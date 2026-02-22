@@ -1,0 +1,6 @@
+@TeAtiendo.API_HostAddress = http://localhost:5067
+
+GET {{TeAtiendo.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
