@@ -8,5 +8,8 @@ namespace TeAtiendo.Domain.Base
 {
     internal class AuditEntity
     {
+        public string Actor { get; set; } = string.Empty;
+        public string Operacion { get; set; } = string.Empty;
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     }
 }
