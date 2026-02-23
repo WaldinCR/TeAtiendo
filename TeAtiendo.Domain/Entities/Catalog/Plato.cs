@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace TeAtiendo.Domain.Entities.Catalog
 {
-    internal class Plato
+    public class Plato
     {
         public int IdPlato { get; set; }
 

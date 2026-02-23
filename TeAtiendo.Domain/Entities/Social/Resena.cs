@@ -1,22 +1,19 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TeAtiendo.Domain.Entities.Catalog;
 using TeAtiendo.Domain.Entities.Operations;
 using TeAtiendo.Domain.Entities.Segurity;
+using TeAtiendo.Domain.Enums;
 
 namespace TeAtiendo.Domain.Entities.Social
 {
-    internal class Resena
+    public class Resena
     {
         public int IdResena { get; set; }
 
         public int IdUsuario { get; set; }
         public int IdRestaurante { get; set; }
 
-        //idReserva OR idOrden (segun regla)
+        // IdReserva OR IdOrden (segun regla)
         public int? IdReserva { get; set; }
         public int? IdOrden { get; set; }
 

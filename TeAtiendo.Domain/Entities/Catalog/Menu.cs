@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace TeAtiendo.Domain.Entities.Catalog
 {
-    internal class Menu
+    public class Menu
     {
         public int IdMenu { get; set; }
 

@@ -1,18 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TeAtiendo.Domain.Entities.Catalog;
-using TeAtiendo.Domain.Base;
 
 namespace TeAtiendo.Domain.Entities.Operations
 {
-    internal class Mesa
+    public class Mesa
     {
-        public int IdMesa { get; set; } // PK
+        public int IdMesa { get; set; }
 
-        public int IdRestaurante { get; set; } // FK
+        public int IdRestaurante { get; set; }
         public int Numero { get; set; }
         public int Capacidad { get; set; }
 
