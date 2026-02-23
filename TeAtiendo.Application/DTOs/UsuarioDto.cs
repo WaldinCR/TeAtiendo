@@ -8,7 +8,7 @@ namespace TeAtiendo.Application.DTOs
         public string Nombre { get; set; } = string.Empty;
         public string Correo { get; set; } = string.Empty;
 
-        // Según SAD: roles del sistema
+        // roles del sistema
         public string Rol { get; set; } = "Cliente";
 
         public DateTime FechaRegistro { get; set; } = DateTime.UtcNow;
@@ -34,7 +34,7 @@ namespace TeAtiendo.Application.DTOs
         public int IdUsuario { get; set; }
         public string Rol { get; set; } = string.Empty;
 
-        // Token simulado para ambiente universitario
+       
         public string TokenSimulado { get; set; } = string.Empty;
     }
 }

@@ -1,16 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TeAtiendo.Domain.Entities.Catalog;
 using TeAtiendo.Domain.Entities.Segurity;
+using TeAtiendo.Domain.Enums;
 
 namespace TeAtiendo.Domain.Entities.Operations
 {
-    internal class Reserva
+    public class Reserva
     {
-        public int IdReserva { get; set; } // PK
+        public int IdReserva { get; set; }
 
         public int IdUsuario { get; set; }
         public int IdRestaurante { get; set; }

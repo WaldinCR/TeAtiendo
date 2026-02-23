@@ -1,15 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TeAtiendo.Domain.Entities.Catalog;
-using TeAtiendo.Domain.Base;
-
 
 namespace TeAtiendo.Domain.Entities.Operations
 {
-    internal class OrdenDetalle
+    public class OrdenDetalle
     {
         public int IdDetalle { get; set; }
 

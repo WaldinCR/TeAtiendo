@@ -24,22 +24,23 @@ namespace TeAtiendo.Application.Services
                 Detalles = new List<OrdenDetalleDto>()
             };
 
-            // Base: crea detalles, sin catálogo real aún (universitario)
+            // Base: crea detalles, sin catálogo real aún 
             foreach (var d in request.Detalles)
             {
                 var detalle = new OrdenDetalleDto
                 {
                     IdPlato = d.IdPlato,
-                    NombrePlato = "Plato #" + d.IdPlato, // TODO: reemplazar por nombre real del catálogo
+                    NombrePlato = "Plato #" + d.IdPlato, 
                     Cantidad = d.Cantidad,
-                    PrecioUnitario = 0m, // TODO: cargar precio real
+                    PrecioUnitario = 0m, // cargar precio real
                     TotalLinea = 0m
                 };
 
                 orden.Detalles.Add(detalle);
             }
 
-            // Totales (a futuro: precios reales)
+            // Totales
+            // (precios reales)
             orden.Subtotal = orden.Detalles.Sum(x => x.TotalLinea);
             orden.Total = orden.Subtotal;
 

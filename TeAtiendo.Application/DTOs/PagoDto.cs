@@ -9,10 +9,10 @@ namespace TeAtiendo.Application.DTOs
         public decimal Monto { get; set; }
         public DateTime FechaPago { get; set; } = DateTime.UtcNow;
 
-        // Pendiente / Pagado / Rechazado (ajustar según SAD)
+        // Pendiente / Pagado / Rechazado 
         public string Estado { get; set; } = "Pendiente";
 
-        // En universitario: “Simulado”, luego puede ser “Stripe”
+       
         public string Metodo { get; set; } = "Simulado";
     }
 

@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TeAtiendo.Domain.Entities.Operations;
 using TeAtiendo.Domain.Entities.Social;
 
 namespace TeAtiendo.Domain.Entities.Catalog
 {
-    internal class Restaurante
+    public class Restaurante
     {
         public int IdRestaurante { get; set; }
 

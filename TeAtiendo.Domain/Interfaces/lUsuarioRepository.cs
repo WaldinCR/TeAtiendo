@@ -1,4 +1,4 @@
-﻿using TeAtiendo.Domain.Entities.Seguridad;
+﻿using TeAtiendo.Domain.Entities.Segurity;
 
 namespace TeAtiendo.Domain.Interfaces;
 

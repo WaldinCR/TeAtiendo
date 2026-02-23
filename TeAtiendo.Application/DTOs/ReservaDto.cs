@@ -13,7 +13,7 @@ namespace TeAtiendo.Application.DTOs
         public string Hora { get; set; } = "19:00";
         public int CantidadPersonas { get; set; }
 
-        // Pendiente / Confirmada / Rechazada / Cancelada (ajustar según SAD)
+        // Pendiente / Confirmada / Rechazada / Cancelada 
         public string Estado { get; set; } = "Pendiente";
     }
 

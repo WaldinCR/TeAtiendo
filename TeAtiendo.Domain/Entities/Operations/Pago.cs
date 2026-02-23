@@ -1,18 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TeAtiendo.Domain.Base;
 using TeAtiendo.Domain.Enums;
 
 namespace TeAtiendo.Domain.Entities.Operations
 {
-    internal class Pago
+    public class Pago
     {
-        public int IdPago { get; set; } // PK
+        public int IdPago { get; set; }
 
-        public int IdOrden { get; set; } // FK
+        public int IdOrden { get; set; }
         public decimal Monto { get; set; }
 
         public string MetodoPago { get; set; } = "Stripe";
@@ -21,7 +16,7 @@ namespace TeAtiendo.Domain.Entities.Operations
 
         public DateTime FechaPago { get; set; }
 
-        // E-R: referenciaExterna (stripe paymentIntent/charge id)
+        // referenciaExterna (Stripe paymentIntent/charge id)
         public string? ReferenciaExterna { get; set; }
 
         // Navegación

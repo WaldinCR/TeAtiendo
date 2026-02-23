@@ -13,7 +13,7 @@ namespace TeAtiendo.Application.Services
 
         public AuthResult Register(RegisterRequest request)
         {
-            // TODO: validar según reglas del SAD/SRS
+            
             var u = new UsuarioDto
             {
                 IdUsuario = _id++,
