@@ -6,10 +6,10 @@ namespace TeAtiendo.Domain.Interfaces
 {
     public interface IPagoRepository
     {
-        Task<Pago?> GetByIdAsync(int id);
+        Task<Pago?> GetByIdAsync(Guid id);
         Task<IEnumerable<Pago>> GetAllAsync();
         Task AddAsync(Pago pago);
         Task UpdateAsync(Pago pago);
-        Task DeleteAsync(int id);
+        Task DeleteAsync(Guid id);
     }
 }
