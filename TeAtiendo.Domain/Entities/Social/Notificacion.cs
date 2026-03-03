@@ -1,9 +1,10 @@
 ﻿using System;
+using TeAtiendo.Domain.Base;
 using TeAtiendo.Domain.Entities.Segurity;
 
 namespace TeAtiendo.Domain.Entities.Social
 {
-    public class Notificacion
+    public class Notificacion:BaseEntity
     {
         public int IdNotificacion { get; set; }
 

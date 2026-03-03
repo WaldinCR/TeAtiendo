@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using TeAtiendo.Domain.Base;    
 
 namespace TeAtiendo.Domain.Entities.Catalog
 {
-    public class Plato
+    public class Plato: BaseEntity
     {
         public int IdPlato { get; set; }
 

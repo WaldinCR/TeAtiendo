@@ -1,9 +1,10 @@
 ﻿using System;
+using TeAtiendo.Domain.Base;
 using System.Collections.Generic;
 
-namespace TeAtiendo.Domain.Entities.Catalog
+namespace TeAtiendo.Domain.Entities.Catalog 
 {
-    public class Menu
+    public class Menu : BaseEntity  
     {
         public int IdMenu { get; set; }
 

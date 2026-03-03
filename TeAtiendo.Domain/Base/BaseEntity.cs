@@ -2,24 +2,25 @@
 
 namespace TeAtiendo.Domain.Base
 {
-    public abstract class BaseEntity
+    public abstract class BaseEntity: AuditEntity   
     {
         public Guid Id { get; set; }
 
-        // Auditoría
+        // AUDITORÍA
         public DateTime FechaCreacion { get; set; }
         public DateTime? FechaModificacion { get; set; }
 
         public string? UsuarioCreacion { get; set; }
         public string? UsuarioModificacion { get; set; }
 
-        // Soft Delete
+        //SOFT DELETE
         public bool Activo { get; set; } = true;
 
         protected BaseEntity()
         {
             Id = Guid.NewGuid();
             FechaCreacion = DateTime.UtcNow;
+            Timestamp = DateTime.UtcNow;
         }
     }
 }
