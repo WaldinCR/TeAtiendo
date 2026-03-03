@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ﻿using Microsoft.EntityFrameworkCore;
 using TeAtiendo.Domain.Entities.Catalog;
 using TeAtiendo.Domain.Entities.Operations;
@@ -40,7 +39,7 @@ namespace TeAtiendo.Persistence.Context
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configuración de precisión para decimales (Evita warnings en la consola)
+            // Configuración de precisión para decimales
             modelBuilder.Entity<Plato>().Property(p => p.Precio).HasPrecision(18, 2);
             modelBuilder.Entity<Orden>().Property(o => o.Total).HasPrecision(18, 2);
             modelBuilder.Entity<OrdenDetalle>().Property(od => od.PrecioUnitario).HasPrecision(18, 2);
@@ -48,17 +47,3 @@ namespace TeAtiendo.Persistence.Context
         }
     }
 }
-=======
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace TeAtiendo.Persistence.Context
-{
-    internal class TeAtiendoContext
-    {
-    }
-}
->>>>>>> 6b12c5cf2d88184f7a0af2ee6523e7745924cbf4

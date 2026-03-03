@@ -1,18 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using TeAtiendo.Domain.Base;
 
 namespace TeAtiendo.Domain.Entities.Catalog
 {
-    public class CategoriaPlato
+    public class CategoriaPlato : BaseEntity
     {
-        public int IdCategoria { get; set; }
-
-        public int IdMenu { get; set; }
+        public Guid MenuId { get; set; }
         public string Nombre { get; set; } = string.Empty;
         public string Descripcion { get; set; } = string.Empty;
 
-        // Navegación
-        public Menu Menu { get; set; } = null!;
-        public ICollection<Plato> Platos { get; set; } = new List<Plato>();
+        public virtual Menu Menu { get; set; } = null!;
+        public virtual ICollection<Plato> Platos { get; set; } = new List<Plato>();
     }
 }

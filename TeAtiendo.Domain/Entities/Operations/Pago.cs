@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
+using TeAtiendo.Domain.Base;    
 using TeAtiendo.Domain.Enums;
 
 namespace TeAtiendo.Domain.Entities.Operations
 {
-    public class Pago
+    public class Pago: BaseEntity   
     {
         public int IdPago { get; set; }
 

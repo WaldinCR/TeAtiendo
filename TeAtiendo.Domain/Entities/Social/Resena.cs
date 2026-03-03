@@ -1,4 +1,4 @@
-﻿using TeAtiendo.Domain.Base;
+﻿using System;
 using TeAtiendo.Domain.Entities.Catalog;
 using TeAtiendo.Domain.Entities.Operations;
 using TeAtiendo.Domain.Entities.Segurity;
