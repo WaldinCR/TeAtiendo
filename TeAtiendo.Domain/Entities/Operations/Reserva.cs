@@ -1,30 +1,32 @@
 ﻿using System;
+using TeAtiendo.Domain.Base;
 using TeAtiendo.Domain.Entities.Catalog;
 using TeAtiendo.Domain.Entities.Segurity;
-using TeAtiendo.Domain.Enums;
 
 namespace TeAtiendo.Domain.Entities.Operations
 {
-    public class Reserva
+    public class Reserva : BaseEntity
     {
-        public int IdReserva { get; set; }
+        public Guid UsuarioId { get; set; }
+        public Guid RestauranteId { get; set; }
+        public Guid MesaId { get; set; }
+        public Guid DisponibilidadId { get; set; }
 
-        public int IdUsuario { get; set; }
-        public int IdRestaurante { get; set; }
-        public int IdMesa { get; set; }
-        public int IdDisponibilidad { get; set; }
-
-        public DateTime Fecha { get; set; }
-        public TimeOnly Hora { get; set; }
+        public DateTime FechaReserva { get; set; }
         public int CantidadPersonas { get; set; }
+        public EstadoReserva EstadoReserva { get; set; }
 
-        public EstadoReserva Estado { get; set; }
-        public DateTime FechaCreacion { get; set; }
+        public virtual Usuario Usuario { get; set; } = null!;
+        public virtual Restaurante Restaurante { get; set; } = null!;
+        public virtual Mesa Mesa { get; set; } = null!;
+        public virtual Disponibilidad Disponibilidad { get; set; } = null!;
+    }
 
-        // Navegación
-        public Usuario Usuario { get; set; } = null!;
-        public Restaurante Restaurante { get; set; } = null!;
-        public Mesa Mesa { get; set; } = null!;
-        public Disponibilidad Disponibilidad { get; set; } = null!;
+    public enum EstadoReserva
+    {
+        Pendiente = 1,
+        Confirmada = 2,
+        Cancelada = 3,
+        Completada = 4
     }
 }

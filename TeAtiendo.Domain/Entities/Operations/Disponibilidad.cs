@@ -1,19 +1,19 @@
 ﻿using System;
-using TeAtiendo.Domain.Enums;
+using System.Collections.Generic;
+using TeAtiendo.Domain.Base;
+using TeAtiendo.Domain.Entities.Catalog;
 
 namespace TeAtiendo.Domain.Entities.Operations
 {
-    public class Disponibilidad
+    public class Disponibilidad : BaseEntity
     {
-        public int IdDisponibilidad { get; set; }
+        public Guid RestauranteId { get; set; }
 
-        public int IdMesa { get; set; }
         public DateTime Fecha { get; set; }
-        public TimeOnly Hora { get; set; }
+        public TimeSpan HoraInicio { get; set; }
+        public TimeSpan HoraFin { get; set; }
 
-        public EstadoDisponibilidad Estado { get; set; }
-
-        // Navegación
-        public Mesa Mesa { get; set; } = null!;
+        public virtual Restaurante Restaurante { get; set; } = null!;
+        public virtual ICollection<Reserva> Reservas { get; set; } = new List<Reserva>();
     }
 }

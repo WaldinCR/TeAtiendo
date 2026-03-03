@@ -1,11 +1,29 @@
+using Microsoft.EntityFrameworkCore;
+using TeAtiendo.Persistence.Context;
+using TeAtiendo.Persistence.Repositories.Catalog;
+using TeAtiendo.Persistence.Repositories.Operaciones;
+using TeAtiendo.Persistence.Repositories.Auditoria;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// DbContext
+builder.Services.AddDbContext<TeAtiendoContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Repositorios
+builder.Services.AddScoped<MenuRepository>();
+builder.Services.AddScoped<PlatoRepository>();
+builder.Services.AddScoped<RestauranteRepository>();
+builder.Services.AddScoped<OrdenRepository>();
+builder.Services.AddScoped<PagoRepository>();
+builder.Services.AddScoped<ReservaRepository>();
+builder.Services.AddScoped<AuditoriaLogRepository>();
 
 var app = builder.Build();
 
