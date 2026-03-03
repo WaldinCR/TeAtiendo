@@ -1,14 +1,13 @@
 ﻿using System;
+using TeAtiendo.Domain.Base;
 using TeAtiendo.Domain.Entities.Catalog;
 using TeAtiendo.Domain.Entities.Segurity;
 using TeAtiendo.Domain.Enums;
 
 namespace TeAtiendo.Domain.Entities.Operations
 {
-    public class Reserva
+    public class Reserva : BaseEntity
     {
-        public int IdReserva { get; set; }
-
         public int IdUsuario { get; set; }
         public int IdRestaurante { get; set; }
         public int IdMesa { get; set; }
@@ -19,12 +18,10 @@ namespace TeAtiendo.Domain.Entities.Operations
         public int CantidadPersonas { get; set; }
 
         public EstadoReserva Estado { get; set; }
-        public DateTime FechaCreacion { get; set; }
 
-        // Navegación
-        public Usuario Usuario { get; set; } = null!;
-        public Restaurante Restaurante { get; set; } = null!;
-        public Mesa Mesa { get; set; } = null!;
-        public Disponibilidad Disponibilidad { get; set; } = null!;
+        public virtual Usuario Usuario { get; set; } = null!;
+        public virtual Restaurante Restaurante { get; set; } = null!;
+        public virtual Mesa Mesa { get; set; } = null!;
+        public virtual Disponibilidad Disponibilidad { get; set; } = null!;
     }
 }

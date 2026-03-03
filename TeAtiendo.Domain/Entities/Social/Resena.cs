@@ -1,4 +1,5 @@
-﻿using TeAtiendo.Domain.Base;
+﻿using System;
+using TeAtiendo.Domain.Base;
 using TeAtiendo.Domain.Entities.Catalog;
 using TeAtiendo.Domain.Entities.Operations;
 using TeAtiendo.Domain.Entities.Segurity;
@@ -6,7 +7,7 @@ using TeAtiendo.Domain.Enums;
 
 namespace TeAtiendo.Domain.Entities.Social
 {
-    public class Resena : BaseEntity
+    public class Resena: BaseEntity 
     {
         public Guid UsuarioId { get; set; }
         public Guid RestauranteId { get; set; }

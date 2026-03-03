@@ -1,15 +1,22 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+
 namespace TeAtiendo.Domain.Base
 {
-    internal class AuditEntity
+    public abstract class AuditEntity
     {
-        public string Actor { get; set; } = string.Empty;
-        public string Operacion { get; set; } = string.Empty;
+        public string? Actor { get; set; }
+        public string? Operacion { get; set; }
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+
+        public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
+        public DateTime? FechaModificacion { get; set; }
+
+        public string? UsuarioCreacion { get; set; }
+        public string? UsuarioModificacion { get; set; }
+
+        public bool Activo { get; set; } = true;
     }
 }

@@ -51,14 +51,26 @@ namespace TeAtiendo.Persistence.Context
 =======
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Reflection.Emit;
+using TeAtiendo.Domain.Entities.Catalog;
+using TeAtiendo.Domain.Entities.Operations;
+using TeAtiendo.Domain.Entities.Segurity;
 
 namespace TeAtiendo.Persistence.Context
 {
-    internal class TeAtiendoContext
+    public class TeAtiendoContext : DbContext
     {
+        public TeAtiendoContext(DbContextOptions<TeAtiendoContext> options) : base(options) { }
+
+        public DbSet<Usuario> Usuarios { get; set; }
+        public DbSet<Restaurante> Restaurantes { get; set; }
+        public DbSet<Reserva> Reservas { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            // Validaciones de base de datos (Fluent API)
+            modelBuilder.Entity<Usuario>().HasIndex(u => u.Correo).IsUnique();
+        }
     }
 }
->>>>>>> 6b12c5cf2d88184f7a0af2ee6523e7745924cbf4

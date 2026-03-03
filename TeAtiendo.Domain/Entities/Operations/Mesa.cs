@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using TeAtiendo.Domain.Base;
 using TeAtiendo.Domain.Entities.Catalog;
 
 namespace TeAtiendo.Domain.Entities.Operations
 {
-    public class Mesa
+    public class Mesa: BaseEntity   
     {
         public int IdMesa { get; set; }
 

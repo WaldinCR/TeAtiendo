@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
+using TeAtiendo.Domain.Base;    
 using TeAtiendo.Domain.Enums;
 
 namespace TeAtiendo.Domain.Entities.Operations
 {
-    public class Disponibilidad
+    public class Disponibilidad: BaseEntity 
     {
         public int IdDisponibilidad { get; set; }
 
