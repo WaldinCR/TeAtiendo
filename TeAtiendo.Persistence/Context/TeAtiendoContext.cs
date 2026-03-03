@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ﻿using Microsoft.EntityFrameworkCore;
 using TeAtiendo.Domain.Entities.Catalog;
 using TeAtiendo.Domain.Entities.Operations;
@@ -37,7 +36,7 @@ namespace TeAtiendo.Persistence.Context
         public DbSet<Auditoria> Auditorias { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
+    {
             base.OnModelCreating(modelBuilder);
 
             // Configuración de precisión para decimales (Evita warnings en la consola)
@@ -45,32 +44,6 @@ namespace TeAtiendo.Persistence.Context
             modelBuilder.Entity<Orden>().Property(o => o.Total).HasPrecision(18, 2);
             modelBuilder.Entity<OrdenDetalle>().Property(od => od.PrecioUnitario).HasPrecision(18, 2);
             modelBuilder.Entity<Pago>().Property(p => p.Monto).HasPrecision(18, 2);
-        }
-    }
-}
-=======
-﻿using System;
-using System.Collections.Generic;
-using System.Reflection.Emit;
-using TeAtiendo.Domain.Entities.Catalog;
-using TeAtiendo.Domain.Entities.Operations;
-using TeAtiendo.Domain.Entities.Segurity;
-
-namespace TeAtiendo.Persistence.Context
-{
-    public class TeAtiendoContext : DbContext
-    {
-        public TeAtiendoContext(DbContextOptions<TeAtiendoContext> options) : base(options) { }
-
-        public DbSet<Usuario> Usuarios { get; set; }
-        public DbSet<Restaurante> Restaurantes { get; set; }
-        public DbSet<Reserva> Reservas { get; set; }
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
-            // Validaciones de base de datos (Fluent API)
-            modelBuilder.Entity<Usuario>().HasIndex(u => u.Correo).IsUnique();
         }
     }
 }

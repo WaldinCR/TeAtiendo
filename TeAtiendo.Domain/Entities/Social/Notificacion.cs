@@ -5,7 +5,6 @@ using TeAtiendo.Domain.Entities.Segurity;
 namespace TeAtiendo.Domain.Entities.Social
 {
     public class Notificacion : BaseEntity
-    public class Notificacion:BaseEntity
     {
         public Guid UsuarioId { get; set; }
 
