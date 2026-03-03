@@ -10,4 +10,13 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.17" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Controllers\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TeAtiendo.Domain\TeAtiendo.Domain.csproj" />
+    <ProjectReference Include="..\TeAtiendo.Persistence\TeAtiendo.Persistence.csproj" />
+  </ItemGroup>
+
 </Project>

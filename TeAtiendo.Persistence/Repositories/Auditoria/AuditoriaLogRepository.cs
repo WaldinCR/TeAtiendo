@@ -1,45 +1,47 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using TeAtiendo.Domain.Entities.Segurity;
+using TeAtiendo.Domain.Entities.Auditory;
 using TeAtiendo.Persistence.Context;
 
 namespace TeAtiendo.Persistence.Repositories.Auditoria
 {
-    public class AuditoriaLogRepository
+    public class AuditoriaRepository
     {
         private readonly TeAtiendoContext _context;
 
-        public AuditoriaLogRepository(TeAtiendoContext context)
+        public AuditoriaRepository(TeAtiendoContext context)
         {
             _context = context;
         }
 
-        public async Task<List<AuditoriaLog>> GetAllAsync()
+        public async Task<List<Auditoria>> GetAllAsync()
         {
-            return await _context.Set<AuditoriaLog>()
-                                 .OrderByDescending(a => a.Fecha)
-                                 .ToListAsync();
+            // Si Auditoria tiene propiedad Fecha, ordenamos por ella.
+            // Si no la tiene, quita el OrderByDescending.
+            return await _context.Set<Auditoria>()
+                .OrderByDescending(a => a.Fecha)
+                .ToListAsync();
         }
 
-        public async Task<AuditoriaLog?> GetByIdAsync(int id)
+        public async Task<Auditoria?> GetByIdAsync(Guid id)
         {
-            return await _context.Set<AuditoriaLog>()
-                                 .FirstOrDefaultAsync(a => a.IdLog == id);
+            // Guid Id viene de BaseEntity
+            return await _context.Set<Auditoria>()
+                .FirstOrDefaultAsync(a => a.Id == id);
         }
 
-        public async Task AddAsync(AuditoriaLog log)
+        public async Task AddAsync(Auditoria auditoria)
         {
-            await _context.Set<AuditoriaLog>().AddAsync(log);
+            await _context.Set<Auditoria>().AddAsync(auditoria);
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(int id)
+        public async Task DeleteAsync(Guid id)
         {
-            var log = await GetByIdAsync(id);
-            if (log != null)
-            {
-                _context.Remove(log);
-                await _context.SaveChangesAsync();
-            }
+            var auditoria = await GetByIdAsync(id);
+            if (auditoria is null) return;
+
+            _context.Set<Auditoria>().Remove(auditoria);
+            await _context.SaveChangesAsync();
         }
     }
 }
