@@ -35,18 +35,11 @@ namespace TeAtiendo.Persistence.Context
         // Auditory
         public DbSet<Auditoria> Auditorias { get; set; }
 
-        // Social
-        public DbSet<Notificacion> Notificaciones { get; set; }
-        public DbSet<Resena> Resenas { get; set; }
-
-        // Auditory
-        public DbSet<Auditoria> Auditorias { get; set; }
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
+        {
             base.OnModelCreating(modelBuilder);
 
-            // Configuración de precisión para decimales (Evita warnings en la consola)
+            // Configuración de precisión para decimales
             modelBuilder.Entity<Plato>().Property(p => p.Precio).HasPrecision(18, 2);
             modelBuilder.Entity<Orden>().Property(o => o.Total).HasPrecision(18, 2);
             modelBuilder.Entity<OrdenDetalle>().Property(od => od.PrecioUnitario).HasPrecision(18, 2);
