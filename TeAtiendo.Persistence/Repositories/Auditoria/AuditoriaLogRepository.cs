@@ -4,6 +4,25 @@ using TeAtiendo.Persistence.Context;
 
 namespace TeAtiendo.Persistence.Repositories.Auditoria
 {
+    internal class AuditoriaLogRepository
+    {
+        private readonly TeAtiendoContext _context;
+
+        public AuditoriaLogRepository(TeAtiendoContext context)
+        {
+            _context = context;
+        }
+
+        public Task RegistrarAsync(string accion, string? usuarioCorreo = null, string? detalles = null)
+        {
+            // Base: sin DbSet<AuditoriaLog>, no se guarda en BD.
+            // De momento solo “simula” el registro.
+            _ = accion;
+            _ = usuarioCorreo;
+            _ = detalles;
+
+            return Task.CompletedTask;
+        }
     public class AuditoriaRepository
     {
         private readonly TeAtiendoContext _context;
