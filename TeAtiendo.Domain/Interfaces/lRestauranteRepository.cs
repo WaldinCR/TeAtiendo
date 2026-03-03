@@ -1,12 +1,16 @@
-﻿using TeAtiendo.Domain.Entities.Catalog;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using TeAtiendo.Domain.Entities.Catalog;
 
-namespace TeAtiendo.Domain.Interfaces;
-
-public interface IRestauranteRepository
+namespace TeAtiendo.Domain.Interfaces
 {
-    Task<Restaurante?> GetByIdAsync(int id);
-    Task<IEnumerable<Restaurante>> GetAllAsync();
-    Task AddAsync(Restaurante restaurante);
-    Task UpdateAsync(Restaurante restaurante);
-    Task DeleteAsync(int id);
+    public interface IRestauranteRepository
+    {
+        Task<Restaurante?> GetByIdAsync(Guid id);
+        Task<IEnumerable<Restaurante>> GetAllAsync();
+        Task AddAsync(Restaurante restaurante);
+        Task UpdateAsync(Restaurante restaurante);
+        Task DeleteAsync(Guid id);
+    }
 }

@@ -12,6 +12,7 @@ namespace TeAtiendo.Domain.Common
         public string Message { get; set; } = string.Empty;
         public T? Data { get; set; }
 
+        // metodos de fábrica para crear resultados exitosos o fallidos 
         public static OperationResult<T> Ok(T data) => new() { Success = true, Data = data };
         public static OperationResult<T> Fail(string message) => new() { Success = false, Message = message };
     }

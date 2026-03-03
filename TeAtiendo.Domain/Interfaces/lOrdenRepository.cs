@@ -6,7 +6,7 @@ namespace TeAtiendo.Domain.Interfaces
 {
     public interface IOrdenRepository
     {
-        Task<Orden?> GetByIdAsync(int id);
+        Task<Orden?> GetByIdAsync(Guid id);
 
         Task<IEnumerable<Orden>> GetAllAsync();
 
@@ -14,6 +14,6 @@ namespace TeAtiendo.Domain.Interfaces
 
         Task UpdateAsync(Orden orden);
 
-        Task DeleteAsync(int id);
+        Task DeleteAsync(Guid id);
     }
 }
