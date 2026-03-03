@@ -19,7 +19,6 @@ namespace TeAtiendo.Domain.Entities.Operations
         public int CantidadPersonas { get; set; }
 
         public EstadoReserva Estado { get; set; }
-        public DateTime FechaCreacion { get; set; }
 
         // Navegación
         public Usuario Usuario { get; set; } = null!;
