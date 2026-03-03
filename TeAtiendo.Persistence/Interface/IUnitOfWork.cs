@@ -20,7 +20,7 @@ namespace TeAtiendo.Persistence.Repositories
         {
             _context = context;
 
-            // Aquí inicializarás los repositorios concretos una vez los tengamos creados
+            // repositorios concretos una vez los tengamos creados
             Usuarios = new UsuarioRepository(_context);
             Reservas = new ReservaRepository(_context);
             Ordenes = new OrdenRepository(_context);

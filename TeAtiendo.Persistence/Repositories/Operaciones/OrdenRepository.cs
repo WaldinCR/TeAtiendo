@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using TeAtiendo.Domain.Entities.Operations;
+using TeAtiendo.Domain.Interfaces;
+using TeAtiendo.Persistence.Base;
+using TeAtiendo.Persistence.Context;
 
 namespace TeAtiendo.Persistence.Repositories.Operaciones
 {
-    internal class OrdenRepository
+    public class OrdenRepository : BaseRepository<Orden>, IOrdenRepository
     {
+        public OrdenRepository(TeAtiendoContext context) : base(context) { }
     }
 }
