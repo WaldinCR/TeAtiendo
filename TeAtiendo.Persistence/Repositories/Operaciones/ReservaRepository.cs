@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using TeAtiendo.Domain.Entities.Operations;
+using TeAtiendo.Domain.Interfaces;
+using TeAtiendo.Persistence.Base;
+using TeAtiendo.Persistence.Context;
 
-namespace TeAtiendo.Persistence.Repositories.Operaciones
+namespace TeAtiendo.Persistence.Repositories.Operaciones    
 {
-    internal class ReservaRepository
+    public class ReservaRepository : BaseRepository<Reserva>, IReservaRepository
     {
+        public ReservaRepository(TeAtiendoContext context) : base(context) { }
     }
 }
