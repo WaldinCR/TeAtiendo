@@ -1,51 +1,25 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using TeAtiendo.Domain.Entities.Catalog;
+using TeAtiendo.Domain.Interfaces;
+using TeAtiendo.Persistence.Base;
 using TeAtiendo.Persistence.Context;
 
-namespace TeAtiendo.Persistence.Repositories.Catalog
+namespace TeAtiendo.Persistence.Repositories.Catalogo
 {
-    public class PlatoRepository
+    public class PlatoRepository : BaseRepository<Plato>, IPlatoRepository
     {
-        private readonly TeAtiendoContext _context;
+        public PlatoRepository(TeAtiendoContext context) : base(context) { }
 
-        public PlatoRepository(TeAtiendoContext context)
+        public async Task<IEnumerable<Plato>> ObtenerPorMenuAsync(Guid menuId)
         {
-            _context = context;
-        }
-
-        public async Task<List<Plato>> GetByMenuAsync(int menuId)
-        {
-            return await _context.Set<Plato>()
-                                 .Where(p => p.IdMenu == menuId)
-                                 .ToListAsync();
-        }
-
-        public async Task<Plato?> GetByIdAsync(int id)
-        {
-            return await _context.Set<Plato>()
-                                 .FirstOrDefaultAsync(p => p.IdPlato == id);
-        }
-
-        public async Task AddAsync(Plato plato)
-        {
-            await _context.Set<Plato>().AddAsync(plato);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task UpdateAsync(Plato plato)
-        {
-            _context.Update(plato);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task DeleteAsync(int id)
-        {
-            var plato = await GetByIdAsync(id);
-            if (plato != null)
-            {
-                _context.Remove(plato);
-                await _context.SaveChangesAsync();
-            }
+            return await _dbSet
+                .Where(x => x.MenuId == menuId && x.Activo)
+                .AsNoTracking()
+                .ToListAsync();
         }
     }
 }
