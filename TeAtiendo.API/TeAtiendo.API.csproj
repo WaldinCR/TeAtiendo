@@ -19,4 +19,8 @@
     <ProjectReference Include="..\TeAtiendo.Persistence\TeAtiendo.Persistence.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Controllers\" />
+  </ItemGroup>
+
 </Project>
