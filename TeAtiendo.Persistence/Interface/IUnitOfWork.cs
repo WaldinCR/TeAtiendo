@@ -7,7 +7,7 @@ using TeAtiendo.Persistence.Repositories.Seguridad;
 
 namespace TeAtiendo.Persistence.Repositories
 {
-    public class UnitOfWork : IUnitOfWork
+    public class UnitOfWork 
     {
         private readonly TeAtiendoContext _context;
 
@@ -20,7 +20,7 @@ namespace TeAtiendo.Persistence.Repositories
         {
             _context = context;
 
-            // repositorios concretos una vez los tengamos creados
+            // repositorios concretos 
             Usuarios = new UsuarioRepository(_context);
             Reservas = new ReservaRepository(_context);
             Ordenes = new OrdenRepository(_context);

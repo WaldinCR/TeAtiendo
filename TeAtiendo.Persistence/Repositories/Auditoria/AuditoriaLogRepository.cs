@@ -1,13 +1,15 @@
 ﻿using System;
-using TeAtiendo.Domain.Entities.Auditoria;
 using TeAtiendo.Domain.Interfaces;
 using TeAtiendo.Persistence.Base;
 using TeAtiendo.Persistence.Context;
+using TeAtiendo.Domain.Entities.Auditory;
 
-namespace TeAtiendo.Persistence.Repositories.Auditoria
+namespace TeAtiendo.Persistence.Repositories.Auditory
 {
-    public class AuditoriaLogRepository : BaseRepository<AuditoriaLog>, IAuditoriaLogRepository
+    public class AuditoriaRepository : BaseRepository<Auditoria>, IAuditoriaRepository
     {
-        public AuditoriaLogRepository(TeAtiendoContext context) : base(context) { }
+        public AuditoriaRepository(TeAtiendoContext context) : base(context)
+        {
+        }
     }
 }

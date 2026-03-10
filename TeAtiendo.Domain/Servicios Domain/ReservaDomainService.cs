@@ -10,12 +10,12 @@ namespace TeAtiendo.Domain.ServiciosDomain
         {
             if (reserva.FechaReserva < DateTime.Now)
             {
-                throw new ExcepcionDominio("No se puede realizar una reserva para una fecha pasada.");
+                throw new TeAtiendoExcepcion("No se puede realizar una reserva para una fecha pasada.");
             }
 
             if (reserva.CantidadPersonas <= 0)
             {
-                throw new ExcepcionDominio("La reserva debe ser para al menos 1 persona.");
+                throw new TeAtiendoExcepcion("La reserva debe ser para al menos 1 persona.");
             }
         }
     }

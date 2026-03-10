@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using TeAtiendo.Domain.Base;    
 using TeAtiendo.Domain.Enums;
+using TeAtiendo.Domain.Entities.Catalog;
 
 namespace TeAtiendo.Domain.Entities.Operations
 {

@@ -3,7 +3,7 @@ using TeAtiendo.Domain.Entities.Catalog;
 using TeAtiendo.Domain.Entities.Operations;
 using TeAtiendo.Domain.Entities.Segurity;
 using TeAtiendo.Domain.Enums;
-
+using TeAtiendo.Domain.Base;    
 namespace TeAtiendo.Domain.Entities.Social
 {
     public class Resena : BaseEntity
