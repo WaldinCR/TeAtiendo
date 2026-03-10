@@ -32,23 +32,25 @@ namespace TeAtiendo.Persistence.Base
         public async Task AddAsync(T entity)
         {
             await _dbSet.AddAsync(entity);
+            await _context.SaveChangesAsync();
         }
 
         public async Task UpdateAsync(T entity)
         {
             _dbSet.Update(entity);
-            await Task.CompletedTask;
+            await _context.SaveChangesAsync();
         }
 
         public async Task DeleteAsync(Guid id)
         {
             var entity = await GetByIdAsync(id);
+
             if (entity != null)
             {
                 entity.Activo = false;
                 _dbSet.Update(entity);
+                await _context.SaveChangesAsync();
             }
-            await Task.CompletedTask;
         }
     }
 }

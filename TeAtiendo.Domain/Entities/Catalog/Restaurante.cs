@@ -1,16 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using TeAtiendo.Domain.Base;
 using TeAtiendo.Domain.Entities.Operations;
 using TeAtiendo.Domain.Entities.Social;
+using TeAtiendo.Domain.Entities.Catalog;
 
 namespace TeAtiendo.Domain.Entities.Catalog
 {
-    public class Restaurante
+    public class Restaurante : BaseEntity
     {
         public string Nombre { get; set; } = string.Empty;
         public string Direccion { get; set; } = string.Empty;
         public string Telefono { get; set; } = string.Empty;
         public string Correo { get; set; } = string.Empty;
+
         public TimeOnly HorarioApertura { get; set; }
         public TimeOnly HorarioCierre { get; set; }
 

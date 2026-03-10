@@ -1,44 +1,26 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System.Windows.Controls;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using TeAtiendo.Domain.Entities.Operations;
+using TeAtiendo.Domain.Interfaces;
+using TeAtiendo.Persistence.Base;
 using TeAtiendo.Persistence.Context;
 
 namespace TeAtiendo.Persistence.Repositories.Operaciones
 {
-    public class OrdenRepository
+    public class OrdenRepository : BaseRepository<Orden>, IOrdenRepository
     {
-        private readonly TeAtiendoContext _context;
+        public OrdenRepository(TeAtiendoContext context) : base(context) { }
 
-        public OrdenRepository(TeAtiendoContext context)
+        public async Task<IEnumerable<Orden>> GetByUsuarioAsync(Guid usuarioId)
         {
-            _context = context;
-        }
-
-        public async Task<List<Orden>> GetByUsuarioAsync(int usuarioId)
-        {
-            return await _context.Set<Orden>()
-                                 .Where(o => o.IdUsuario == usuarioId)
-                                 .Include(o => o.Pago)
-                                 .ToListAsync();
-        }
-
-        public async Task<Orden?> GetByIdAsync(int id)
-        {
-            return await _context.Set<Orden>()
-                                 .Include(o => o.Pago)
-                                 .FirstOrDefaultAsync(o => o.IdOrden == id);
-        }
-
-        public async Task AddAsync(Orden orden)
-        {
-            await _context.Set<Orden>().AddAsync(orden);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task UpdateAsync(Orden orden)
-        {
-            _context.Update(orden);
-            await _context.SaveChangesAsync();
+            return await _dbSet
+                .Where(o => o.UsuarioId == usuarioId && o.Activo)
+                .Include(o => o.Pago)
+                .Include(o => o.Detalles)
+                .ToListAsync();
         }
     }
 }

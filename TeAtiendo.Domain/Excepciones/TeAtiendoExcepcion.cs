@@ -1,9 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using TeAtiendo.Domain.Excepciones;
 
 namespace TeAtiendo.Domain.Excepciones
 {
-    public class TeAtiendoException : Exception
+    
+    public class TeAtiendoExcepcion : Exception
     {
-        public TeAtiendoException(string mensaje) : base(mensaje) { }
+        public TeAtiendoExcepcion(string mensaje) : base(mensaje) { }
     }
 }
