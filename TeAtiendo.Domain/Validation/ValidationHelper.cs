@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace TeAtiendo.Domain.Validation
 {
@@ -13,9 +12,7 @@ namespace TeAtiendo.Domain.Validation
 
             var errors = new List<string>();
             foreach (var error in results)
-            {
                 errors.Add(error.ErrorMessage ?? "Error de validación");
-            }
 
             return (isValid, errors);
         }

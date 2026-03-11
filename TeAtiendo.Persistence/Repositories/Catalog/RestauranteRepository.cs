@@ -1,5 +1,4 @@
-﻿using System;
-using TeAtiendo.Domain.Entities.Catalog;
+﻿using TeAtiendo.Domain.Entities.Catalog;
 using TeAtiendo.Domain.Interfaces;
 using TeAtiendo.Persistence.Base;
 using TeAtiendo.Persistence.Context;

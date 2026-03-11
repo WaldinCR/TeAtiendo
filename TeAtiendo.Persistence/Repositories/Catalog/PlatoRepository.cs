@@ -1,8 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using TeAtiendo.Domain.Entities.Catalog;
 using TeAtiendo.Domain.Interfaces;
 using TeAtiendo.Persistence.Base;
@@ -14,12 +10,12 @@ namespace TeAtiendo.Persistence.Repositories.Catalogo
     {
         public PlatoRepository(TeAtiendoContext context) : base(context) { }
 
-        public async Task<IEnumerable<Plato>> ObtenerPorMenuAsync(Guid menuId)
+        public async Task<IReadOnlyList<Plato>> ObtenerPorMenuAsync(Guid menuId, CancellationToken ct = default)
         {
             return await _dbSet
                 .Where(x => x.MenuId == menuId && x.Activo)
                 .AsNoTracking()
-                .ToListAsync();
+                .ToListAsync(ct);
         }
     }
 }

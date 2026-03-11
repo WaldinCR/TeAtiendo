@@ -1,20 +1,29 @@
-﻿using System;
-
-namespace TeAtiendo.Domain.Base
+﻿namespace TeAtiendo.Domain.Base
 {
     public abstract class AuditEntity
     {
-        public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
-        public DateTime? FechaModificacion { get; set; }
-
-        public string? UsuarioCreacion { get; set; }
-        public string? UsuarioModificacion { get; set; }
-
         public bool Activo { get; set; } = true;
 
-        public string? Actor { get; set; }
-        public string? Operacion { get; set; }
+        public DateTime CreationDate { get; set; } = DateTime.UtcNow;
+        public DateTime? ModifyDate { get; set; }
 
-        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public Guid CreationUser { get; set; }
+        public Guid? UserMod { get; set; }
+
+        public Guid? UserDeleted { get; set; }
+        public DateTime? DeletedDate { get; set; }
+
+        public void SoftDelete(Guid userId)
+        {
+            Activo = false;
+            UserDeleted = userId;
+            DeletedDate = DateTime.UtcNow;
+        }
+
+        public void MarkModified(Guid userId)
+        {
+            UserMod = userId;
+            ModifyDate = DateTime.UtcNow;
+        }
     }
 }

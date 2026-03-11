@@ -1,8 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using TeAtiendo.Domain.Entities.Operations;
 using TeAtiendo.Domain.Interfaces;
 using TeAtiendo.Persistence.Base;
@@ -14,13 +10,13 @@ namespace TeAtiendo.Persistence.Repositories.Operaciones
     {
         public OrdenRepository(TeAtiendoContext context) : base(context) { }
 
-        public async Task<IEnumerable<Orden>> GetByUsuarioAsync(Guid usuarioId)
+        public async Task<IReadOnlyList<Orden>> GetByUsuarioAsync(Guid usuarioId, CancellationToken ct = default)
         {
             return await _dbSet
                 .Where(o => o.UsuarioId == usuarioId && o.Activo)
                 .Include(o => o.Pago)
                 .Include(o => o.Detalles)
-                .ToListAsync();
+                .ToListAsync(ct);
         }
     }
 }
