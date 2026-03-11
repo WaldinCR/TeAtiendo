@@ -1,50 +1,30 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using TeAtiendo.Application.DTOs;
+using System.Threading.Tasks;
+using TeAtiendo.Application.Interfaces;
+using TeAtiendo.Domain.Interfaces;
 
 namespace TeAtiendo.Application.Services
 {
-    public class AuthService
+    public class AuthService : IAuthService
     {
+        private readonly IUsuarioRepository _usuarioRepository;
 
-        private static readonly List<UsuarioDto> _usuarios = new List<UsuarioDto>();
-        private static int _id = 1;
-
-        public AuthResult Register(RegisterRequest request)
+        public AuthService(IUsuarioRepository usuarioRepository)
         {
-            
-            var u = new UsuarioDto
-            {
-                IdUsuario = _id++,
-                Nombre = request.Nombre,
-                Correo = request.Correo,
-                Rol = request.Rol,
-                FechaRegistro = DateTime.UtcNow,
-                Estado = "Activo"
-            };
-            _usuarios.Add(u);
-
-            return new AuthResult
-            {
-                IdUsuario = u.IdUsuario,
-                Rol = u.Rol,
-                TokenSimulado = "token-simulado-" + u.IdUsuario
-            };
+            _usuarioRepository = usuarioRepository;
         }
 
-        public AuthResult? Login(LoginRequest request)
+        public async Task<bool> LoginAsync(string correo, string password)
         {
-            // TODO: autenticar real con hash en BD (luego)
-            var u = _usuarios.FirstOrDefault(x => x.Correo.Equals(request.Correo, StringComparison.OrdinalIgnoreCase));
-            if (u is null) return null;
+            var usuarios = await _usuarioRepository.GetAllAsync();
 
-            return new AuthResult
-            {
-                IdUsuario = u.IdUsuario,
-                Rol = u.Rol,
-                TokenSimulado = "token-simulado-" + u.IdUsuario
-            };
+            var usuario = usuarios.FirstOrDefault(u => u.Correo == correo);
+
+            if (usuario == null)
+                return false;
+
+            return usuario.PasswordHash == password;
         }
     }
 }

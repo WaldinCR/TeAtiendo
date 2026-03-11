@@ -1,31 +1,92 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using TeAtiendo.Application.DTOs;
+using System.Threading.Tasks;
+using TeAtiendo.Application.DTOs.Usuario;
+using TeAtiendo.Application.Interfaces;
+using TeAtiendo.Domain.Entities.Segurity;
+using TeAtiendo.Domain.Interfaces;
 
 namespace TeAtiendo.Application.Services
 {
-    public class UsuarioService
+    public class UsuarioService : IUsuarioService
     {
-        private static readonly List<UsuarioDto> _usuarios = new List<UsuarioDto>();
-        private static int _id = 1;
+        private readonly IUsuarioRepository _usuarioRepository;
 
-        public UsuarioDto Crear(UsuarioDto dto)
+        public UsuarioService(IUsuarioRepository usuarioRepository)
         {
-            dto.IdUsuario = _id++;
-            dto.FechaRegistro = DateTime.UtcNow;
-            _usuarios.Add(dto);
+            _usuarioRepository = usuarioRepository;
+        }
+
+        public async Task<IEnumerable<UsuarioDto>> GetAllAsync()
+        {
+            var usuarios = await _usuarioRepository.GetAllAsync();
+
+            return usuarios.Select(u => new UsuarioDto
+            {
+                IdUsuario = u.IdUsuario,
+                Nombre = u.Nombre,
+                Correo = u.Correo,
+                Rol = u.Rol,
+                Estado = u.Estado,
+                FechaRegistro = u.FechaRegistro
+            });
+        }
+
+        public async Task<UsuarioDto?> GetByIdAsync(int id)
+        {
+            var usuario = await _usuarioRepository.GetByIdAsync(id);
+
+            if (usuario == null) return null;
+
+            return new UsuarioDto
+            {
+                IdUsuario = usuario.IdUsuario,
+                Nombre = usuario.Nombre,
+                Correo = usuario.Correo,
+                Rol = usuario.Rol,
+                Estado = usuario.Estado,
+                FechaRegistro = usuario.FechaRegistro
+            };
+        }
+
+        public async Task<UsuarioDto> AddAsync(UsuarioDto dto)
+        {
+            var usuario = new Usuario
+            {
+                Nombre = dto.Nombre,
+                Correo = dto.Correo,
+                Rol = dto.Rol,
+                Estado = dto.Estado,
+                FechaRegistro = dto.FechaRegistro,
+                PasswordHash = string.Empty
+            };
+
+            await _usuarioRepository.AddAsync(usuario);
+
+            dto.IdUsuario = usuario.IdUsuario;
             return dto;
         }
 
-        public List<UsuarioDto> ObtenerTodos()
+        public async Task UpdateAsync(int id, UsuarioDto dto)
         {
-            return _usuarios;
+            var usuario = await _usuarioRepository.GetByIdAsync(id);
+
+            if (usuario == null)
+                throw new Exception("Usuario no encontrado.");
+
+            usuario.Nombre = dto.Nombre;
+            usuario.Correo = dto.Correo;
+            usuario.Rol = dto.Rol;
+            usuario.Estado = dto.Estado;
+            usuario.FechaRegistro = dto.FechaRegistro;
+
+            await _usuarioRepository.UpdateAsync(usuario);
         }
 
-        public UsuarioDto? ObtenerPorId(int id)
+        public async Task DeleteAsync(int id)
         {
-            return _usuarios.FirstOrDefault(x => x.IdUsuario == id);
+            await _usuarioRepository.DeleteAsync(id);
         }
     }
 }

@@ -1,70 +1,94 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using TeAtiendo.Application.DTOs;
+using System.Threading.Tasks;
+using TeAtiendo.Application.Base;
+using TeAtiendo.Application.DTOs.Orden;
+using TeAtiendo.Application.Interfaces;
+using TeAtiendo.Domain.Entities.Operations;
+using TeAtiendo.Domain.Interfaces;
 
 namespace TeAtiendo.Application.Services
 {
-    public class OrdenService
+    public class OrdenService : BaseService<OrdenDto, SaveOrdenDto, UpdateOrdenDto>, IOrdenService
     {
-        private static readonly List<OrdenDto> _ordenes = new List<OrdenDto>();
-        private static int _id = 1;
+        private readonly IOrdenRepository _ordenRepository;
 
-        public OrdenDto Crear(OrdenCreateRequest request)
+        public OrdenService(IOrdenRepository ordenRepository)
         {
-            var orden = new OrdenDto
+            _ordenRepository = ordenRepository;
+        }
+
+        public override async Task<IEnumerable<OrdenDto>> GetAllAsync()
+        {
+            var ordenes = await _ordenRepository.GetAllAsync();
+
+            return ordenes.Select(o => new OrdenDto
             {
-                IdOrden = _id++,
-                IdUsuario = request.IdUsuario,
-                IdRestaurante = request.IdRestaurante,
-                FechaCreacion = DateTime.UtcNow,
-                Estado = "Pendiente",
-                Subtotal = 0m,
-                Total = 0m,
-                Detalles = new List<OrdenDetalleDto>()
+                Id = o.Id,
+                UsuarioId = o.UsuarioId,
+                RestauranteId = o.RestauranteId,
+                EstadoOrden = o.EstadoOrden,
+                Total = o.Total
+            });
+        }
+
+        public override async Task<OrdenDto?> GetByIdAsync(Guid id)
+        {
+            var orden = await _ordenRepository.GetByIdAsync(id);
+
+            if (orden == null) return null;
+
+            return new OrdenDto
+            {
+                Id = orden.Id,
+                UsuarioId = orden.UsuarioId,
+                RestauranteId = orden.RestauranteId,
+                EstadoOrden = orden.EstadoOrden,
+                Total = orden.Total
+            };
+        }
+
+        public override async Task<OrdenDto> AddAsync(SaveOrdenDto dto)
+        {
+            var orden = new Orden
+            {
+                UsuarioId = dto.UsuarioId,
+                RestauranteId = dto.RestauranteId,
+                EstadoOrden = dto.EstadoOrden,
+                Total = dto.Total
             };
 
-            // Base: crea detalles, sin catálogo real aún 
-            foreach (var d in request.Detalles)
+            await _ordenRepository.AddAsync(orden);
+
+            return new OrdenDto
             {
-                var detalle = new OrdenDetalleDto
-                {
-                    IdPlato = d.IdPlato,
-                    NombrePlato = "Plato #" + d.IdPlato, 
-                    Cantidad = d.Cantidad,
-                    PrecioUnitario = 0m, // cargar precio real
-                    TotalLinea = 0m
-                };
-
-                orden.Detalles.Add(detalle);
-            }
-
-            // Totales
-            // (precios reales)
-            orden.Subtotal = orden.Detalles.Sum(x => x.TotalLinea);
-            orden.Total = orden.Subtotal;
-
-            _ordenes.Add(orden);
-            return orden;
+                Id = orden.Id,
+                UsuarioId = orden.UsuarioId,
+                RestauranteId = orden.RestauranteId,
+                EstadoOrden = orden.EstadoOrden,
+                Total = orden.Total
+            };
         }
 
-        public OrdenDto? ObtenerPorId(int idOrden)
+        public override async Task UpdateAsync(Guid id, UpdateOrdenDto dto)
         {
-            return _ordenes.FirstOrDefault(x => x.IdOrden == idOrden);
+            var orden = await _ordenRepository.GetByIdAsync(id);
+
+            if (orden == null)
+                throw new Exception("Orden no encontrada.");
+
+            orden.UsuarioId = dto.UsuarioId;
+            orden.RestauranteId = dto.RestauranteId;
+            orden.EstadoOrden = dto.EstadoOrden;
+            orden.Total = dto.Total;
+
+            await _ordenRepository.UpdateAsync(orden);
         }
 
-        public List<OrdenDto> ObtenerPorUsuario(int idUsuario)
+        public override async Task DeleteAsync(Guid id)
         {
-            return _ordenes.Where(x => x.IdUsuario == idUsuario).ToList();
-        }
-
-        public void CambiarEstado(int idOrden, string nuevoEstado)
-        {
-            var orden = _ordenes.FirstOrDefault(x => x.IdOrden == idOrden);
-            if (orden != null)
-            {
-                orden.Estado = nuevoEstado;
-            }
+            await _ordenRepository.DeleteAsync(id);
         }
     }
 }
