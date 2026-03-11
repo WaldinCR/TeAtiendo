@@ -14,42 +14,32 @@ namespace TeAtiendo.Persistence.Context
         }
 
         #region SEGURITY
-
         public DbSet<Usuario> Usuarios { get; set; }
-
         #endregion
 
         #region CATALOG
-
         public DbSet<Restaurante> Restaurantes { get; set; }
         public DbSet<Menu> Menus { get; set; }
         public DbSet<CategoriaPlato> CategoriaPlatos { get; set; }
         public DbSet<Plato> Platos { get; set; }
-
         #endregion
 
         #region OPERATIONS
-
         public DbSet<Reserva> Reservas { get; set; }
         public DbSet<Orden> Ordenes { get; set; }
         public DbSet<OrdenDetalle> OrdenDetalles { get; set; }
         public DbSet<Pago> Pagos { get; set; }
         public DbSet<Disponibilidad> Disponibilidades { get; set; }
         public DbSet<Mesa> Mesas { get; set; }
-
         #endregion
 
         #region SOCIAL
-
         public DbSet<Notificacion> Notificaciones { get; set; }
         public DbSet<Resena> Resenas { get; set; }
-
         #endregion
 
         #region AUDITORY
-
         public DbSet<Auditoria> Auditorias { get; set; }
-
         #endregion
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -57,7 +47,6 @@ namespace TeAtiendo.Persistence.Context
             base.OnModelCreating(modelBuilder);
 
             #region RELACIONES DEL CATALOGO
-
             modelBuilder.Entity<Menu>()
                 .HasOne(m => m.Restaurante)
                 .WithMany(r => r.Menus)
@@ -76,10 +65,15 @@ namespace TeAtiendo.Persistence.Context
                 .HasForeignKey(p => p.CategoriaPlatoId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // Recomendado: relación explícita Plato -> Menu (tienes MenuId en la entidad)
+            modelBuilder.Entity<Plato>()
+                .HasOne(p => p.Menu)
+                .WithMany(m => m.Categorias.SelectMany(c => c.Platos)) // si te da problemas, se quita; EF puede inferir sin esto
+                .HasForeignKey(p => p.MenuId)
+                .OnDelete(DeleteBehavior.Restrict);
             #endregion
 
             #region CONFIGURACION DECIMALES
-
             modelBuilder.Entity<Plato>()
                 .Property(p => p.Precio)
                 .HasPrecision(18, 2);
@@ -95,18 +89,14 @@ namespace TeAtiendo.Persistence.Context
             modelBuilder.Entity<Pago>()
                 .Property(p => p.Monto)
                 .HasPrecision(18, 2);
-
             #endregion
 
             #region NOMBRES DE TABLAS
-
             modelBuilder.Entity<Restaurante>().ToTable("Restaurantes");
             modelBuilder.Entity<Menu>().ToTable("Menus");
             modelBuilder.Entity<CategoriaPlato>().ToTable("CategoriasPlato");
             modelBuilder.Entity<Plato>().ToTable("Platos");
-
             #endregion
         }
     }
 }
-

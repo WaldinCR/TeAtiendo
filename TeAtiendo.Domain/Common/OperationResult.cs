@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace TeAtiendo.Domain.Common
+﻿namespace TeAtiendo.Domain.Common
 {
     public class OperationResult<T>
     {
@@ -12,8 +6,10 @@ namespace TeAtiendo.Domain.Common
         public string Message { get; set; } = string.Empty;
         public T? Data { get; set; }
 
-        // metodos de fábrica para crear resultados exitosos o fallidos 
-        public static OperationResult<T> Ok(T data) => new() { Success = true, Data = data };
-        public static OperationResult<T> Fail(string message) => new() { Success = false, Message = message };
+        public static OperationResult<T> Ok(T data, string message = "") =>
+            new() { Success = true, Data = data, Message = message };
+
+        public static OperationResult<T> Fail(string message) =>
+            new() { Success = false, Message = message };
     }
 }

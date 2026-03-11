@@ -1,5 +1,4 @@
-﻿using System;
-using TeAtiendo.Domain.Base;
+﻿using TeAtiendo.Domain.Base;
 using TeAtiendo.Domain.Entities.Catalog;
 
 namespace TeAtiendo.Domain.Entities.Operations

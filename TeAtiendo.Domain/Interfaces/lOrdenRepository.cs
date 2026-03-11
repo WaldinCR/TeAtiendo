@@ -1,17 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using TeAtiendo.Domain.Entities.Operations;
+﻿using TeAtiendo.Domain.Entities.Operations;
 
 namespace TeAtiendo.Domain.Interfaces
 {
-    public interface IOrdenRepository
+    public interface IOrdenRepository : IRepository<Orden>
     {
-        Task<IEnumerable<Orden>> GetAllAsync();
-        Task<Orden?> GetByIdAsync(Guid id);
-        Task<IEnumerable<Orden>> GetByUsuarioAsync(Guid usuarioId);
-        Task AddAsync(Orden orden);
-        Task UpdateAsync(Orden orden);
-        Task DeleteAsync(Guid id);
+        Task<IReadOnlyList<Orden>> GetByUsuarioAsync(Guid usuarioId, CancellationToken ct = default);
     }
 }

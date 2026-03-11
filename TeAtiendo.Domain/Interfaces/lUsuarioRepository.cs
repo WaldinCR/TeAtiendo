@@ -1,16 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using TeAtiendo.Domain.Entities.Segurity;
+﻿using TeAtiendo.Domain.Entities.Segurity;
 
 namespace TeAtiendo.Domain.Interfaces
 {
-    public interface IUsuarioRepository
+    public interface IUsuarioRepository : IRepository<Usuario>
     {
-        Task<Usuario?> GetByIdAsync(Guid id);
-        Task<IEnumerable<Usuario>> GetAllAsync();
-        Task AddAsync(Usuario usuario);
-        Task UpdateAsync(Usuario usuario);
-        Task DeleteAsync(Guid id);
+        Task<Usuario?> GetByCorreoAsync(string correo, CancellationToken ct = default);
     }
 }

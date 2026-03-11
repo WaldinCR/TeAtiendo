@@ -1,40 +1,15 @@
-﻿using System;
-using System.Threading.Tasks;
-using TeAtiendo.Domain.Interfaces;
-using TeAtiendo.Persistence.Context;
-using TeAtiendo.Persistence.Repositories.Operaciones;
-using TeAtiendo.Persistence.Repositories.Seguridad;
+﻿using TeAtiendo.Domain.Interfaces;
 
-namespace TeAtiendo.Persistence.Repositories
+namespace TeAtiendo.Persistence.Interface
 {
-    public class UnitOfWork 
+    public interface IUnitOfWork : IDisposable
     {
-        private readonly TeAtiendoContext _context;
+        IUsuarioRepository Usuarios { get; }
+        IReservaRepository Reservas { get; }
+        IOrdenRepository Ordenes { get; }
+        IPagoRepository Pagos { get; }
+        IAuditoriaRepository Auditorias { get; }
 
-        public IUsuarioRepository Usuarios { get; private set; }
-        public IReservaRepository Reservas { get; private set; }
-        public IOrdenRepository Ordenes { get; private set; }
-        public IPagoRepository Pagos { get; private set; }
-
-        public UnitOfWork(TeAtiendoContext context)
-        {
-            _context = context;
-
-            // repositorios concretos 
-            Usuarios = new UsuarioRepository(_context);
-            Reservas = new ReservaRepository(_context);
-            Ordenes = new OrdenRepository(_context);
-            Pagos = new PagoRepository(_context);
-        }
-
-        public async Task<int> SaveAsync()
-        {
-            return await _context.SaveChangesAsync();
-        }
-
-        public void Dispose()
-        {
-            _context.Dispose();
-        }
+        Task<int> SaveAsync(CancellationToken ct = default);
     }
 }

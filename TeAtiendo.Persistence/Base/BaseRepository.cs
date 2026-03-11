@@ -1,14 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using TeAtiendo.Domain.Base;
+using TeAtiendo.Domain.Interfaces;
 using TeAtiendo.Persistence.Context;
 
 namespace TeAtiendo.Persistence.Base
 {
-    public class BaseRepository<T> where T : BaseEntity
+
+    public class BaseRepository<T> : IRepository<T> where T : BaseEntity
     {
         protected readonly TeAtiendoContext _context;
         protected readonly DbSet<T> _dbSet;
@@ -19,38 +17,39 @@ namespace TeAtiendo.Persistence.Base
             _dbSet = context.Set<T>();
         }
 
-        public async Task<IEnumerable<T>> GetAllAsync()
+        public async Task<IReadOnlyList<T>> GetAllAsync(CancellationToken ct = default)
         {
-            return await _dbSet.Where(x => x.Activo).ToListAsync();
+            return await _dbSet
+                .Where(x => x.Activo)
+                .ToListAsync(ct);
         }
 
-        public async Task<T?> GetByIdAsync(Guid id)
+        public async Task<T?> GetByIdAsync(Guid id, CancellationToken ct = default)
         {
-            return await _dbSet.FirstOrDefaultAsync(x => x.Id == id && x.Activo);
+            return await _dbSet.FirstOrDefaultAsync(x => x.Id == id && x.Activo, ct);
         }
 
-        public async Task AddAsync(T entity)
+        public async Task AddAsync(T entity, CancellationToken ct = default)
         {
-            await _dbSet.AddAsync(entity);
-            await _context.SaveChangesAsync();
+            await _dbSet.AddAsync(entity, ct);
         }
 
-        public async Task UpdateAsync(T entity)
+        public Task UpdateAsync(T entity, CancellationToken ct = default)
         {
             _dbSet.Update(entity);
-            await _context.SaveChangesAsync();
+            return Task.CompletedTask;
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task SoftDeleteAsync(Guid id, Guid userId, CancellationToken ct = default)
         {
-            var entity = await GetByIdAsync(id);
+            var entity = await GetByIdAsync(id, ct);
+            if (entity is null) return;
 
-            if (entity != null)
-            {
-                entity.Activo = false;
-                _dbSet.Update(entity);
-                await _context.SaveChangesAsync();
-            }
+            entity.Activo = false;
+            entity.UserDeleted = userId;
+            entity.DeletedDate = DateTime.UtcNow;
+
+            _dbSet.Update(entity);
         }
     }
 }
