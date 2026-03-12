@@ -1,10 +1,7 @@
-﻿using TeAtiendo.Domain.Enums;
-
-namespace TeAtiendo.Application.DTOs.Reserva
+﻿namespace TeAtiendo.Application.DTOs.Reserva
 {
-    public sealed class ReservaDto
+    public sealed class CreateReservaDto
     {
-        public Guid Id { get; set; }
         public Guid UsuarioId { get; set; }
         public Guid RestauranteId { get; set; }
         public Guid MesaId { get; set; }
@@ -12,7 +9,5 @@ namespace TeAtiendo.Application.DTOs.Reserva
 
         public DateTime FechaReserva { get; set; }
         public int CantidadPersonas { get; set; }
-
-        public EstadoReserva EstadoReserva { get; set; }
     }
 }

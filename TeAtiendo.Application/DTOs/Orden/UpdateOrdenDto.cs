@@ -1,14 +1,9 @@
-﻿using System;
-using TeAtiendo.Domain.Entities.Operations;
+﻿using TeAtiendo.Domain.Enums;
 
 namespace TeAtiendo.Application.DTOs.Orden
 {
-    public class UpdateOrdenDto
+    public sealed class UpdateOrdenDto
     {
-        public Guid Id { get; set; }
-        public Guid UsuarioId { get; set; }
-        public Guid RestauranteId { get; set; }
-        public EstadoOrden EstadoOrden { get; set; }
-        public decimal Total { get; set; }
+        public EstadoOrden Estado { get; set; }
     }
 }

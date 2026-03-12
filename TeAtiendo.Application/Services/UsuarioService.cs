@@ -1,92 +1,43 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using TeAtiendo.Application.Base;
 using TeAtiendo.Application.DTOs.Usuario;
 using TeAtiendo.Application.Interfaces;
 using TeAtiendo.Domain.Entities.Segurity;
-using TeAtiendo.Domain.Interfaces;
 
 namespace TeAtiendo.Application.Services
 {
-    public class UsuarioService : IUsuarioService
+    public sealed class UsuarioService : BaseService<Usuario, UsuarioDto>, IUsuarioService
     {
-        private readonly IUsuarioRepository _usuarioRepository;
-
-        public UsuarioService(IUsuarioRepository usuarioRepository)
+        public UsuarioService(TeAtiendo.Persistence.Interface.IUnitOfWork uow)
+            : base(uow.Usuarios, uow)
         {
-            _usuarioRepository = usuarioRepository;
         }
 
-        public async Task<IEnumerable<UsuarioDto>> GetAllAsync()
+        protected override UsuarioDto ToDto(Usuario entity) => new()
         {
-            var usuarios = await _usuarioRepository.GetAllAsync();
+            Id = entity.Id,
+            Nombre = entity.Nombre,
+            Correo = entity.Correo,
+            Rol = entity.Rol
+        };
 
-            return usuarios.Select(u => new UsuarioDto
-            {
-                IdUsuario = u.IdUsuario,
-                Nombre = u.Nombre,
-                Correo = u.Correo,
-                Rol = u.Rol,
-                Estado = u.Estado,
-                FechaRegistro = u.FechaRegistro
-            });
+        protected override void ApplyDto(UsuarioDto dto, Usuario entity)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Nombre)) throw new ArgumentException("Nombre requerido");
+            if (string.IsNullOrWhiteSpace(dto.Correo)) throw new ArgumentException("Correo requerido");
+
+            entity.Nombre = dto.Nombre.Trim();
+            entity.Correo = dto.Correo.Trim().ToLowerInvariant();
+            entity.Rol = dto.Rol;
         }
 
-        public async Task<UsuarioDto?> GetByIdAsync(int id)
+        public async Task<UsuarioDto?> GetByEmailAsync(string correo, CancellationToken ct = default)
         {
-            var usuario = await _usuarioRepository.GetByIdAsync(id);
+            if (string.IsNullOrWhiteSpace(correo)) return null;
+            var normalized = correo.Trim().ToLowerInvariant();
 
-            if (usuario == null) return null;
-
-            return new UsuarioDto
-            {
-                IdUsuario = usuario.IdUsuario,
-                Nombre = usuario.Nombre,
-                Correo = usuario.Correo,
-                Rol = usuario.Rol,
-                Estado = usuario.Estado,
-                FechaRegistro = usuario.FechaRegistro
-            };
-        }
-
-        public async Task<UsuarioDto> AddAsync(UsuarioDto dto)
-        {
-            var usuario = new Usuario
-            {
-                Nombre = dto.Nombre,
-                Correo = dto.Correo,
-                Rol = dto.Rol,
-                Estado = dto.Estado,
-                FechaRegistro = dto.FechaRegistro,
-                PasswordHash = string.Empty
-            };
-
-            await _usuarioRepository.AddAsync(usuario);
-
-            dto.IdUsuario = usuario.IdUsuario;
-            return dto;
-        }
-
-        public async Task UpdateAsync(int id, UsuarioDto dto)
-        {
-            var usuario = await _usuarioRepository.GetByIdAsync(id);
-
-            if (usuario == null)
-                throw new Exception("Usuario no encontrado.");
-
-            usuario.Nombre = dto.Nombre;
-            usuario.Correo = dto.Correo;
-            usuario.Rol = dto.Rol;
-            usuario.Estado = dto.Estado;
-            usuario.FechaRegistro = dto.FechaRegistro;
-
-            await _usuarioRepository.UpdateAsync(usuario);
-        }
-
-        public async Task DeleteAsync(int id)
-        {
-            await _usuarioRepository.DeleteAsync(id);
+            var users = await Uow.Usuarios.GetAllAsync(ct);
+            var user = users.FirstOrDefault(u => u.Correo.ToLower() == normalized);
+            return user is null ? null : ToDto(user);
         }
     }
 }

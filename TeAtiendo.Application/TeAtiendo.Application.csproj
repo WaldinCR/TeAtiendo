@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TeAtiendo.Domain\TeAtiendo.Domain.csproj" />
+    <ProjectReference Include="..\TeAtiendo.Persistence\TeAtiendo.Persistence.csproj" />
   </ItemGroup>
 
 </Project>

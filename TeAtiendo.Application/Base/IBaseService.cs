@@ -1,19 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
-namespace TeAtiendo.Application.Base
+﻿namespace TeAtiendo.Application.Base
 {
-    public interface IBaseService<TDto, TSaveDto, TUpdateDto>
+    public interface IBaseService<TDto>
     {
-        Task<IEnumerable<TDto>> GetAllAsync();
+        Task<IReadOnlyList<TDto>> GetAllAsync(CancellationToken ct = default);
+        Task<TDto?> GetByIdAsync(Guid id, CancellationToken ct = default);
 
-        Task<TDto?> GetByIdAsync(Guid id);
+        Task<TDto> CreateAsync(TDto dto, CancellationToken ct = default);
+        Task<TDto?> UpdateAsync(Guid id, TDto dto, CancellationToken ct = default);
 
-        Task<TDto> AddAsync(TSaveDto dto);
-
-        Task UpdateAsync(Guid id, TUpdateDto dto);
-
-        Task DeleteAsync(Guid id);
+        Task<bool> DeleteAsync(Guid id, Guid userId, CancellationToken ct = default);
     }
 }

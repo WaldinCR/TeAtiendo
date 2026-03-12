@@ -1,109 +1,64 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using TeAtiendo.Application.Base;
+﻿using TeAtiendo.Application.Base;
 using TeAtiendo.Application.DTOs.Reserva;
 using TeAtiendo.Application.Interfaces;
 using TeAtiendo.Domain.Entities.Operations;
-using TeAtiendo.Domain.Interfaces;
+using TeAtiendo.Domain.Enums;
 
 namespace TeAtiendo.Application.Services
 {
-    public class ReservaService : BaseService<ReservaDto, ReservaDto, ReservaDto>, IReservaService
+    public sealed class ReservaService : BaseService<Reserva, ReservaDto>, IReservaService
     {
-        private readonly IReservaRepository _reservaRepository;
-
-        public ReservaService(IReservaRepository reservaRepository)
+        public ReservaService(TeAtiendo.Persistence.Interface.IUnitOfWork uow)
+            : base(uow.Reservas, uow)
         {
-            _reservaRepository = reservaRepository;
         }
 
-        public override async Task<IEnumerable<ReservaDto>> GetAllAsync()
+        protected override ReservaDto ToDto(Reserva e) => new()
         {
-            var reservas = await _reservaRepository.GetAllAsync();
+            Id = e.Id,
+            UsuarioId = e.UsuarioId,
+            RestauranteId = e.RestauranteId,
+            MesaId = e.MesaId,
+            DisponibilidadId = e.DisponibilidadId,
+            FechaReserva = e.FechaReserva,
+            CantidadPersonas = e.CantidadPersonas,
+            EstadoReserva = e.EstadoReserva
+        };
 
-            return reservas.Select(r => new ReservaDto
-            {
-                Id = r.Id,
-                UsuarioId = r.UsuarioId,
-                RestauranteId = r.RestauranteId,
-                MesaId = r.MesaId,
-                DisponibilidadId = r.DisponibilidadId,
-                FechaReserva = r.FechaReserva,
-                CantidadPersonas = r.CantidadPersonas,
-                EstadoReserva = r.EstadoReserva
-            });
+
+        protected override void ApplyDto(ReservaDto dto, Reserva e)
+        {
+            if (dto.UsuarioId == Guid.Empty) throw new ArgumentException("UsuarioId requerido");
+            if (dto.RestauranteId == Guid.Empty) throw new ArgumentException("RestauranteId requerido");
+            if (dto.MesaId == Guid.Empty) throw new ArgumentException("MesaId requerido");
+            if (dto.DisponibilidadId == Guid.Empty) throw new ArgumentException("DisponibilidadId requerido");
+            if (dto.CantidadPersonas <= 0) throw new ArgumentException("CantidadPersonas inválida");
+
+            e.UsuarioId = dto.UsuarioId;
+            e.RestauranteId = dto.RestauranteId;
+            e.MesaId = dto.MesaId;
+            e.DisponibilidadId = dto.DisponibilidadId;
+
+            e.FechaReserva = dto.FechaReserva == default ? DateTime.UtcNow : dto.FechaReserva;
+            e.CantidadPersonas = dto.CantidadPersonas;
+            e.EstadoReserva = dto.EstadoReserva;
         }
 
-        public override async Task<ReservaDto?> GetByIdAsync(Guid id)
+        public async Task<bool> CancelarReservaAsync(Guid reservaId, Guid userId, CancellationToken ct = default)
         {
-            var reserva = await _reservaRepository.GetByIdAsync(id);
+            var reserva = await Repo.GetByIdAsync(reservaId, ct);
+            if (reserva is null) return false;
 
-            if (reserva == null) return null;
-
-            return new ReservaDto
-            {
-                Id = reserva.Id,
-                UsuarioId = reserva.UsuarioId,
-                RestauranteId = reserva.RestauranteId,
-                MesaId = reserva.MesaId,
-                DisponibilidadId = reserva.DisponibilidadId,
-                FechaReserva = reserva.FechaReserva,
-                CantidadPersonas = reserva.CantidadPersonas,
-                EstadoReserva = reserva.EstadoReserva
-            };
+            await Repo.SoftDeleteAsync(reservaId, userId, ct);
+            await Uow.SaveAsync(ct);
+            return true;
         }
 
-        public override async Task<ReservaDto> AddAsync(ReservaDto dto)
+
+        public override async Task<ReservaDto> CreateAsync(ReservaDto dto, CancellationToken ct = default)
         {
-            var reserva = new Reserva
-            {
-                UsuarioId = dto.UsuarioId,
-                RestauranteId = dto.RestauranteId,
-                MesaId = dto.MesaId,
-                DisponibilidadId = dto.DisponibilidadId,
-                FechaReserva = dto.FechaReserva,
-                CantidadPersonas = dto.CantidadPersonas,
-                EstadoReserva = dto.EstadoReserva
-            };
-
-            await _reservaRepository.AddAsync(reserva);
-
-            return new ReservaDto
-            {
-                Id = reserva.Id,
-                UsuarioId = reserva.UsuarioId,
-                RestauranteId = reserva.RestauranteId,
-                MesaId = reserva.MesaId,
-                DisponibilidadId = reserva.DisponibilidadId,
-                FechaReserva = reserva.FechaReserva,
-                CantidadPersonas = reserva.CantidadPersonas,
-                EstadoReserva = reserva.EstadoReserva
-            };
-        }
-
-        public override async Task UpdateAsync(Guid id, ReservaDto dto)
-        {
-            var reserva = await _reservaRepository.GetByIdAsync(id);
-
-            if (reserva == null)
-                throw new Exception("Reserva no encontrada.");
-
-            reserva.UsuarioId = dto.UsuarioId;
-            reserva.RestauranteId = dto.RestauranteId;
-            reserva.MesaId = dto.MesaId;
-            reserva.DisponibilidadId = dto.DisponibilidadId;
-            reserva.FechaReserva = dto.FechaReserva;
-            reserva.CantidadPersonas = dto.CantidadPersonas;
-            reserva.EstadoReserva = dto.EstadoReserva;
-
-            await _reservaRepository.UpdateAsync(reserva);
-        }
-
-        public override async Task DeleteAsync(Guid id)
-        {
-            await _reservaRepository.DeleteAsync(id);
+            dto.EstadoReserva = EstadoReserva.Pendiente;
+            return await base.CreateAsync(dto, ct);
         }
     }
 }
