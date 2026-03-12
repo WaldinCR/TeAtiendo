@@ -13,7 +13,6 @@ namespace TeAtiendo.Domain.Entities.Auditory
         public string Detalle { get; set; } = string.Empty;
         public string Ip { get; set; } = string.Empty;
 
-        // Navegación
         public virtual Usuario Admin { get; set; } = null!;
     }
 }

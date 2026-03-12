@@ -2,7 +2,7 @@
 
 namespace TeAtiendo.Domain.Interfaces
 {
-    public interface IMenuRepository : IRepository<Menu>
+    public interface IRestauranteRepository : IRepository<Restaurante>
     {
     }
 }
