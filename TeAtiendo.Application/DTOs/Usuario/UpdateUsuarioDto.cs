@@ -2,11 +2,9 @@
 
 namespace TeAtiendo.Application.DTOs.Usuario
 {
-    public sealed class UsuarioDto
+    public sealed class UpdateUsuarioDto
     {
-        public Guid Id { get; set; }
         public string Nombre { get; set; } = string.Empty;
-        public string Correo { get; set; } = string.Empty;
         public RolUsuario Rol { get; set; }
     }
 }

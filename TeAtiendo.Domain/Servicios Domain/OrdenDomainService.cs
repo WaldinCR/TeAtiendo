@@ -9,12 +9,12 @@ namespace TeAtiendo.Domain.ServiciosDomain
     {
         public void ValidarOrden(Orden orden)
         {
-            if (orden.OrdenDetalles == null || !orden.OrdenDetalles.Any())
+            if (orden.Detalles == null || !orden.Detalles.Any())
             {
                 throw new TeAtiendoExcepcion("La orden debe tener al menos un detalle.");
             }
 
-            var totalCalculado = orden.OrdenDetalles.Sum(d => d.Cantidad * d.PrecioUnitario);
+            var totalCalculado = orden.Detalles.Sum(d => d.Cantidad * d.PrecioUnitario);
 
             if (orden.Total != totalCalculado)
             {

@@ -1,94 +1,65 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using TeAtiendo.Application.Base;
+﻿using TeAtiendo.Application.Base;
 using TeAtiendo.Application.DTOs.Pago;
 using TeAtiendo.Application.Interfaces;
 using TeAtiendo.Domain.Entities.Operations;
-using TeAtiendo.Domain.Interfaces;
+using TeAtiendo.Domain.Enums;
 
 namespace TeAtiendo.Application.Services
 {
-    public class PagoService : BaseService<PagoDto, PagoDto, PagoDto>, IPagoService
+    public sealed class PagoService : BaseService<Pago, PagoDto>, IPagoService
     {
-        private readonly IPagoRepository _pagoRepository;
-
-        public PagoService(IPagoRepository pagoRepository)
+        public PagoService(TeAtiendo.Persistence.Interface.IUnitOfWork uow)
+            : base(uow.Pagos, uow)
         {
-            _pagoRepository = pagoRepository;
         }
 
-        public override async Task<IEnumerable<PagoDto>> GetAllAsync()
+        protected override PagoDto ToDto(Pago e) => new()
         {
-            var pagos = await _pagoRepository.GetAllAsync();
+            Id = e.Id,
+            OrdenId = e.OrdenId,
+            Monto = e.Monto,
+            EstadoPago = e.EstadoPago,
+            MetodoPago = e.MetodoPago
+        };
 
-            return pagos.Select(p => new PagoDto
-            {
-                Id = p.Id,
-                OrdenId = p.OrdenId,
-                Monto = p.Monto,
-                EstadoPago = p.EstadoPago,
-                MetodoPago = p.MetodoPago
-            });
+        protected override void ApplyDto(PagoDto dto, Pago e)
+        {
+            if (dto.OrdenId == Guid.Empty)
+                throw new ArgumentException("OrdenId requerido");
+
+            e.OrdenId = dto.OrdenId;
+            e.MetodoPago = dto.MetodoPago;
+
+            // si viene 0, luego lo calculamos al crear
+            e.Monto = dto.Monto;
+            e.EstadoPago = dto.EstadoPago;
         }
 
-        public override async Task<PagoDto?> GetByIdAsync(Guid id)
+        //  la base usa PagoDto
+        public override async Task<PagoDto> CreateAsync(PagoDto dto, CancellationToken ct = default)
         {
-            var pago = await _pagoRepository.GetByIdAsync(id);
+            if (dto.OrdenId == Guid.Empty) throw new ArgumentException("OrdenId requerido");
 
-            if (pago == null) return null;
+            var orden = await Uow.Ordenes.GetByIdAsync(dto.OrdenId, ct);
+            if (orden is null) throw new InvalidOperationException("Orden no existe");
 
-            return new PagoDto
+            var pagos = await Uow.Pagos.GetAllAsync(ct);
+            if (pagos.Any(p => p.OrdenId == dto.OrdenId))
+                throw new InvalidOperationException("La orden ya tiene un pago registrado");
+
+            var entity = new Pago
             {
-                Id = pago.Id,
-                OrdenId = pago.OrdenId,
-                Monto = pago.Monto,
-                EstadoPago = pago.EstadoPago,
-                MetodoPago = pago.MetodoPago
-            };
-        }
-
-        public override async Task<PagoDto> AddAsync(PagoDto dto)
-        {
-            var pago = new Pago
-            {
+                Id = Guid.NewGuid(),
                 OrdenId = dto.OrdenId,
-                Monto = dto.Monto,
-                EstadoPago = dto.EstadoPago,
-                MetodoPago = dto.MetodoPago
+                MetodoPago = dto.MetodoPago,
+                Monto = orden.Total, // lógico: monto = total de la orden
+                EstadoPago = EstadoPago.Pendiente
             };
 
-            await _pagoRepository.AddAsync(pago);
+            await Uow.Pagos.AddAsync(entity, ct);
+            await Uow.SaveAsync(ct);
 
-            return new PagoDto
-            {
-                Id = pago.Id,
-                OrdenId = pago.OrdenId,
-                Monto = pago.Monto,
-                EstadoPago = pago.EstadoPago,
-                MetodoPago = pago.MetodoPago
-            };
-        }
-
-        public override async Task UpdateAsync(Guid id, PagoDto dto)
-        {
-            var pago = await _pagoRepository.GetByIdAsync(id);
-
-            if (pago == null)
-                throw new Exception("Pago no encontrado.");
-
-            pago.OrdenId = dto.OrdenId;
-            pago.Monto = dto.Monto;
-            pago.EstadoPago = dto.EstadoPago;
-            pago.MetodoPago = dto.MetodoPago;
-
-            await _pagoRepository.UpdateAsync(pago);
-        }
-
-        public override async Task DeleteAsync(Guid id)
-        {
-            await _pagoRepository.DeleteAsync(id);
+            return ToDto(entity);
         }
     }
 }

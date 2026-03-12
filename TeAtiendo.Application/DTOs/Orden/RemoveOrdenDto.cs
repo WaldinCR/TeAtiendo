@@ -1,9 +1,8 @@
-﻿using System;
-
-namespace TeAtiendo.Application.DTOs.Orden
+﻿namespace TeAtiendo.Application.DTOs.Orden
 {
-    public class RemoveOrdenDto
+    public sealed class RemoveOrdenDto
     {
-        public Guid Id { get; set; }
+        public Guid OrdenId { get; set; }
+        public Guid UserId { get; set; }
     }
 }

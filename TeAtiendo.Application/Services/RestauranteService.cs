@@ -1,99 +1,53 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using TeAtiendo.Application.Base;
 using TeAtiendo.Application.DTOs.Restaurante;
 using TeAtiendo.Application.Interfaces;
 using TeAtiendo.Domain.Entities.Catalog;
-using TeAtiendo.Domain.Interfaces;
 
 namespace TeAtiendo.Application.Services
 {
-    public class RestauranteService : IRestauranteService
+    public sealed class RestauranteService : BaseService<Restaurante, RestauranteDto>, IRestauranteService
     {
-        private readonly IRestauranteRepository _restauranteRepository;
 
-        public RestauranteService(IRestauranteRepository restauranteRepository)
+        public RestauranteService(
+            TeAtiendo.Domain.Interfaces.IRestauranteRepository repo,
+            TeAtiendo.Persistence.Interface.IUnitOfWork uow)
+            : base(repo, uow)
         {
-            _restauranteRepository = restauranteRepository;
         }
 
-        public async Task<IEnumerable<RestauranteDto>> GetAllAsync()
+        protected override RestauranteDto ToDto(Restaurante e) => new()
         {
-            var restaurantes = await _restauranteRepository.GetAllAsync();
+            Id = e.Id,
+            Nombre = e.Nombre,
+            Direccion = e.Direccion,
+            Telefono = e.Telefono,
+            Correo = e.Correo,
+            HorarioApertura = e.HorarioApertura,
+            HorarioCierre = e.HorarioCierre
+        };
 
-            return restaurantes.Select(r => new RestauranteDto
-            {
-                IdRestaurante = r.IdRestaurante,
-                Nombre = r.Nombre,
-                Direccion = r.Direccion,
-                Telefono = r.Telefono,
-                Correo = r.Correo,
-                Estado = r.Estado,
-                HorarioApertura = r.HorarioApertura,
-                HorarioCierre = r.HorarioCierre
-            });
+        protected override void ApplyDto(RestauranteDto dto, Restaurante e)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Nombre)) throw new ArgumentException("Nombre requerido");
+            if (dto.HorarioCierre <= dto.HorarioApertura) throw new ArgumentException("Horario inválido");
+
+            e.Nombre = dto.Nombre.Trim();
+            e.Direccion = (dto.Direccion ?? "").Trim();
+            e.Telefono = (dto.Telefono ?? "").Trim();
+            e.Correo = (dto.Correo ?? "").Trim();
+            e.HorarioApertura = dto.HorarioApertura;
+            e.HorarioCierre = dto.HorarioCierre;
         }
 
-        public async Task<RestauranteDto?> GetByIdAsync(int id)
+        public async Task<IReadOnlyList<RestauranteDto>> BuscarPorNombreAsync(string nombre, CancellationToken ct = default)
         {
-            var restaurante = await _restauranteRepository.GetByIdAsync(id);
+            nombre = nombre?.Trim() ?? "";
+            var list = await GetAllAsync(ct);
+            if (string.IsNullOrWhiteSpace(nombre)) return list;
 
-            if (restaurante == null) return null;
-
-            return new RestauranteDto
-            {
-                IdRestaurante = restaurante.IdRestaurante,
-                Nombre = restaurante.Nombre,
-                Direccion = restaurante.Direccion,
-                Telefono = restaurante.Telefono,
-                Correo = restaurante.Correo,
-                Estado = restaurante.Estado,
-                HorarioApertura = restaurante.HorarioApertura,
-                HorarioCierre = restaurante.HorarioCierre
-            };
-        }
-
-        public async Task<RestauranteDto> AddAsync(RestauranteDto dto)
-        {
-            var restaurante = new Restaurante
-            {
-                Nombre = dto.Nombre,
-                Direccion = dto.Direccion,
-                Telefono = dto.Telefono,
-                Correo = dto.Correo,
-                Estado = dto.Estado,
-                HorarioApertura = dto.HorarioApertura,
-                HorarioCierre = dto.HorarioCierre
-            };
-
-            await _restauranteRepository.AddAsync(restaurante);
-
-            dto.IdRestaurante = restaurante.IdRestaurante;
-            return dto;
-        }
-
-        public async Task UpdateAsync(int id, RestauranteDto dto)
-        {
-            var restaurante = await _restauranteRepository.GetByIdAsync(id);
-
-            if (restaurante == null)
-                throw new Exception("Restaurante no encontrado.");
-
-            restaurante.Nombre = dto.Nombre;
-            restaurante.Direccion = dto.Direccion;
-            restaurante.Telefono = dto.Telefono;
-            restaurante.Correo = dto.Correo;
-            restaurante.Estado = dto.Estado;
-            restaurante.HorarioApertura = dto.HorarioApertura;
-            restaurante.HorarioCierre = dto.HorarioCierre;
-
-            await _restauranteRepository.UpdateAsync(restaurante);
-        }
-
-        public async Task DeleteAsync(int id)
-        {
-            await _restauranteRepository.DeleteAsync(id);
+            return list
+                .Where(r => r.Nombre.Contains(nombre, StringComparison.OrdinalIgnoreCase))
+                .ToList();
         }
     }
 }

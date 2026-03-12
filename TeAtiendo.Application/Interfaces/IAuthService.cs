@@ -1,18 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿using TeAtiendo.Application.DTOs.Auth;
+using TeAtiendo.Application.DTOs.Usuario;
 
 namespace TeAtiendo.Application.Interfaces
 {
     public interface IAuthService
     {
-        Task<string> LoginAsync(string email, string password);
-
-        Task<bool> RegisterAsync(string nombre, string email, string password);
-
-        Task LogoutAsync();
+        Task<UsuarioDto> RegisterAsync(RegisterDto dto, CancellationToken ct = default);
+        Task<LoginResultDto> LoginAsync(LoginDto dto, CancellationToken ct = default);
+        Task<bool> ChangePasswordAsync(Guid userId, string currentPassword, string newPassword, CancellationToken ct = default);
     }
 }

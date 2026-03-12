@@ -1,18 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using TeAtiendo.Application.Base;
-using TeAtiendo.Application.DTOs;
+﻿using TeAtiendo.Application.Base;
 using TeAtiendo.Application.DTOs.Reserva;
 
 namespace TeAtiendo.Application.Interfaces
 {
-    public interface IReservaService : IBaseService<ReservaDto, ReservaDto, ReservaDto>
+    public interface IReservaService : IBaseService<ReservaDto>
     {
-        Task<IEnumerable<ReservaDto>> GetReservasPorUsuarioAsync(Guid usuarioId);
-
-        Task<IEnumerable<ReservaDto>> GetReservasPorRestauranteAsync(Guid restauranteId);
-
-        Task<bool> CancelarReservaAsync(Guid reservaId);
+        Task<bool> CancelarReservaAsync(Guid reservaId, Guid userId, CancellationToken ct = default);
     }
 }
