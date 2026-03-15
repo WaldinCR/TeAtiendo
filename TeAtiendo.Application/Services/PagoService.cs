@@ -30,12 +30,12 @@ namespace TeAtiendo.Application.Services
             e.OrdenId = dto.OrdenId;
             e.MetodoPago = dto.MetodoPago;
 
-            // si viene 0, luego lo calculamos al crear
+         
             e.Monto = dto.Monto;
             e.EstadoPago = dto.EstadoPago;
         }
 
-        //  la base usa PagoDto
+        //   PagoDto
         public override async Task<PagoDto> CreateAsync(PagoDto dto, CancellationToken ct = default)
         {
             if (dto.OrdenId == Guid.Empty) throw new ArgumentException("OrdenId requerido");
@@ -52,7 +52,7 @@ namespace TeAtiendo.Application.Services
                 Id = Guid.NewGuid(),
                 OrdenId = dto.OrdenId,
                 MetodoPago = dto.MetodoPago,
-                Monto = orden.Total, // lógico: monto = total de la orden
+                Monto = orden.Total, //total de la orden
                 EstadoPago = EstadoPago.Pendiente
             };
 

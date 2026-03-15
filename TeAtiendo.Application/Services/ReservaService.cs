@@ -3,14 +3,18 @@ using TeAtiendo.Application.DTOs.Reserva;
 using TeAtiendo.Application.Interfaces;
 using TeAtiendo.Domain.Entities.Operations;
 using TeAtiendo.Domain.Enums;
+using TeAtiendo.Domain.Interfaces;
 
 namespace TeAtiendo.Application.Services
 {
     public sealed class ReservaService : BaseService<Reserva, ReservaDto>, IReservaService
     {
-        public ReservaService(TeAtiendo.Persistence.Interface.IUnitOfWork uow)
+        private readonly IReservaRepository _reservaRepository;
+
+        public ReservaService(TeAtiendo.Persistence.Interface.IUnitOfWork uow, IReservaRepository reservaRepository)
             : base(uow.Reservas, uow)
         {
+            _reservaRepository = reservaRepository;
         }
 
         protected override ReservaDto ToDto(Reserva e) => new()
@@ -24,7 +28,6 @@ namespace TeAtiendo.Application.Services
             CantidadPersonas = e.CantidadPersonas,
             EstadoReserva = e.EstadoReserva
         };
-
 
         protected override void ApplyDto(ReservaDto dto, Reserva e)
         {
@@ -44,6 +47,12 @@ namespace TeAtiendo.Application.Services
             e.EstadoReserva = dto.EstadoReserva;
         }
 
+        public async Task<IReadOnlyList<ReservaDto>> GetByUsuarioAsync(Guid usuarioId, CancellationToken ct = default)
+        {
+            var reservas = await _reservaRepository.GetByUsuarioAsync(usuarioId, ct);
+            return reservas.Select(ToDto).ToList();
+        }
+
         public async Task<bool> CancelarReservaAsync(Guid reservaId, Guid userId, CancellationToken ct = default)
         {
             var reserva = await Repo.GetByIdAsync(reservaId, ct);
@@ -53,7 +62,6 @@ namespace TeAtiendo.Application.Services
             await Uow.SaveAsync(ct);
             return true;
         }
-
 
         public override async Task<ReservaDto> CreateAsync(ReservaDto dto, CancellationToken ct = default)
         {

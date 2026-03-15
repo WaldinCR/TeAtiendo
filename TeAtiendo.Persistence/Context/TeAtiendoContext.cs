@@ -65,10 +65,10 @@ namespace TeAtiendo.Persistence.Context
                 .HasForeignKey(p => p.CategoriaPlatoId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Recomendado: relación explícita Plato -> Menu (tienes MenuId en la entidad)
+            //relación explícita Plato -> Menu (tienes MenuId en la entidad)
             modelBuilder.Entity<Plato>()
                 .HasOne(p => p.Menu)
-                .WithMany(m => m.Categorias.SelectMany(c => c.Platos)) // si te da problemas, se quita; EF puede inferir sin esto
+                .WithMany(m => m.Categorias.SelectMany(c => c.Platos)) // }se quita; EF puede inferir sin esto
                 .HasForeignKey(p => p.MenuId)
                 .OnDelete(DeleteBehavior.Restrict);
             #endregion

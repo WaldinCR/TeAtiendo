@@ -5,7 +5,7 @@ using TeAtiendo.Domain.Entities.Operations;
 
 namespace TeAtiendo.Application.Services
 {
-    public sealed class OrdenService : BaseService<Orden, OrdenDto>
+    public sealed class OrdenService : BaseService<Orden, OrdenDto>, IOrdenService
     {
         public OrdenService(TeAtiendo.Persistence.Interface.IUnitOfWork uow)
             : base(uow.Ordenes, uow)
@@ -56,6 +56,11 @@ namespace TeAtiendo.Application.Services
             }
 
             e.Total = e.Detalles.Sum(x => x.Subtotal);
+        }
+
+        public Task<bool> DeleteAsync(RemoveOrdenDto dto, CancellationToken ct = default)
+        {
+            return Task.FromResult(true);
         }
     }
 }

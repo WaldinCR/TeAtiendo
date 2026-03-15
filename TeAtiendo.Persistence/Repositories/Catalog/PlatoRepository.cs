@@ -17,5 +17,14 @@ namespace TeAtiendo.Persistence.Repositories.Catalogo
                 .AsNoTracking()
                 .ToListAsync(ct);
         }
+
+        public async Task<IReadOnlyList<Plato>> GetByCategoriaAsync(Guid categoriaId, CancellationToken ct = default)
+        {
+            return await _dbSet
+                .Where(x => x.CategoriaPlatoId == categoriaId && x.Activo)
+                .OrderBy(x => x.Nombre)
+                .AsNoTracking()
+                .ToListAsync(ct);
+        }
     }
 }

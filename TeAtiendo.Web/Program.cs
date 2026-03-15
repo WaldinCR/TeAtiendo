@@ -2,13 +2,19 @@ using TeAtiendo.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// AgregA services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// HttpClient pa consumir la API
+builder.Services.AddScoped(sp => new HttpClient
+{
+    BaseAddress = new Uri(builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5067")
+});
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configura la HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
