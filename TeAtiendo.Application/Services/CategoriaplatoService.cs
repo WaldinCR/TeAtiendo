@@ -23,7 +23,7 @@ namespace TeAtiendo.Application.Services
             MenuId = e.MenuId,
             Nombre = e.Nombre,
             Descripcion = e.Descripcion,
-            FechaCreacion = e.CreationDate
+            FechaCreacion = e.FechaCreacion
         };
 
         protected override void ApplyDto(CategoriaplatoDto dto, CategoriaPlato e)

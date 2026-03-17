@@ -13,6 +13,7 @@ namespace TeAtiendo.Persistence.Repositories
         public IOrdenRepository Ordenes { get; }
         public IPagoRepository Pagos { get; }
         public IAuditoriaRepository Auditorias { get; }
+        public IMenuRepository Menus { get; }
 
         public UnitOfWork(
             TeAtiendoContext context,
@@ -20,7 +21,8 @@ namespace TeAtiendo.Persistence.Repositories
             IReservaRepository reservas,
             IOrdenRepository ordenes,
             IPagoRepository pagos,
-            IAuditoriaRepository auditorias)
+            IAuditoriaRepository auditorias,
+            IMenuRepository menus)
         {
             _context = context;
             Usuarios = usuarios;
@@ -28,6 +30,7 @@ namespace TeAtiendo.Persistence.Repositories
             Ordenes = ordenes;
             Pagos = pagos;
             Auditorias = auditorias;
+            Menus = menus;
         }
 
         public Task<int> SaveAsync(CancellationToken ct = default)
