@@ -24,9 +24,8 @@ namespace TeAtiendo.Application.Services
             NumeroMesa = e.Numero,
             Capacidad = e.Capacidad,
             Disponible = true,
-            FechaCreacion = e.CreationDate
+            FechaCreacion = e.FechaCreacion  
         };
-
         protected override void ApplyDto(MesaDto dto, Mesa e)
         {
             if (dto.RestauranteId == Guid.Empty) throw new ArgumentException("RestauranteId requerido");

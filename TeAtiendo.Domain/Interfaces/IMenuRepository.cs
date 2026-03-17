@@ -1,4 +1,5 @@
-﻿using TeAtiendo.Domain.Entities.Catalog;
+﻿using TeAtiendo.Domain.Entities.Catalogo;
+using TeAtiendo.Domain.Interfaces;
 
 namespace TeAtiendo.Domain.Interfaces
 {

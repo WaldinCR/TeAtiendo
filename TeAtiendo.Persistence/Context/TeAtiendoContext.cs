@@ -1,9 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using TeAtiendo.Domain.Entities.Auditory;
 using TeAtiendo.Domain.Entities.Catalog;
+using TeAtiendo.Domain.Entities.Catalogo;  // ← Cambia aquí de Catalog a Catalogo
 using TeAtiendo.Domain.Entities.Operations;
 using TeAtiendo.Domain.Entities.Segurity;
 using TeAtiendo.Domain.Entities.Social;
-using TeAtiendo.Domain.Entities.Auditory;
 
 namespace TeAtiendo.Persistence.Context
 {
@@ -65,10 +66,10 @@ namespace TeAtiendo.Persistence.Context
                 .HasForeignKey(p => p.CategoriaPlatoId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            //relación explícita Plato -> Menu (tienes MenuId en la entidad)
+            // Relación Plato - Menu
             modelBuilder.Entity<Plato>()
                 .HasOne(p => p.Menu)
-                .WithMany(m => m.Categorias.SelectMany(c => c.Platos)) // }se quita; EF puede inferir sin esto
+                .WithMany()
                 .HasForeignKey(p => p.MenuId)
                 .OnDelete(DeleteBehavior.Restrict);
             #endregion

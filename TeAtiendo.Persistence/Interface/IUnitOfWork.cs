@@ -9,6 +9,7 @@ namespace TeAtiendo.Persistence.Interface
         IOrdenRepository Ordenes { get; }
         IPagoRepository Pagos { get; }
         IAuditoriaRepository Auditorias { get; }
+        IMenuRepository Menus { get; }
 
         Task<int> SaveAsync(CancellationToken ct = default);
     }
