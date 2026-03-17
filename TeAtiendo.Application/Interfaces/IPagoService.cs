@@ -5,5 +5,6 @@ namespace TeAtiendo.Application.Interfaces
 {
     public interface IPagoService : IBaseService<PagoDto>
     {
+        Task<PagoDto?> GetByOrdenIdAsync(Guid ordenId, CancellationToken ct = default);
     }
 }
