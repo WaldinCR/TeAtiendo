@@ -28,7 +28,7 @@ namespace TeAtiendo.Application.Services
             Comentario = e.Comentario,
             Fecha = e.Fecha,
             Estado = e.Estado,
-            FechaCreacion = e.CreationDate
+            FechaCreacion = e.FechaCreacion  
         };
 
         protected override void ApplyDto(ResenaDto dto, Resena e)

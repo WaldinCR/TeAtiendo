@@ -26,7 +26,7 @@ namespace TeAtiendo.Application.Services
             Descripcion = e.Descripcion,
             Precio = e.Precio,
             Disponible = true,
-            FechaCreacion = e.CreationDate,
+            FechaCreacion = e.FechaCreacion,
             Activo = e.Activo
         };
 

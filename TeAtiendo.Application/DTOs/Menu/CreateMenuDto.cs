@@ -1,11 +1,9 @@
 ﻿namespace TeAtiendo.Application.DTOs.Menu
 {
-    public class MenuDto
+    public class CreateMenuDto
     {
-        public Guid Id { get; set; }
         public required string Nombre { get; set; }
         public string? Descripcion { get; set; }
         public Guid RestauranteId { get; set; }
-        public DateTime FechaCreacion { get; set; }
     }
 }

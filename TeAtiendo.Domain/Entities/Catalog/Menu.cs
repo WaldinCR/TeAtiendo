@@ -1,13 +1,16 @@
 ﻿using TeAtiendo.Domain.Base;
+using TeAtiendo.Domain.Entities.Catalog;
 
-namespace TeAtiendo.Domain.Entities.Catalog
+namespace TeAtiendo.Domain.Entities.Catalogo
 {
     public class Menu : BaseEntity
     {
+        public required string Nombre { get; set; }
+        public string? Descripcion { get; set; }
         public Guid RestauranteId { get; set; }
-        public string Nombre { get; set; } = string.Empty;
 
-        public virtual Restaurante Restaurante { get; set; } = null!;
+        // Relación
+        public virtual Restaurante? Restaurante { get; set; }
         public virtual ICollection<CategoriaPlato> Categorias { get; set; } = new List<CategoriaPlato>();
     }
 }

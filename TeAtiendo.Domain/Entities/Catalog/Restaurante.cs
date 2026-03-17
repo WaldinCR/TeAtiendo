@@ -2,6 +2,8 @@
 using TeAtiendo.Domain.Entities.Operations;
 using TeAtiendo.Domain.Entities.Social;
 
+using TeAtiendo.Domain.Entities.Catalogo;
+ 
 namespace TeAtiendo.Domain.Entities.Catalog
 {
     public class Restaurante : BaseEntity

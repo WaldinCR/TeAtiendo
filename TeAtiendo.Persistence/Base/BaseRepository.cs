@@ -5,7 +5,6 @@ using TeAtiendo.Persistence.Context;
 
 namespace TeAtiendo.Persistence.Base
 {
-
     public class BaseRepository<T> : IRepository<T> where T : BaseEntity
     {
         protected readonly TeAtiendoContext _context;
@@ -46,8 +45,7 @@ namespace TeAtiendo.Persistence.Base
             if (entity is null) return;
 
             entity.Activo = false;
-            entity.UserDeleted = userId;
-            entity.DeletedDate = DateTime.UtcNow;
+            entity.FechaModificacion = DateTime.UtcNow;
 
             _dbSet.Update(entity);
         }

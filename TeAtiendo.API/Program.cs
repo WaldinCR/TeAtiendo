@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using Microsoft.OpenApi.Models;
+using System.Text;
 using TeAtiendo.Application.Interfaces;
 using TeAtiendo.Application.Services;
 using TeAtiendo.Domain.Interfaces;
@@ -14,14 +14,13 @@ using TeAtiendo.Persistence.Repositories.Catalog;
 using TeAtiendo.Persistence.Repositories.Catalogo;
 using TeAtiendo.Persistence.Repositories.Operaciones;
 using TeAtiendo.Persistence.Repositories.Seguridad;
+using TeAtiendo.Persistence.Repositories.Social;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Agrega services al container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// Swagger con JWT
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
@@ -31,7 +30,6 @@ builder.Services.AddSwaggerGen(c =>
         Description = "API para sistema de reservas y órdenes de restaurante"
     });
 
-    // Agregar seguridad JWT a Swagger
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -57,32 +55,41 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// DbContext
 builder.Services.AddDbContext<TeAtiendoContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// UnitOfWork
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-// Repositorios - Domain Interfaces
+// ===== REPOSITORIOS DOMAIN =====
+builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IRestauranteRepository, RestauranteRepository>();
 builder.Services.AddScoped<IMenuRepository, MenuRepository>();
+builder.Services.AddScoped<ICategoriaplatoRepository, CategoriaplatoRepository>();
 builder.Services.AddScoped<IPlatoRepository, PlatoRepository>();
+builder.Services.AddScoped<IMesaRepository, MesaRepository>();
+builder.Services.AddScoped<IDisponibilidadRepository, DisponibilidadRepository>();
+builder.Services.AddScoped<IReservaRepository, ReservaRepository>();
 builder.Services.AddScoped<IOrdenRepository, OrdenRepository>();
 builder.Services.AddScoped<IPagoRepository, PagoRepository>();
-builder.Services.AddScoped<IReservaRepository, ReservaRepository>();
-builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+builder.Services.AddScoped<IResenaRepository, ResenaRepository>();
+builder.Services.AddScoped<INotificacionRepository, NotificacionRepository>();
 builder.Services.AddScoped<IAuditoriaRepository, AuditoriaRepository>();
 
-// Services
+// ===== SERVICIOS APPLICATION =====
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<IRestauranteService, RestauranteService>();
+builder.Services.AddScoped<IMenuService, MenuService>();
+builder.Services.AddScoped<ICategoriaplatoService, CategoriaplatoService>();
+builder.Services.AddScoped<IPlatoService, PlatoService>();
+builder.Services.AddScoped<IMesaService, MesaService>();
+builder.Services.AddScoped<IDisponibilidadService, DisponibilidadService>();
 builder.Services.AddScoped<IReservaService, ReservaService>();
 builder.Services.AddScoped<IOrdenService, OrdenService>();
 builder.Services.AddScoped<IPagoService, PagoService>();
-builder.Services.AddScoped<IUsuarioService, UsuarioService>();
+builder.Services.AddScoped<IResenaService, ResenaService>();
+builder.Services.AddScoped<INotificacionService, NotificacionService>();
 
-// JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = Encoding.UTF8.GetBytes(jwtSettings["Secret"] ?? throw new InvalidOperationException("JWT Secret not configured"));
 
@@ -104,7 +111,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// CORS - Mejorado para desarrollo
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -114,7 +120,6 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader();
     });
 
-    // Para producción (opcional)
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy.WithOrigins(
@@ -129,24 +134,17 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Configura la HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "TeAtiendo API v1");
-        c.RoutePrefix = string.Empty; // Swagger en la raíz
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "TeAtiendo API v1");
+    c.RoutePrefix = string.Empty;
+});
 
 app.UseHttpsRedirection();
-
 app.UseCors("AllowAll");
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();

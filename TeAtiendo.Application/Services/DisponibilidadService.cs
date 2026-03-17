@@ -25,7 +25,7 @@ namespace TeAtiendo.Application.Services
             HoraInicio = e.HoraInicio,
             HoraFin = e.HoraFin,
             Estado = e.Estado,
-            FechaCreacion = e.CreationDate
+            FechaCreacion = e.FechaCreacion
         };
 
         protected override void ApplyDto(DisponibilidadDto dto, Disponibilidad e)

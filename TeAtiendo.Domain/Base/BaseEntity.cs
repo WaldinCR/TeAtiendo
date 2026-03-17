@@ -1,7 +1,12 @@
-﻿namespace TeAtiendo.Domain.Base
+﻿using System;
+
+namespace TeAtiendo.Domain.Base
 {
-    public abstract class BaseEntity : AuditEntity
+    public class BaseEntity
     {
         public Guid Id { get; set; } = Guid.NewGuid();
+        public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
+        public DateTime? FechaModificacion { get; set; }
+        public bool Activo { get; set; } = true;
     }
 }
