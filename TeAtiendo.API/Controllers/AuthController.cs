@@ -22,7 +22,7 @@ namespace TeAtiendo.API.Controllers
             try
             {
                 var result = await _authService.RegisterAsync(dto, ct);
-                return Ok(result);
+                return CreatedAtAction(nameof(Register), new { id = result.Id }, result);
             }
             catch (ArgumentException ex)
             {
@@ -30,7 +30,11 @@ namespace TeAtiendo.API.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return Conflict(new { message = ex.Message }); // 409 en lugar de 400
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
             }
         }
 
@@ -58,7 +62,7 @@ namespace TeAtiendo.API.Controllers
             {
                 var result = await _authService.ChangePasswordAsync(dto.UsuarioId, dto.PasswordActual, dto.PasswordNueva, ct);
                 if (!result)
-                    return BadRequest(new { message = "No se pudo cambiar la contraseña" });
+                    return NotFound(new { message = "Usuario no encontrado" });
 
                 return Ok(new { message = "Contraseña cambiada exitosamente" });
             }

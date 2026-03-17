@@ -29,13 +29,10 @@ namespace TeAtiendo.Application.Services
 
             e.OrdenId = dto.OrdenId;
             e.MetodoPago = dto.MetodoPago;
-
-         
             e.Monto = dto.Monto;
             e.EstadoPago = dto.EstadoPago;
         }
 
-        //   PagoDto
         public override async Task<PagoDto> CreateAsync(PagoDto dto, CancellationToken ct = default)
         {
             if (dto.OrdenId == Guid.Empty) throw new ArgumentException("OrdenId requerido");
@@ -52,7 +49,7 @@ namespace TeAtiendo.Application.Services
                 Id = Guid.NewGuid(),
                 OrdenId = dto.OrdenId,
                 MetodoPago = dto.MetodoPago,
-                Monto = orden.Total, //total de la orden
+                Monto = orden.Total,
                 EstadoPago = EstadoPago.Pendiente
             };
 
@@ -60,6 +57,13 @@ namespace TeAtiendo.Application.Services
             await Uow.SaveAsync(ct);
 
             return ToDto(entity);
+        }
+
+        public async Task<PagoDto?> GetByOrdenIdAsync(Guid ordenId, CancellationToken ct = default)
+        {
+            var pagos = await Uow.Pagos.GetAllAsync(ct);
+            var pago = pagos.FirstOrDefault(p => p.OrdenId == ordenId);
+            return pago is null ? null : ToDto(pago);
         }
     }
 }
