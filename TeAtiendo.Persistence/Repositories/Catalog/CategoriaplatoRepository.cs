@@ -16,7 +16,7 @@ namespace TeAtiendo.Persistence.Repositories.Catalog
         {
             return await _dbSet
                 .Where(c => c.MenuId == menuId && c.Activo)
-                .Include(c => c.Platos)
+                .AsNoTracking()
                 .ToListAsync(ct);
         }
     }
