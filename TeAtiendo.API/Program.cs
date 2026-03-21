@@ -11,10 +11,10 @@ using TeAtiendo.Persistence.Interface;
 using TeAtiendo.Persistence.Repositories;
 using TeAtiendo.Persistence.Repositories.Auditory;
 using TeAtiendo.Persistence.Repositories.Catalog;
-using TeAtiendo.Persistence.Repositories.Catalogo;
 using TeAtiendo.Persistence.Repositories.Operaciones;
 using TeAtiendo.Persistence.Repositories.Seguridad;
 using TeAtiendo.Persistence.Repositories.Social;
+using TeAtiendo.IOC;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -90,26 +90,9 @@ builder.Services.AddScoped<IPagoService, PagoService>();
 builder.Services.AddScoped<IResenaService, ResenaService>();
 builder.Services.AddScoped<INotificacionService, NotificacionService>();
 
-var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = Encoding.UTF8.GetBytes(jwtSettings["Secret"] ?? throw new InvalidOperationException("JWT Secret not configured"));
+// ===== IOC - DEPENDENCIAS ADICIONALES =====
+builder.Services.AddTeAtiendoDependencies(builder.Configuration);
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(secretKey),
-            ValidateIssuer = true,
-            ValidIssuer = jwtSettings["Issuer"],
-            ValidateAudience = true,
-            ValidAudience = jwtSettings["Audience"],
-            ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero
-        };
-    });
-
-builder.Services.AddAuthorization();
 
 builder.Services.AddCors(options =>
 {
