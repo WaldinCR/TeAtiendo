@@ -1,7 +1,7 @@
 ﻿using TeAtiendo.Application.DTOs.Menu;
 using TeAtiendo.Application.Interfaces;
 using TeAtiendo.Domain.Entities.Catalog;
-using TeAtiendo.Domain.Entities.Catalogo;
+
 using TeAtiendo.Persistence.Interface;
 
 namespace TeAtiendo.Application.Services

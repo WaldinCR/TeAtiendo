@@ -4,7 +4,7 @@ using TeAtiendo.Domain.Interfaces;
 using TeAtiendo.Persistence.Base;
 using TeAtiendo.Persistence.Context;
 
-namespace TeAtiendo.Persistence.Repositories.Catalogo
+namespace TeAtiendo.Persistence.Repositories.Catalog
 {
     public class PlatoRepository : BaseRepository<Plato>, IPlatoRepository
     {

@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TeAtiendo.Domain.Entities.Auditory;
 using TeAtiendo.Domain.Entities.Catalog;
-using TeAtiendo.Domain.Entities.Catalogo;  // ← Cambia aquí de Catalog a Catalogo
+ 
 using TeAtiendo.Domain.Entities.Operations;
 using TeAtiendo.Domain.Entities.Segurity;
 using TeAtiendo.Domain.Entities.Social;

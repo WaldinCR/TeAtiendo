@@ -19,6 +19,7 @@
   <ItemGroup>
     <ProjectReference Include="..\TeAtiendo.Application\TeAtiendo.Application.csproj" />
     <ProjectReference Include="..\TeAtiendo.Domain\TeAtiendo.Domain.csproj" />
+    <ProjectReference Include="..\TeAtiendo.IOC\TeAtiendo.IOC.csproj" />
     <ProjectReference Include="..\TeAtiendo.Persistence\TeAtiendo.Persistence.csproj" />
   </ItemGroup>
 
