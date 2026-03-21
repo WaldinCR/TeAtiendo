@@ -2,7 +2,7 @@
 using TeAtiendo.Domain.Entities.Operations;
 using TeAtiendo.Domain.Entities.Social;
 
-using TeAtiendo.Domain.Entities.Catalogo;
+using TeAtiendo.Domain.Entities.Catalog;
  
 namespace TeAtiendo.Domain.Entities.Catalog
 {
