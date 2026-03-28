@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using TeAtiendo.Domain.Entities.Admin;
 using TeAtiendo.Domain.Entities.Auditory;
 using TeAtiendo.Domain.Entities.Catalog;
-using TeAtiendo.Domain.Entities.Catalogo;  // ← Cambia aquí de Catalog a Catalogo
 using TeAtiendo.Domain.Entities.Operations;
 using TeAtiendo.Domain.Entities.Segurity;
 using TeAtiendo.Domain.Entities.Social;
@@ -43,6 +43,10 @@ namespace TeAtiendo.Persistence.Context
         public DbSet<Auditoria> Auditorias { get; set; }
         #endregion
 
+        #region ADMIN
+        public DbSet<ModeracionContenido> ModeracionContenidos { get; set; }
+        #endregion
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -66,11 +70,42 @@ namespace TeAtiendo.Persistence.Context
                 .HasForeignKey(p => p.CategoriaPlatoId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Relación Plato - Menu
             modelBuilder.Entity<Plato>()
                 .HasOne(p => p.Menu)
                 .WithMany()
                 .HasForeignKey(p => p.MenuId)
+                .OnDelete(DeleteBehavior.Restrict);
+            #endregion
+
+            #region RELACIONES DE OPERACIONES
+            modelBuilder.Entity<Orden>()
+                .HasOne(o => o.Restaurante)
+                .WithMany(r => r.Ordenes)
+                .HasForeignKey(o => o.RestauranteId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Orden>()
+                .HasOne(o => o.Usuario)
+                .WithMany(u => u.Ordenes)
+                .HasForeignKey(o => o.UsuarioId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Reserva>()
+                .HasOne(r => r.Disponibilidad)
+                .WithMany(d => d.Reservas)
+                .HasForeignKey(r => r.DisponibilidadId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Reserva>()
+                .HasOne(r => r.Mesa)
+                .WithMany(m => m.Reservas)
+                .HasForeignKey(r => r.MesaId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Reserva>()
+                .HasOne(r => r.Restaurante)
+                .WithMany(rest => rest.Reservas)
+                .HasForeignKey(r => r.RestauranteId)
                 .OnDelete(DeleteBehavior.Restrict);
             #endregion
 
@@ -87,6 +122,10 @@ namespace TeAtiendo.Persistence.Context
                 .Property(od => od.PrecioUnitario)
                 .HasPrecision(18, 2);
 
+            modelBuilder.Entity<OrdenDetalle>()
+                .Property(od => od.Subtotal)
+                .HasPrecision(18, 2);
+
             modelBuilder.Entity<Pago>()
                 .Property(p => p.Monto)
                 .HasPrecision(18, 2);
@@ -97,6 +136,7 @@ namespace TeAtiendo.Persistence.Context
             modelBuilder.Entity<Menu>().ToTable("Menus");
             modelBuilder.Entity<CategoriaPlato>().ToTable("CategoriasPlato");
             modelBuilder.Entity<Plato>().ToTable("Platos");
+            modelBuilder.Entity<ModeracionContenido>().ToTable("ModeracionContenidos");
             #endregion
         }
     }

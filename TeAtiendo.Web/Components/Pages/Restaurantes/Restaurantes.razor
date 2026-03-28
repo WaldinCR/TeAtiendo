@@ -1,0 +1,75 @@
+﻿@page "/restaurantes"
+@rendermode InteractiveServer
+
+<h3>Restaurantes</h3>
+
+<div class="mb-3">
+    <input type="text" class="form-control" placeholder="Buscar restaurante..." @bind="_busqueda" @bind:event="oninput" @onkeyup="Buscar" />
+</div>
+
+@if (_loading)
+{
+    <LoadingSpinner />
+}
+else if (_restaurantes is null || _restaurantes.Count == 0)
+{
+    <div class="alert alert-info">No se encontraron restaurantes.</div>
+}
+else
+{
+    <div class="row g-3">
+        @foreach (var r in _restaurantes)
+        {
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">@r.Nombre</h5>
+                        <p class="text-muted mb-1">@r.Direccion</p>
+                        <p class="text-muted mb-1">Tel: @r.Telefono</p>
+                        <p class="text-muted mb-1">Horario: @r.HorarioApertura - @r.HorarioCierre</p>
+                    </div>
+                    <div class="card-footer">
+                        <a href="/restaurantes/@r.Id" class="btn btn-primary btn-sm">Ver detalle</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Inject] private IApiService _api { get; set; } = default!;
+
+    private List<RestauranteResponse>? _restaurantes;
+    private string _busqueda = string.Empty;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarRestaurantes();
+    }
+
+    private async Task CargarRestaurantes()
+    {
+        _loading = true;
+        var response = await _api.GetAsync<RestauranteApiResponse>("api/Restaurantes");
+        _restaurantes = response?.Data;
+        _loading = false;
+    }
+
+    private async Task Buscar()
+    {
+        _loading = true;
+        if (string.IsNullOrWhiteSpace(_busqueda))
+        {
+            var response = await _api.GetAsync<RestauranteApiResponse>("api/Restaurantes");
+            _restaurantes = response?.Data;
+        }
+        else
+        {
+            var response = await _api.GetAsync<RestauranteApiResponse>($"api/Restaurantes/buscar?nombre={_busqueda}");
+            _restaurantes = response?.Data;
+        }
+        _loading = false;
+    }
+}

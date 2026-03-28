@@ -1,5 +1,6 @@
 ﻿using TeAtiendo.Domain.Base;
-using TeAtiendo.Domain.Entities.Catalogo;
+using TeAtiendo.Domain.Entities.Catalog;
+
 namespace TeAtiendo.Domain.Entities.Catalog
 {
     public class Plato : BaseEntity

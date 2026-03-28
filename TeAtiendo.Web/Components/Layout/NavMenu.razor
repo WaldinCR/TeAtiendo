@@ -1,30 +1,68 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">TeAtiendo.Web</a>
+﻿<div class="bg-dark text-white d-flex flex-column" style="width: 250px; min-height: 100vh;">
+    <div class="p-3 border-bottom border-secondary">
+        <h5 class="mb-0">Te Atiendo</h5>
+        <small class="text-muted">Plataforma de Reservas</small>
     </div>
-</div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+    <nav class="nav flex-column p-2 flex-grow-1">
+        <NavLink class="nav-link text-white" href="/" Match="NavLinkMatch.All">
+            Inicio
+        </NavLink>
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+        @if (_authService.IsAuthenticated)
+        {
+            <NavLink class="nav-link text-white" href="/restaurantes">
+                Restaurantes
             </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
+            <NavLink class="nav-link text-white" href="/reservas">
+                Reservas
             </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
+            <NavLink class="nav-link text-white" href="/ordenes">
+                Ordenes
             </NavLink>
-        </div>
+            <NavLink class="nav-link text-white" href="/pagos">
+                Pagos
+            </NavLink>
+            <NavLink class="nav-link text-white" href="/resenas">
+                Resenas
+            </NavLink>
+
+            @if (_authService.CurrentUser?.Rol == 3)
+            {
+                <hr class="border-secondary" />
+                <small class="text-muted px-3">ADMINISTRACION</small>
+                <NavLink class="nav-link text-white" href="/usuarios">
+                    Usuarios
+                </NavLink>
+                <NavLink class="nav-link text-white" href="/auditoria">
+                    Auditoria
+                </NavLink>
+                <NavLink class="nav-link text-white" href="/moderacion">
+                    Moderacion
+                </NavLink>
+            }
+        }
+        else
+        {
+            <NavLink class="nav-link text-white" href="/login">
+                Iniciar Sesion
+            </NavLink>
+            <NavLink class="nav-link text-white" href="/register">
+                Registrarse
+            </NavLink>
+        }
     </nav>
 </div>
 
+@code {
+    [Inject] private IAuthService _authService { get; set; } = default!;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await _authService.LoadSession();
+            StateHasChanged();
+        }
+    }
+}
