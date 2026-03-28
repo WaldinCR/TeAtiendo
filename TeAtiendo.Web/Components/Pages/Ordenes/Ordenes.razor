@@ -1,0 +1,81 @@
+﻿@page "/ordenes"
+@rendermode InteractiveServer
+
+<h3>Mis Ordenes</h3>
+
+@if (_loading)
+{
+    <LoadingSpinner />
+}
+else if (_ordenes is null || _ordenes.Count == 0)
+{
+    <div class="alert alert-info">No tienes ordenes registradas.</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Total</th>
+                <th>Tipo</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var o in _ordenes)
+            {
+                <tr>
+                    <td>@o.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>$@o.Total.ToString("N2")</td>
+                    <td>@o.TipoOrden</td>
+                    <td>
+                        <span class="badge @GetBadgeClass(o.Estado)">@GetEstadoNombre(o.Estado)</span>
+                    </td>
+                    <td>
+                        @if (o.Estado == 1)
+                        {
+                            <a href="/pagos?ordenId=@o.Id" class="btn btn-success btn-sm">Pagar</a>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Inject] private IApiService _api { get; set; } = default!;
+    [Inject] private IAuthService _auth { get; set; } = default!;
+
+    private List<OrdenResponse>? _ordenes;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (_auth.CurrentUser is not null)
+            _ordenes = await _api.GetAsync<List<OrdenResponse>>($"api/Ordenes/usuario/{_auth.CurrentUser.Id}");
+        _loading = false;
+    }
+
+    private string GetEstadoNombre(int estado) => estado switch
+    {
+        1 => "Pendiente",
+        2 => "En Preparacion",
+        3 => "Lista",
+        4 => "Entregada",
+        5 => "Cancelada",
+        _ => "Desconocido"
+    };
+
+    private string GetBadgeClass(int estado) => estado switch
+    {
+        1 => "bg-warning",
+        2 => "bg-info",
+        3 => "bg-primary",
+        4 => "bg-success",
+        5 => "bg-danger",
+        _ => "bg-dark"
+    };
+}

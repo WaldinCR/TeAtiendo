@@ -1,0 +1,127 @@
+﻿@page "/resenas"
+@rendermode InteractiveServer
+
+<h3>Resenas</h3>
+
+<ErrorAlert Message="@_error" />
+
+@if (_successMsg is not null)
+{
+    <div class="alert alert-success">@_successMsg</div>
+}
+
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <h5>Dejar una resena</h5>
+        <div class="mb-3">
+            <label class="form-label">Restaurante ID</label>
+            <InputText class="form-control" @bind-Value="_restauranteId" placeholder="ID del restaurante" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Reserva u Orden ID (opcional)</label>
+            <InputText class="form-control" @bind-Value="_referenciaId" placeholder="ID de reserva u orden" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Calificacion (1-5)</label>
+            <InputNumber class="form-control" @bind-Value="_calificacion" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Comentario</label>
+            <InputTextArea class="form-control" @bind-Value="_comentario" rows="3" />
+        </div>
+        <button class="btn btn-primary" @onclick="Enviar" disabled="@_loading">
+            @if (_loading)
+            {
+                <span class="spinner-border spinner-border-sm me-1"></span>
+            }
+            Enviar Resena
+        </button>
+    </div>
+</div>
+
+<h5>Mis resenas</h5>
+@if (_resenas is null || _resenas.Count == 0)
+{
+    <p class="text-muted">No has dejado resenas.</p>
+}
+else
+{
+    @foreach (var r in _resenas)
+    {
+        <div class="card mb-2">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <strong>Calificacion: @r.Calificacion / 5</strong>
+                    <small class="text-muted">@r.Fecha.ToString("dd/MM/yyyy")</small>
+                </div>
+                <p>@r.Comentario</p>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [Inject] private IApiService _api { get; set; } = default!;
+    [Inject] private IAuthService _auth { get; set; } = default!;
+
+    private List<ResenaResponse>? _resenas;
+    private string _restauranteId = string.Empty;
+    private string _referenciaId = string.Empty;
+    private int _calificacion = 5;
+    private string _comentario = string.Empty;
+    private string _error = string.Empty;
+    private string? _successMsg;
+    private bool _loading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (_auth.CurrentUser is not null)
+            _resenas = await _api.GetAsync<List<ResenaResponse>>($"api/Resenas/usuario/{_auth.CurrentUser.Id}");
+    }
+
+    private async Task Enviar()
+    {
+        _error = string.Empty;
+        _successMsg = null;
+        _loading = true;
+
+        if (!Guid.TryParse(_restauranteId, out Guid restId))
+        {
+            _error = "ID de restaurante invalido";
+            _loading = false;
+            return;
+        }
+
+        Guid? reservaId = null;
+        Guid? ordenId = null;
+        if (Guid.TryParse(_referenciaId, out Guid refId))
+            reservaId = refId;
+
+        var resena = new
+        {
+            UsuarioId = _auth.CurrentUser!.Id,
+            RestauranteId = restId,
+            ReservaId = reservaId,
+            OrdenId = ordenId,
+            Calificacion = _calificacion,
+            Comentario = _comentario,
+            Fecha = DateTime.UtcNow,
+            Estado = 1
+        };
+
+        var result = await _api.PostAsync<ResenaResponse>("api/Resenas", resena);
+
+        if (result is not null)
+        {
+            _successMsg = "Resena enviada exitosamente";
+            _comentario = string.Empty;
+            _resenas = await _api.GetAsync<List<ResenaResponse>>($"api/Resenas/usuario/{_auth.CurrentUser.Id}");
+        }
+        else
+        {
+            _error = "Error al enviar la resena. Asegurate de tener una reserva u orden asociada.";
+        }
+
+        _loading = false;
+    }
+}

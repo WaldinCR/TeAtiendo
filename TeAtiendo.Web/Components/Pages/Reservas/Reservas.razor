@@ -1,0 +1,83 @@
+﻿@page "/reservas"
+@rendermode InteractiveServer
+
+<h3>Mis Reservas</h3>
+
+@if (_loading)
+{
+    <LoadingSpinner />
+}
+else if (_reservas is null || _reservas.Count == 0)
+{
+    <div class="alert alert-info">No tienes reservas registradas.</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Personas</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in _reservas)
+            {
+                <tr>
+                    <td>@r.FechaReserva.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>@r.CantidadPersonas</td>
+                    <td>
+                        <span class="badge @GetBadgeClass(r.EstadoReserva)">@GetEstadoNombre(r.EstadoReserva)</span>
+                    </td>
+                    <td>
+                        @if (r.EstadoReserva == 1)
+                        {
+                            <button class="btn btn-danger btn-sm" @onclick="() => Cancelar(r.Id)">Cancelar</button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Inject] private IApiService _api { get; set; } = default!;
+    [Inject] private IAuthService _auth { get; set; } = default!;
+
+    private List<ReservaResponse>? _reservas;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (_auth.CurrentUser is not null)
+            _reservas = await _api.GetAsync<List<ReservaResponse>>($"api/Reservas/usuario/{_auth.CurrentUser.Id}");
+        _loading = false;
+    }
+
+    private async Task Cancelar(Guid id)
+    {
+        await _api.PostAsync<object>($"api/Reservas/{id}/cancelar?userId={_auth.CurrentUser!.Id}", new { });
+        _reservas = await _api.GetAsync<List<ReservaResponse>>($"api/Reservas/usuario/{_auth.CurrentUser.Id}");
+    }
+
+    private string GetEstadoNombre(int estado) => estado switch
+    {
+        1 => "Pendiente",
+        2 => "Confirmada",
+        3 => "Cancelada",
+        4 => "Rechazada",
+        _ => "Desconocido"
+    };
+
+    private string GetBadgeClass(int estado) => estado switch
+    {
+        1 => "bg-warning",
+        2 => "bg-success",
+        3 => "bg-danger",
+        4 => "bg-secondary",
+        _ => "bg-dark"
+    };
+}

@@ -35,14 +35,22 @@ namespace TeAtiendo.Application.Services
 
         public override async Task<PagoDto> CreateAsync(PagoDto dto, CancellationToken ct = default)
         {
-            if (dto.OrdenId == Guid.Empty) throw new ArgumentException("OrdenId requerido");
+            if (dto.OrdenId == Guid.Empty)
+                throw new ArgumentException("OrdenId requerido");
 
+            // Validar que la orden exista
             var orden = await Uow.Ordenes.GetByIdAsync(dto.OrdenId, ct);
-            if (orden is null) throw new InvalidOperationException("Orden no existe");
+            if (orden is null)
+                throw new InvalidOperationException("Orden no existe");
 
+            // Validar que no tenga pago previo
             var pagos = await Uow.Pagos.GetAllAsync(ct);
             if (pagos.Any(p => p.OrdenId == dto.OrdenId))
                 throw new InvalidOperationException("La orden ya tiene un pago registrado");
+
+            // Validar que la orden este en estado valido para pagar
+            if (orden.Estado == EstadoOrden.Cancelada)
+                throw new InvalidOperationException("No se puede pagar una orden cancelada");
 
             var entity = new Pago
             {
@@ -52,6 +60,23 @@ namespace TeAtiendo.Application.Services
                 Monto = orden.Total,
                 EstadoPago = EstadoPago.Pendiente
             };
+
+            // Simulación de pasarela de pago (Stripe futuro)
+            bool pagoExitoso = SimularPasarelaPago(entity.MetodoPago, entity.Monto);
+
+            if (pagoExitoso)
+            {
+                entity.EstadoPago = EstadoPago.Aprobado;
+
+                // Actualizar estado de la orden a EnPreparacion
+                orden.Estado = EstadoOrden.EnPreparacion;
+                orden.FechaModificacion = DateTime.UtcNow;
+                await Uow.Ordenes.UpdateAsync(orden, ct);
+            }
+            else
+            {
+                entity.EstadoPago = EstadoPago.Rechazado;
+            }
 
             await Uow.Pagos.AddAsync(entity, ct);
             await Uow.SaveAsync(ct);
@@ -64,6 +89,16 @@ namespace TeAtiendo.Application.Services
             var pagos = await Uow.Pagos.GetAllAsync(ct);
             var pago = pagos.FirstOrDefault(p => p.OrdenId == ordenId);
             return pago is null ? null : ToDto(pago);
+        }
+
+        /// <summary>
+        /// Simulación de pasarela de pago.
+        /// En el futuro se reemplazará por integración real con Stripe API.
+        /// </summary>
+        private static bool SimularPasarelaPago(MetodoPago metodo, decimal monto)
+        {
+            if (monto <= 0) return false;
+            return true;
         }
     }
 }

@@ -1,0 +1,106 @@
+﻿@page "/usuarios"
+@rendermode InteractiveServer
+
+<h3>Gestion de Usuarios</h3>
+
+@if (_auth.CurrentUser?.Rol != 3)
+{
+    <div class="alert alert-danger">No tienes permisos para acceder a esta seccion.</div>
+}
+else
+{
+    @if (_loading)
+    {
+        <LoadingSpinner />
+    }
+    else if (_usuarios is null || _usuarios.Count == 0)
+    {
+        <div class="alert alert-info">No hay usuarios registrados.</div>
+    }
+    else
+    {
+        <div class="mb-3">
+            <input type="text" class="form-control" placeholder="Buscar por nombre o correo..." @bind="_busqueda" @bind:event="oninput" />
+        </div>
+
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Correo</th>
+                    <th>Rol</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var u in UsuariosFiltrados)
+                {
+                    <tr>
+                        <td>@u.Nombre</td>
+                        <td>@u.Correo</td>
+                        <td>
+                            <span class="badge @GetRolBadge(u.Rol)">@GetRolNombre(u.Rol)</span>
+                        </td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" @onclick="() => Eliminar(u.Id)">Eliminar</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <p class="text-muted">Total: @UsuariosFiltrados.Count usuarios</p>
+    }
+}
+
+@code {
+    [Inject] private IApiService _api { get; set; } = default!;
+    [Inject] private IAuthService _auth { get; set; } = default!;
+
+    private List<UsuarioItem>? _usuarios;
+    private string _busqueda = string.Empty;
+    private bool _loading = true;
+
+    private List<UsuarioItem> UsuariosFiltrados =>
+        string.IsNullOrWhiteSpace(_busqueda)
+            ? _usuarios ?? new()
+            : (_usuarios ?? new()).Where(u =>
+                u.Nombre.Contains(_busqueda, StringComparison.OrdinalIgnoreCase) ||
+                u.Correo.Contains(_busqueda, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _usuarios = await _api.GetAsync<List<UsuarioItem>>("api/Usuarios");
+        _loading = false;
+    }
+
+    private async Task Eliminar(Guid id)
+    {
+        await _api.DeleteAsync($"api/Usuarios/{id}?userId={_auth.CurrentUser!.Id}");
+        _usuarios = await _api.GetAsync<List<UsuarioItem>>("api/Usuarios");
+    }
+
+    private string GetRolNombre(int rol) => rol switch
+    {
+        1 => "Cliente",
+        2 => "Restaurante",
+        3 => "Admin",
+        _ => "Desconocido"
+    };
+
+    private string GetRolBadge(int rol) => rol switch
+    {
+        1 => "bg-primary",
+        2 => "bg-success",
+        3 => "bg-danger",
+        _ => "bg-dark"
+    };
+
+    private class UsuarioItem
+    {
+        public Guid Id { get; set; }
+        public string Nombre { get; set; } = string.Empty;
+        public string Correo { get; set; } = string.Empty;
+        public int Rol { get; set; }
+    }
+}
