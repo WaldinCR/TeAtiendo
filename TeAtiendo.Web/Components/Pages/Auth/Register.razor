@@ -1,0 +1,112 @@
+﻿@page "/register"
+@rendermode InteractiveServer
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5">
+        <div class="card shadow">
+            <div class="card-body p-4">
+                <h3 class="text-center mb-4">Registrarse</h3>
+
+                <ErrorAlert Message="@_error" />
+
+                @if (_success)
+                {
+                    <div class="alert alert-success">
+                        Cuenta creada exitosamente. <a href="/login">Inicia sesion aqui</a>
+                    </div>
+                }
+                else
+                {
+                    <EditForm Model="_register" OnValidSubmit="HandleRegister" FormName="registerForm">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre completo</label>
+                            <InputText class="form-control" @bind-Value="_register.Nombre" placeholder="Tu nombre" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Correo electronico</label>
+                            <InputText class="form-control" @bind-Value="_register.Correo" placeholder="correo@ejemplo.com" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Contrasena</label>
+                            <InputText type="password" class="form-control" @bind-Value="_register.Password" placeholder="Minimo 8 caracteres" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Tipo de cuenta</label>
+                            <InputSelect class="form-select" @bind-Value="_register.Rol">
+                                <option value="1">Cliente</option>
+                                <option value="2">Restaurante</option>
+                            </InputSelect>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100" disabled="@_loading">
+                            @if (_loading)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+                            }
+                            Crear Cuenta
+                        </button>
+                    </EditForm>
+
+                    <hr />
+                    <p class="text-center text-muted">
+                        Ya tienes cuenta? <a href="/login">Inicia sesion</a>
+                    </p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Inject] private IAuthService _authService { get; set; } = default!;
+
+    private RegisterRequest _register = new();
+    private string _error = string.Empty;
+    private bool _loading = false;
+    private bool _success = false;
+
+    private async Task HandleRegister()
+    {
+        _loading = true;
+        _error = string.Empty;
+
+        try
+        {
+            if (string.IsNullOrWhiteSpace(_register.Nombre) ||
+                string.IsNullOrWhiteSpace(_register.Correo) ||
+                string.IsNullOrWhiteSpace(_register.Password))
+            {
+                _error = "Todos los campos son obligatorios";
+                _loading = false;
+                return;
+            }
+
+            if (_register.Password.Length < 8)
+            {
+                _error = "La contrasena debe tener al menos 8 caracteres";
+                _loading = false;
+                return;
+            }
+
+            var result = await _authService.RegisterAsync(_register);
+
+            if (result is not null)
+            {
+                _success = true;
+            }
+            else
+            {
+                _error = "Error al crear la cuenta";
+            }
+        }
+        catch
+        {
+            _error = "Error al conectar con el servidor";
+        }
+
+        _loading = false;
+    }
+}

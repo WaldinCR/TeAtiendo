@@ -1,0 +1,121 @@
+﻿@page "/reservas/crear/{RestauranteId:guid}"
+@rendermode InteractiveServer
+
+<h3>Crear Reserva</h3>
+
+<ErrorAlert Message="@_error" />
+
+@if (_success)
+{
+    <div class="alert alert-success">
+        Reserva creada exitosamente. <a href="/reservas">Ver mis reservas</a>
+    </div>
+}
+else
+{
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label">Fecha de reserva</label>
+                <InputDate class="form-control" @bind-Value="_fecha" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Cantidad de personas</label>
+                <InputNumber class="form-control" @bind-Value="_cantidad" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Mesa</label>
+                <select class="form-select" @bind="_mesaId">
+                    <option value="">Seleccionar mesa</option>
+                    @if (_mesas is not null)
+                    {
+                        @foreach (var m in _mesas)
+                        {
+                            <option value="@m.Id">Mesa @m.NumeroMesa (capacidad: @m.Capacidad)</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Horario disponible</label>
+                <select class="form-select" @bind="_disponibilidadId">
+                    <option value="">Seleccionar horario</option>
+                    @if (_disponibilidades is not null)
+                    {
+                        @foreach (var d in _disponibilidades)
+                        {
+                            <option value="@d.Id">@d.HoraInicio - @d.HoraFin</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <button class="btn btn-success" @onclick="Crear" disabled="@_loading">
+                @if (_loading)
+                {
+                    <span class="spinner-border spinner-border-sm me-1"></span>
+                }
+                Confirmar Reserva
+            </button>
+            <a href="/restaurantes/@RestauranteId" class="btn btn-outline-secondary ms-2">Cancelar</a>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid RestauranteId { get; set; }
+    [Inject] private IApiService _api { get; set; } = default!;
+    [Inject] private IAuthService _auth { get; set; } = default!;
+
+    private List<MesaResponse>? _mesas;
+    private List<DisponibilidadResponse>? _disponibilidades;
+    private DateTime _fecha = DateTime.Today;
+    private int _cantidad = 2;
+    private string _mesaId = string.Empty;
+    private string _disponibilidadId = string.Empty;
+    private string _error = string.Empty;
+    private bool _loading = false;
+    private bool _success = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _mesas = await _api.GetAsync<List<MesaResponse>>($"api/Mesas/restaurante/{RestauranteId}");
+        _disponibilidades = await _api.GetAsync<List<DisponibilidadResponse>>($"api/Disponibilidades/restaurante/{RestauranteId}");
+    }
+
+    private async Task Crear()
+    {
+        _error = string.Empty;
+        _loading = true;
+
+        if (string.IsNullOrEmpty(_mesaId) || string.IsNullOrEmpty(_disponibilidadId))
+        {
+            _error = "Selecciona una mesa y un horario";
+            _loading = false;
+            return;
+        }
+
+        var reserva = new
+        {
+            UsuarioId = _auth.CurrentUser!.Id,
+            RestauranteId = RestauranteId,
+            MesaId = Guid.Parse(_mesaId),
+            DisponibilidadId = Guid.Parse(_disponibilidadId),
+            FechaReserva = _fecha,
+            CantidadPersonas = _cantidad,
+            EstadoReserva = 1
+        };
+
+        var result = await _api.PostAsync<ReservaResponse>("api/Reservas", reserva);
+
+        if (result is not null)
+            _success = true;
+        else
+            _error = "Error al crear la reserva. Verifica los datos.";
+
+        _loading = false;
+    }
+}

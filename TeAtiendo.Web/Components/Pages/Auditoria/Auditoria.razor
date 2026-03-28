@@ -1,0 +1,110 @@
+﻿@page "/auditoria"
+@rendermode InteractiveServer
+
+<h3>Auditoria del Sistema</h3>
+
+@if (_auth.CurrentUser?.Rol != 3)
+{
+    <div class="alert alert-danger">No tienes permisos para acceder a esta seccion.</div>
+}
+else
+{
+    <div class="row mb-3 g-2">
+        <div class="col-md-3">
+            <label class="form-label">Desde</label>
+            <InputDate class="form-control" @bind-Value="_desde" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Hasta</label>
+            <InputDate class="form-control" @bind-Value="_hasta" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Modulo</label>
+            <InputText class="form-control" @bind-Value="_modulo" placeholder="Ej: reservas, pagos..." />
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+            <button class="btn btn-primary w-100" @onclick="Filtrar">Filtrar</button>
+        </div>
+    </div>
+
+    @if (_loading)
+    {
+        <LoadingSpinner />
+    }
+    else if (_auditorias is null || _auditorias.Count == 0)
+    {
+        <div class="alert alert-info">No hay registros de auditoria.</div>
+    }
+    else
+    {
+        <table class="table table-striped table-sm">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Accion</th>
+                    <th>Modulo</th>
+                    <th>Detalle</th>
+                    <th>IP</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var a in _auditorias)
+                {
+                    <tr>
+                        <td>@a.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@a.Accion</td>
+                        <td><span class="badge bg-secondary">@a.Modulo</span></td>
+                        <td>@a.Detalle</td>
+                        <td><code>@a.Ip</code></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <p class="text-muted">Total: @_auditorias.Count registros</p>
+    }
+}
+
+@code {
+    [Inject] private IApiService _api { get; set; } = default!;
+    [Inject] private IAuthService _auth { get; set; } = default!;
+
+    private List<AuditoriaItem>? _auditorias;
+    private DateTime _desde = DateTime.Today.AddMonths(-1);
+    private DateTime _hasta = DateTime.Today;
+    private string _modulo = string.Empty;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _auditorias = await _api.GetAsync<List<AuditoriaItem>>("api/Auditorias");
+        _loading = false;
+    }
+
+    private async Task Filtrar()
+    {
+        _loading = true;
+
+        if (!string.IsNullOrWhiteSpace(_modulo))
+        {
+            _auditorias = await _api.GetAsync<List<AuditoriaItem>>($"api/Auditorias/modulo/{_modulo}");
+        }
+        else
+        {
+            _auditorias = await _api.GetAsync<List<AuditoriaItem>>(
+                $"api/Auditorias/rango?desde={_desde:yyyy-MM-dd}&hasta={_hasta:yyyy-MM-dd}");
+        }
+
+        _loading = false;
+    }
+
+    private class AuditoriaItem
+    {
+        public Guid Id { get; set; }
+        public DateTime Fecha { get; set; }
+        public string Accion { get; set; } = string.Empty;
+        public string Modulo { get; set; } = string.Empty;
+        public string Detalle { get; set; } = string.Empty;
+        public string Ip { get; set; } = string.Empty;
+    }
+}

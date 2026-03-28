@@ -17,9 +17,11 @@ namespace TeAtiendo.Application.Services
         {
             Id = e.Id,
             UsuarioId = e.UsuarioId,
+            RestauranteId = e.RestauranteId,
             Fecha = e.Fecha,
             Total = e.Total,
             Estado = e.Estado,
+            TipoOrden = e.TipoOrden,
             Detalles = e.Detalles.Select(d => new OrdenDetalleDto
             {
                 PlatoId = d.PlatoId,
@@ -32,11 +34,14 @@ namespace TeAtiendo.Application.Services
         protected override void ApplyDto(OrdenDto dto, Orden e)
         {
             if (dto.UsuarioId == Guid.Empty) throw new ArgumentException("UsuarioId requerido");
+            if (dto.RestauranteId == Guid.Empty) throw new ArgumentException("RestauranteId requerido");
             if (dto.Detalles is null || dto.Detalles.Count == 0) throw new ArgumentException("Debe incluir detalles");
 
             e.UsuarioId = dto.UsuarioId;
+            e.RestauranteId = dto.RestauranteId;
             e.Fecha = dto.Fecha == default ? DateTime.UtcNow : dto.Fecha;
             e.Estado = dto.Estado;
+            e.TipoOrden = dto.TipoOrden ?? "anticipada";
 
             e.Detalles.Clear();
             foreach (var item in dto.Detalles)
@@ -63,6 +68,8 @@ namespace TeAtiendo.Application.Services
         {
             if (dto.UsuarioId == Guid.Empty)
                 throw new ArgumentException("UsuarioId requerido");
+            if (dto.RestauranteId == Guid.Empty)
+                throw new ArgumentException("RestauranteId requerido");
             if (dto.Detalles is null || dto.Detalles.Count == 0)
                 throw new ArgumentException("Debe incluir detalles");
 
@@ -70,12 +77,18 @@ namespace TeAtiendo.Application.Services
             if (usuario is null)
                 throw new InvalidOperationException("Usuario no existe");
 
+            var restaurante = await Uow.Restaurantes.GetByIdAsync(dto.RestauranteId, ct);
+            if (restaurante is null)
+                throw new InvalidOperationException("Restaurante no existe");
+
             var orden = new Orden
             {
                 Id = Guid.NewGuid(),
                 UsuarioId = dto.UsuarioId,
+                RestauranteId = dto.RestauranteId,
                 Fecha = DateTime.UtcNow,
                 Estado = EstadoOrden.Pendiente,
+                TipoOrden = "anticipada",
                 Total = 0
             };
 
@@ -113,6 +126,7 @@ namespace TeAtiendo.Application.Services
             if (orden is null) return null;
 
             orden.Estado = nuevoEstado;
+            orden.FechaModificacion = DateTime.UtcNow;
 
             await Uow.Ordenes.UpdateAsync(orden, ct);
             await Uow.SaveAsync(ct);

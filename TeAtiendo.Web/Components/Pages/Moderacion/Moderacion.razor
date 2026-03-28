@@ -1,0 +1,219 @@
+﻿@page "/moderacion"
+@rendermode InteractiveServer
+
+<h3>Moderacion de Contenido</h3>
+
+@if (_auth.CurrentUser?.Rol != 3)
+{
+    <div class="alert alert-danger">No tienes permisos para acceder a esta seccion.</div>
+}
+else
+{
+    <ErrorAlert Message="@_error" />
+
+    @if (_successMsg is not null)
+    {
+        <div class="alert alert-success">@_successMsg</div>
+    }
+
+    <div class="row mb-3 g-2">
+        <div class="col-md-4">
+            <select class="form-select" @bind="_filtroEstado">
+                <option value="">Todos los estados</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="aprobado">Aprobado</option>
+                <option value="rechazado">Rechazado</option>
+                <option value="eliminado">Eliminado</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <select class="form-select" @bind="_filtroTipo">
+                <option value="">Todos los tipos</option>
+                <option value="resena">Resenas</option>
+                <option value="restaurante">Restaurantes</option>
+                <option value="menu">Menus</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <button class="btn btn-primary w-100" @onclick="Filtrar">Filtrar</button>
+        </div>
+    </div>
+
+    @if (_loading)
+    {
+        <LoadingSpinner />
+    }
+    else if (_items is null || _items.Count == 0)
+    {
+        <div class="alert alert-info">No hay registros de moderacion.</div>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>Motivo</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var m in _items)
+                {
+                    <tr>
+                        <td>@m.Fecha.ToString("dd/MM/yyyy")</td>
+                        <td><span class="badge bg-info">@m.TipoContenido</span></td>
+                        <td>@m.Motivo</td>
+                        <td>
+                            <span class="badge @GetEstadoBadge(m.Estado)">@m.Estado</span>
+                        </td>
+                        <td>
+                            @if (m.Estado == "pendiente")
+                            {
+                                <button class="btn btn-success btn-sm me-1" @onclick="@(() => CambiarEstado(m.Id, "aprobado"))">Aprobar</button>
+                                <button class="btn btn-warning btn-sm me-1" @onclick="@(() => CambiarEstado(m.Id, "rechazado"))">Rechazar</button>
+                                <button class="btn btn-danger btn-sm" @onclick="@(() => CambiarEstado(m.Id, "eliminado"))">Eliminar</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <p class="text-muted">Total: @_items.Count registros</p>
+    }
+
+    <hr />
+    <h5>Reportar contenido</h5>
+    <div class="card">
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <select class="form-select" @bind="_nuevoTipo">
+                        <option value="resena">Resena</option>
+                        <option value="restaurante">Restaurante</option>
+                        <option value="menu">Menu</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <InputText class="form-control" @bind-Value="_nuevoContenidoId" placeholder="ID del contenido" />
+                </div>
+                <div class="col-md-4">
+                    <InputText class="form-control" @bind-Value="_nuevoMotivo" placeholder="Motivo del reporte" />
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" @onclick="Crear">Reportar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Inject] private IApiService _api { get; set; } = default!;
+    [Inject] private IAuthService _auth { get; set; } = default!;
+
+    private List<ModeracionItem>? _items;
+    private string _filtroEstado = string.Empty;
+    private string _filtroTipo = string.Empty;
+    private string _nuevoTipo = "resena";
+    private string _nuevoContenidoId = string.Empty;
+    private string _nuevoMotivo = string.Empty;
+    private string _error = string.Empty;
+    private string? _successMsg;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _items = await _api.GetAsync<List<ModeracionItem>>("api/Moderacion");
+        _loading = false;
+    }
+
+    private async Task Filtrar()
+    {
+        _loading = true;
+
+        if (!string.IsNullOrWhiteSpace(_filtroEstado))
+            _items = await _api.GetAsync<List<ModeracionItem>>($"api/Moderacion/estado/{_filtroEstado}");
+        else if (!string.IsNullOrWhiteSpace(_filtroTipo))
+            _items = await _api.GetAsync<List<ModeracionItem>>($"api/Moderacion/tipo/{_filtroTipo}");
+        else
+            _items = await _api.GetAsync<List<ModeracionItem>>("api/Moderacion");
+
+        _loading = false;
+    }
+
+    private async Task CambiarEstado(Guid id, string nuevoEstado)
+    {
+        _error = string.Empty;
+        _successMsg = null;
+
+        var result = await _api.PostAsync<object>($"api/Moderacion/{id}/estado", new { NuevoEstado = nuevoEstado });
+
+        if (result is not null)
+        {
+            _successMsg = $"Estado cambiado a {nuevoEstado}";
+            await Filtrar();
+        }
+        else
+        {
+            _error = "Error al cambiar el estado";
+        }
+    }
+
+    private async Task Crear()
+    {
+        _error = string.Empty;
+        _successMsg = null;
+
+        if (!Guid.TryParse(_nuevoContenidoId, out Guid contenidoId))
+        {
+            _error = "ID de contenido invalido";
+            return;
+        }
+
+        var item = new
+        {
+            AdminId = _auth.CurrentUser!.Id,
+            TipoContenido = _nuevoTipo,
+            ContenidoId = contenidoId,
+            Motivo = _nuevoMotivo,
+            Estado = "pendiente",
+            Fecha = DateTime.UtcNow
+        };
+
+        var result = await _api.PostAsync<object>("api/Moderacion", item);
+
+        if (result is not null)
+        {
+            _successMsg = "Reporte creado exitosamente";
+            _nuevoContenidoId = string.Empty;
+            _nuevoMotivo = string.Empty;
+            _items = await _api.GetAsync<List<ModeracionItem>>("api/Moderacion");
+        }
+        else
+        {
+            _error = "Error al crear el reporte";
+        }
+    }
+
+    private string GetEstadoBadge(string estado) => estado switch
+    {
+        "pendiente" => "bg-warning",
+        "aprobado" => "bg-success",
+        "rechazado" => "bg-secondary",
+        "eliminado" => "bg-danger",
+        _ => "bg-dark"
+    };
+
+    private class ModeracionItem
+    {
+        public Guid Id { get; set; }
+        public DateTime Fecha { get; set; }
+        public string TipoContenido { get; set; } = string.Empty;
+        public string Motivo { get; set; } = string.Empty;
+        public string Estado { get; set; } = string.Empty;
+    }
+}

@@ -1,0 +1,64 @@
+﻿@page "/restaurantes/{Id:guid}"
+@rendermode InteractiveServer
+
+@if (_loading)
+{
+    <LoadingSpinner />
+}
+else if (_restaurante is null)
+{
+    <div class="alert alert-warning">Restaurante no encontrado.</div>
+}
+else
+{
+    <div class="card shadow">
+        <div class="card-body">
+            <h3>@_restaurante.Nombre</h3>
+            <p><strong>Direccion:</strong> @_restaurante.Direccion</p>
+            <p><strong>Telefono:</strong> @_restaurante.Telefono</p>
+            <p><strong>Correo:</strong> @_restaurante.Correo</p>
+            <p><strong>Horario:</strong> @_restaurante.HorarioApertura - @_restaurante.HorarioCierre</p>
+        </div>
+    </div>
+
+    <div class="mt-4 d-flex gap-2">
+        <a href="/reservas/crear/@Id" class="btn btn-success">Hacer Reserva</a>
+        <a href="/ordenes/crear/@Id" class="btn btn-primary">Crear Orden</a>
+        <a href="/restaurantes" class="btn btn-outline-secondary">Volver</a>
+    </div>
+
+    <h4 class="mt-4">Menus</h4>
+    @if (_menus is null || _menus.Count == 0)
+    {
+        <p class="text-muted">Este restaurante no tiene menus registrados.</p>
+    }
+    else
+    {
+        @foreach (var menu in _menus)
+        {
+            <div class="card mb-2">
+                <div class="card-body">
+                    <h5>@menu.Nombre</h5>
+                    <p class="text-muted">@menu.Descripcion</p>
+                </div>
+            </div>
+        }
+    }
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    [Inject] private IApiService _api { get; set; } = default!;
+
+    private RestauranteResponse? _restaurante;
+    private List<MenuResponse>? _menus;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _restaurante = await _api.GetAsync<RestauranteResponse>($"api/Restaurantes/{Id}");
+        _menus = await _api.GetAsync<List<MenuResponse>>("api/Menus");
+        _menus = _menus?.Where(m => m.RestauranteId == Id).ToList();
+        _loading = false;
+    }
+}

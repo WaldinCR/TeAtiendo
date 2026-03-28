@@ -1,0 +1,74 @@
+﻿@page "/login"
+@rendermode InteractiveServer
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5">
+        <div class="card shadow">
+            <div class="card-body p-4">
+                <h3 class="text-center mb-4">Iniciar Sesion</h3>
+
+                <ErrorAlert Message="@_error" />
+
+                <EditForm Model="_login" OnValidSubmit="HandleLogin" FormName="loginForm">
+                    <div class="mb-3">
+                        <label class="form-label">Correo electronico</label>
+                        <InputText class="form-control" @bind-Value="_login.Correo" placeholder="correo@ejemplo.com" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Contrasena</label>
+                        <InputText type="password" class="form-control" @bind-Value="_login.Password" placeholder="********" />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100" disabled="@_loading">
+                        @if (_loading)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        Iniciar Sesion
+                    </button>
+                </EditForm>
+
+                <hr />
+                <p class="text-center text-muted">
+                    No tienes cuenta? <a href="/register">Registrate aqui</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Inject] private IAuthService _authService { get; set; } = default!;
+    [Inject] private NavigationManager _nav { get; set; } = default!;
+
+    private LoginRequest _login = new();
+    private string _error = string.Empty;
+    private bool _loading = false;
+
+    private async Task HandleLogin()
+    {
+        _loading = true;
+        _error = string.Empty;
+
+        try
+        {
+            var result = await _authService.LoginAsync(_login);
+
+            if (result is not null && result.Success)
+            {
+                _nav.NavigateTo("/");
+            }
+            else
+            {
+                _error = result?.Message ?? "Credenciales invalidas";
+            }
+        }
+        catch
+        {
+            _error = "Error al conectar con el servidor";
+        }
+
+        _loading = false;
+    }
+}
