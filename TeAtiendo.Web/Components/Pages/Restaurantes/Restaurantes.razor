@@ -1,75 +1,132 @@
 ﻿@page "/restaurantes"
+@layout TeAtiendo.Web.Components.Layout.MainLayout
+@inject IApiService ApiService
+@inject NavigationManager Navigation
 @rendermode InteractiveServer
 
-<h3>Restaurantes</h3>
-
-<div class="mb-3">
-    <input type="text" class="form-control" placeholder="Buscar restaurante..." @bind="_busqueda" @bind:event="oninput" @onkeyup="Buscar" />
-</div>
-
-@if (_loading)
-{
-    <LoadingSpinner />
-}
-else if (_restaurantes is null || _restaurantes.Count == 0)
-{
-    <div class="alert alert-info">No se encontraron restaurantes.</div>
-}
-else
-{
-    <div class="row g-3">
-        @foreach (var r in _restaurantes)
-        {
-            <div class="col-md-4">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title">@r.Nombre</h5>
-                        <p class="text-muted mb-1">@r.Direccion</p>
-                        <p class="text-muted mb-1">Tel: @r.Telefono</p>
-                        <p class="text-muted mb-1">Horario: @r.HorarioApertura - @r.HorarioCierre</p>
-                    </div>
-                    <div class="card-footer">
-                        <a href="/restaurantes/@r.Id" class="btn btn-primary btn-sm">Ver detalle</a>
-                    </div>
-                </div>
-            </div>
-        }
+<section class="ta-sec">
+    <div class="ta-sec__head">
+        <div>
+            <h2 class="ta-sec__title">Restaurantes <span>Disponibles</span></h2>
+            <p class="ta-sec__sub">@(_filtered != null ? _filtered.Count + " restaurantes encontrados" : "Buscando...")</p>
+        </div>
     </div>
-}
+
+    <div style="margin-bottom:20px;">
+        <div class="ta-search__wrap" style="max-width:100%;border-radius:var(--r-sm);height:50px;">
+            <i class="ta-search__ico bi bi-search"></i>
+            <input class="ta-search__input" type="search"
+                   placeholder="Buscar por nombre, direccion..."
+                   @bind="_searchQuery" @bind:event="oninput" @onkeyup="FilterList" />
+            @if (!string.IsNullOrEmpty(_searchQuery))
+            {
+                <button style="background:none;border:none;color:var(--text-3);font-size:1rem;cursor:pointer;" @onclick="ClearSearch">
+                    <i class="bi bi-x-circle-fill"></i>
+                </button>
+            }
+        </div>
+    </div>
+
+    <CategoryPills OnCategoryChanged="HandleCat" />
+</section>
+
+<section class="ta-sec" style="padding-top:16px;">
+    @if (_isLoading)
+    {
+        <LoadingSpinner Mode="skeleton-cards" Count="6" />
+    }
+    else if (_filtered != null && _filtered.Any())
+    {
+        <div class="ta-r-grid">
+            @foreach (var rest in _filtered)
+            {
+                <RestauranteCard RestauranteId="@rest.Id.ToString()"
+                                 Nombre="@rest.Nombre"
+                                 ImageUrl="@GetImage(rest.Nombre)"
+                                 Direccion="@GetShort(rest.Direccion)"
+                                 Telefono="@rest.Telefono"
+                                 Horario="@FmtHorario(rest.HorarioApertura, rest.HorarioCierre)"
+                                 Rating="@GetRating(rest.Nombre)"
+                                 TotalResenas="@GetReviews(rest.Nombre)"
+                                 MesasDisponibles="5"
+                                 Tags="@GetTags(rest.Nombre)"
+                                 Categoria="@GetCat(rest.Nombre)" />
+            }
+        </div>
+    }
+    else
+    {
+        <EmptyState Icon="bi-search" Title="Sin resultados" Message="No encontramos restaurantes con ese criterio.">
+            <button class="ta-btn-primary" @onclick="ClearSearch"><i class="bi bi-arrow-counterclockwise"></i> Limpiar</button>
+        </EmptyState>
+    }
+</section>
 
 @code {
-    [Inject] private IApiService _api { get; set; } = default!;
+    private bool _isLoading = true;
+    private string _searchQuery = "";
+    private List<RDto>? _all;
+    private List<RDto>? _filtered;
 
-    private List<RestauranteResponse>? _restaurantes;
-    private string _busqueda = string.Empty;
-    private bool _loading = true;
+    [SupplyParameterFromQuery(Name = "buscar")]
+    public string? BuscarQuery { get; set; }
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await CargarRestaurantes();
-    }
-
-    private async Task CargarRestaurantes()
-    {
-        _loading = true;
-        var response = await _api.GetAsync<RestauranteApiResponse>("api/Restaurantes");
-        _restaurantes = response?.Data;
-        _loading = false;
-    }
-
-    private async Task Buscar()
-    {
-        _loading = true;
-        if (string.IsNullOrWhiteSpace(_busqueda))
+        if (firstRender)
         {
-            var response = await _api.GetAsync<RestauranteApiResponse>("api/Restaurantes");
-            _restaurantes = response?.Data;
+            if (!string.IsNullOrEmpty(BuscarQuery)) _searchQuery = BuscarQuery;
+            await Load();
+            StateHasChanged();
         }
-        else
-        {
-            var response = await _api.GetAsync<RestauranteApiResponse>($"api/Restaurantes/buscar?nombre={_busqueda}");
-            _restaurantes = response?.Data;
-        }
-        _loading = false;
     }
+
+    private async Task Load()
+    {
+        _isLoading = true;
+        try
+        {
+            var r = await ApiService.GetAsync<ApiResp>("api/Restaurantes");
+            if (r?.Data != null) { _all = r.Data; FilterList(); }
+        }
+        catch { }
+        finally { _isLoading = false; }
+    }
+
+    private void FilterList()
+    {
+        if (_all == null) return;
+        if (string.IsNullOrWhiteSpace(_searchQuery)) { _filtered = _all.ToList(); return; }
+        var q = _searchQuery.ToLower();
+        _filtered = _all.Where(r =>
+            (r.Nombre?.ToLower().Contains(q) ?? false) ||
+            (r.Direccion?.ToLower().Contains(q) ?? false) ||
+            (r.Telefono?.Contains(q) ?? false)
+        ).ToList();
+    }
+
+    private void ClearSearch() { _searchQuery = ""; FilterList(); }
+    private void HandleCat(int? c) { FilterList(); }
+
+    private string GetImage(string? n)
+    {
+        var i = new string[] {
+            "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=700&q=80",
+            "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=700&q=80",
+            "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=700&q=80",
+            "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=700&q=80",
+            "https://images.unsplash.com/photo-1544025162-d76694265947?w=700&q=80",
+            "https://images.unsplash.com/photo-1565299507177-b0ac66763828?w=700&q=80"
+        };
+        return i[Math.Abs((n ?? "").GetHashCode()) % i.Length];
+    }
+    private string GetShort(string? d) { if (string.IsNullOrEmpty(d)) return "Santo Domingo"; var p = d.Split(','); return p.Length > 1 ? p[p.Length - 1].Trim() : d; }
+    private string FmtHorario(string? a, string? c) { if (string.IsNullOrEmpty(a) || string.IsNullOrEmpty(c)) return ""; return a.Substring(0, Math.Min(5, a.Length)) + " - " + c.Substring(0, Math.Min(5, c.Length)); }
+    private double GetRating(string? n) { return 4.0 + Math.Abs((n ?? "").GetHashCode() % 10) * 0.1; }
+    private int GetReviews(string? n) { return 50 + Math.Abs((n ?? "").GetHashCode() % 200); }
+    private List<string> GetTags(string? n) { var l = (n ?? "").ToLower(); if (l.Contains("criolla") || l.Contains("abuela")) return new List<string> { "Criolla", "Local" }; if (l.Contains("seafood")) return new List<string> { "Mariscos", "Fresco" }; return new List<string> { "Restaurante" }; }
+    private string GetCat(string? n) { var l = (n ?? "").ToLower(); if (l.Contains("criolla")) return "Criolla"; if (l.Contains("seafood")) return "Mariscos"; return "Dominicana"; }
+
+    private class ApiResp { public string? Message { get; set; } public List<RDto>? Data { get; set; } }
+    private class RDto { public Guid Id { get; set; } public string Nombre { get; set; } = ""; public string? Direccion { get; set; } public string? Telefono { get; set; } public string? Correo { get; set; } public string? HorarioApertura { get; set; } public string? HorarioCierre { get; set; } }
 }

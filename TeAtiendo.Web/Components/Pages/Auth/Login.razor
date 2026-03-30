@@ -1,74 +1,165 @@
 ﻿@page "/login"
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
 @rendermode InteractiveServer
 
-<div class="row justify-content-center mt-5">
-    <div class="col-md-5">
-        <div class="card shadow">
-            <div class="card-body p-4">
-                <h3 class="text-center mb-4">Iniciar Sesion</h3>
-
-                <ErrorAlert Message="@_error" />
-
-                <EditForm Model="_login" OnValidSubmit="HandleLogin" FormName="loginForm">
-                    <div class="mb-3">
-                        <label class="form-label">Correo electronico</label>
-                        <InputText class="form-control" @bind-Value="_login.Correo" placeholder="correo@ejemplo.com" />
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Contrasena</label>
-                        <InputText type="password" class="form-control" @bind-Value="_login.Password" placeholder="********" />
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100" disabled="@_loading">
-                        @if (_loading)
-                        {
-                            <span class="spinner-border spinner-border-sm me-1"></span>
-                        }
-                        Iniciar Sesion
-                    </button>
-                </EditForm>
-
-                <hr />
-                <p class="text-center text-muted">
-                    No tienes cuenta? <a href="/register">Registrate aqui</a>
-                </p>
+@if (_loginSuccess)
+{
+    <div class="ta-auth-page">
+        <div class="ta-auth-card ta-animate-fade-up" style="text-align:center;">
+            <div style="width:72px;height:72px;border-radius:50%;background:rgba(34,197,94,.1);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.7rem;color:#22C55E;animation:popIn .5s cubic-bezier(.34,1.56,.64,1);">
+                <i class="bi bi-check-lg"></i>
             </div>
+            <h1 class="ta-auth-card__title">Bienvenido!</h1>
+            <p class="ta-auth-card__sub">Hola @_welcomeName, redirigiendo...</p>
         </div>
     </div>
-</div>
+}
+else
+{
+    <div class="ta-auth-page">
+        <div class="ta-auth-card ta-animate-fade-up">
+
+            <div class="ta-auth-card__logo">
+                <div class="ta-logo__mark" style="width:48px;height:48px;font-size:1.4rem;">
+                    <i class="bi bi-shop"></i>
+                </div>
+                <span class="ta-logo__text" style="font-size:1.5rem;">Te <span>Atiendo</span></span>
+            </div>
+
+            <h1 class="ta-auth-card__title">Iniciar Sesion</h1>
+            <p class="ta-auth-card__sub">Ingresa tus credenciales para acceder a tu cuenta</p>
+
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <ErrorAlert Type="error" Message="@_errorMessage" Dismissible="true" OnDismiss="ClearError" />
+            }
+
+            <div class="ta-auth-card__form">
+                <div class="ta-form-group">
+                    <label class="ta-form-label">
+                        <i class="bi bi-envelope" style="margin-right:4px;"></i> Correo electronico
+                    </label>
+                    <input class="ta-form-input"
+                           type="email"
+                           placeholder="tu@correo.com"
+                           @bind="_email"
+                           @onkeydown="HandleKeyDown" />
+                </div>
+
+                <div class="ta-form-group">
+                    <label class="ta-form-label">
+                        <i class="bi bi-lock" style="margin-right:4px;"></i> Contrasena
+                    </label>
+                    <div style="position:relative;">
+                        <input class="ta-form-input"
+                               type="@(_showPassword ? "text" : "password")"
+                               placeholder="Tu contrasena"
+                               style="padding-right:44px;"
+                               @bind="_password"
+                               @onkeydown="HandleKeyDown" />
+                        <button style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-3);font-size:1rem;cursor:pointer;"
+                                @onclick="TogglePassword"
+                                type="button">
+                            <i class="bi @(_showPassword ? "bi-eye-slash" : "bi-eye")"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button class="ta-btn-primary ta-btn-primary--lg ta-btn-primary--full"
+                        @onclick="HandleLogin"
+                        disabled="@_isLoading">
+                    @if (_isLoading)
+                    {
+                        <div class="ta-spinner" style="width:18px;height:18px;border-width:2px;border-top-color:white;border-color:rgba(255,255,255,.3);"></div>
+                        <span>Ingresando...</span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-box-arrow-in-right"></i>
+                        <span>Iniciar Sesion</span>
+                    }
+                </button>
+            </div>
+
+            <div class="ta-auth-card__footer">
+                No tienes cuenta? <a href="/register">Registrate aqui</a>
+            </div>
+
+        </div>
+    </div>
+}
 
 @code {
-    [Inject] private IAuthService _authService { get; set; } = default!;
-    [Inject] private NavigationManager _nav { get; set; } = default!;
+    private string _email = "";
+    private string _password = "";
+    private string _errorMessage = "";
+    private bool _isLoading = false;
+    private bool _showPassword = false;
+    private bool _loginSuccess = false;
+    private string _welcomeName = "";
 
-    private LoginRequest _login = new();
-    private string _error = string.Empty;
-    private bool _loading = false;
+    private void TogglePassword()
+    {
+        _showPassword = !_showPassword;
+    }
+
+    private void ClearError()
+    {
+        _errorMessage = "";
+    }
 
     private async Task HandleLogin()
     {
-        _loading = true;
-        _error = string.Empty;
+        _errorMessage = "";
+
+        if (string.IsNullOrWhiteSpace(_email) || string.IsNullOrWhiteSpace(_password))
+        {
+            _errorMessage = "Correo y contrasena son requeridos.";
+            return;
+        }
+
+        _isLoading = true;
 
         try
         {
-            var result = await _authService.LoginAsync(_login);
+            var request = new LoginRequest
+            {
+                Correo = _email,
+                Password = _password
+            };
+
+            var result = await AuthService.LoginAsync(request);
 
             if (result is not null && result.Success)
             {
-                _nav.NavigateTo("/");
+                _welcomeName = result.User?.Nombre ?? "Usuario";
+                _loginSuccess = true;
+                StateHasChanged();
+
+                await Task.Delay(1500);
+                Navigation.NavigateTo("/", true);
             }
             else
             {
-                _error = result?.Message ?? "Credenciales invalidas";
+                _errorMessage = string.IsNullOrWhiteSpace(result?.Message)
+                    ? "Credenciales incorrectas. Verifica tu correo y contrasena."
+                    : result!.Message;
             }
         }
-        catch
+        catch (Exception ex)
         {
-            _error = "Error al conectar con el servidor";
+            _errorMessage = "Error al conectar con el servidor: " + ex.Message;
         }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
 
-        _loading = false;
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            await HandleLogin();
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace TeAtiendo.Web.Models.Requets
+﻿namespace TeAtiendo.Web.Models.Requests
 {
     public class RegisterRequest
     {

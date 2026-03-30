@@ -1,0 +1,50 @@
+@* StarRating.razor — *@
+
+<div class="ta-stars" role="group" aria-label="Calificacion">
+    @for (int i = 1; i <= MaxStars; i++)
+    {
+        var star = i;
+        <button class="ta-star @(star <= Value ? "filled" : "")"
+                @onclick="() => SetRating(star)"
+                @onmouseover="() => _hoverValue = star"
+                @onmouseout="() => _hoverValue = 0"
+                disabled="@ReadOnly"
+                aria-label="@star estrellas"
+                style="@(ReadOnly ? "cursor:default;" : "")">
+            <i class="bi @(star <= (_hoverValue > 0 ? _hoverValue : Value) ? "bi-star-fill" : "bi-star")"></i>
+        </button>
+    }
+
+    @if (ShowValue && Value > 0)
+    {
+        <span style="font-size:.85rem;font-weight:700;color:var(--text);margin-left:6px;">
+            @Value.ToString("0.0")
+        </span>
+    }
+
+    @if (ShowCount && TotalCount > 0)
+    {
+        <span style="font-size:.78rem;color:var(--text-3);margin-left:4px;">
+            (@TotalCount)
+        </span>
+    }
+</div>
+
+@code {
+    [Parameter] public double Value { get; set; }
+    [Parameter] public int MaxStars { get; set; } = 5;
+    [Parameter] public bool ReadOnly { get; set; } = false;
+    [Parameter] public bool ShowValue { get; set; } = false;
+    [Parameter] public bool ShowCount { get; set; } = false;
+    [Parameter] public int TotalCount { get; set; }
+    [Parameter] public EventCallback<int> OnRatingChanged { get; set; }
+
+    private int _hoverValue = 0;
+
+    private async Task SetRating(int rating)
+    {
+        if (ReadOnly) return;
+        Value = rating;
+        await OnRatingChanged.InvokeAsync(rating);
+    }
+}

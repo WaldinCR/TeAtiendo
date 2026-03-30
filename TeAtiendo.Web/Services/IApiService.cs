@@ -6,6 +6,7 @@
         Task<T?> PostAsync<T>(string url, object data);
         Task<T?> PutAsync<T>(string url, object data);
         Task<bool> DeleteAsync(string url);
+        Task<T?> PatchAsync<T>(string url, object data);
         void SetToken(string token);
     }
 }

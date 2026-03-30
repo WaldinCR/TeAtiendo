@@ -1,127 +1,97 @@
 ﻿@page "/resenas"
+@layout TeAtiendo.Web.Components.Layout.MainLayout
+@inject IApiService ApiService
+@inject Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedSessionStorage SessionStorage
 @rendermode InteractiveServer
 
-<h3>Resenas</h3>
-
-<ErrorAlert Message="@_error" />
-
-@if (_successMsg is not null)
-{
-    <div class="alert alert-success">@_successMsg</div>
-}
-
-<div class="card shadow mb-4">
-    <div class="card-body">
-        <h5>Dejar una resena</h5>
-        <div class="mb-3">
-            <label class="form-label">Restaurante ID</label>
-            <InputText class="form-control" @bind-Value="_restauranteId" placeholder="ID del restaurante" />
+<section class="ta-sec">
+    <div class="ta-sec__head">
+        <div>
+            <h2 class="ta-sec__title">Mis <span>Resenas</span></h2>
+            <p class="ta-sec__sub">Tus opiniones sobre los restaurantes</p>
         </div>
-        <div class="mb-3">
-            <label class="form-label">Reserva u Orden ID (opcional)</label>
-            <InputText class="form-control" @bind-Value="_referenciaId" placeholder="ID de reserva u orden" />
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Calificacion (1-5)</label>
-            <InputNumber class="form-control" @bind-Value="_calificacion" />
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Comentario</label>
-            <InputTextArea class="form-control" @bind-Value="_comentario" rows="3" />
-        </div>
-        <button class="btn btn-primary" @onclick="Enviar" disabled="@_loading">
-            @if (_loading)
-            {
-                <span class="spinner-border spinner-border-sm me-1"></span>
-            }
-            Enviar Resena
-        </button>
     </div>
-</div>
+</section>
 
-<h5>Mis resenas</h5>
-@if (_resenas is null || _resenas.Count == 0)
-{
-    <p class="text-muted">No has dejado resenas.</p>
-}
-else
-{
-    @foreach (var r in _resenas)
+<section class="ta-sec" style="padding-top:0;">
+    @if (_isLoading)
     {
-        <div class="card mb-2">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <strong>Calificacion: @r.Calificacion / 5</strong>
-                    <small class="text-muted">@r.Fecha.ToString("dd/MM/yyyy")</small>
+        <LoadingSpinner Mode="skeleton-list" Count="3" />
+    }
+    else if (_resenas.Any())
+    {
+        <div style="display:flex;flex-direction:column;gap:14px;">
+            @foreach (var r in _resenas.OrderByDescending(x => x.FechaCreacion))
+            {
+                <div class="ta-card ta-animate-fade-up" style="padding:20px;">
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <div style="width:44px;height:44px;border-radius:12px;background:var(--warning-bg);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--warning);">
+                                <i class="bi bi-star-fill"></i>
+                            </div>
+                            <div>
+                                <div style="font-weight:700;font-size:.92rem;">Restaurante</div>
+                                <div style="font-size:.75rem;color:var(--text-3);">@r.FechaCreacion.ToString("dd MMM yyyy")</div>
+                            </div>
+                        </div>
+                        <StarRating Value="@r.Calificacion" ReadOnly="true" ShowValue="true" />
+                    </div>
+                    @if (!string.IsNullOrEmpty(r.Comentario))
+                    {
+                        <p style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);font-size:.88rem;color:var(--text-2);line-height:1.6;">@r.Comentario</p>
+                    }
                 </div>
-                <p>@r.Comentario</p>
-            </div>
+            }
         </div>
     }
-}
+    else
+    {
+        <EmptyState Icon="bi-star" Title="Sin resenas" Message="Aun no has dejado ninguna resena." />
+    }
+</section>
 
 @code {
-    [Inject] private IApiService _api { get; set; } = default!;
-    [Inject] private IAuthService _auth { get; set; } = default!;
+    private bool _isLoading = true;
+    private string _userId = "";
+    private List<ResenaDto> _resenas = new();
 
-    private List<ResenaResponse>? _resenas;
-    private string _restauranteId = string.Empty;
-    private string _referenciaId = string.Empty;
-    private int _calificacion = 5;
-    private string _comentario = string.Empty;
-    private string _error = string.Empty;
-    private string? _successMsg;
-    private bool _loading = false;
-
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (_auth.CurrentUser is not null)
-            _resenas = await _api.GetAsync<List<ResenaResponse>>($"api/Resenas/usuario/{_auth.CurrentUser.Id}");
+        if (firstRender)
+        {
+            try
+            {
+                var idResult = await SessionStorage.GetAsync<string>("userId");
+                if (idResult.Success) _userId = idResult.Value ?? "";
+            }
+            catch { }
+            await LoadResenas();
+            StateHasChanged();
+        }
     }
 
-    private async Task Enviar()
+    private async Task LoadResenas()
     {
-        _error = string.Empty;
-        _successMsg = null;
-        _loading = true;
-
-        if (!Guid.TryParse(_restauranteId, out Guid restId))
+        _isLoading = true;
+        try
         {
-            _error = "ID de restaurante invalido";
-            _loading = false;
-            return;
+            if (!string.IsNullOrEmpty(_userId))
+            {
+                var result = await ApiService.GetAsync<List<ResenaDto>>("api/Resenas/usuario/" + _userId);
+                if (result != null) _resenas = result;
+            }
         }
+        catch { }
+        finally { _isLoading = false; }
+    }
 
-        Guid? reservaId = null;
-        Guid? ordenId = null;
-        if (Guid.TryParse(_referenciaId, out Guid refId))
-            reservaId = refId;
-
-        var resena = new
-        {
-            UsuarioId = _auth.CurrentUser!.Id,
-            RestauranteId = restId,
-            ReservaId = reservaId,
-            OrdenId = ordenId,
-            Calificacion = _calificacion,
-            Comentario = _comentario,
-            Fecha = DateTime.UtcNow,
-            Estado = 1
-        };
-
-        var result = await _api.PostAsync<ResenaResponse>("api/Resenas", resena);
-
-        if (result is not null)
-        {
-            _successMsg = "Resena enviada exitosamente";
-            _comentario = string.Empty;
-            _resenas = await _api.GetAsync<List<ResenaResponse>>($"api/Resenas/usuario/{_auth.CurrentUser.Id}");
-        }
-        else
-        {
-            _error = "Error al enviar la resena. Asegurate de tener una reserva u orden asociada.";
-        }
-
-        _loading = false;
+    private class ResenaDto
+    {
+        public Guid Id { get; set; }
+        public Guid UsuarioId { get; set; }
+        public Guid RestauranteId { get; set; }
+        public int Calificacion { get; set; }
+        public string? Comentario { get; set; }
+        public DateTime FechaCreacion { get; set; }
     }
 }

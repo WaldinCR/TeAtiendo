@@ -1,4 +1,4 @@
-﻿using TeAtiendo.Web.Models.Requets;
+﻿using TeAtiendo.Web.Models.Requests;
 using TeAtiendo.Web.Models.Reponses;
 
 namespace TeAtiendo.Web.Services

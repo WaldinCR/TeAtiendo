@@ -1,14 +1,74 @@
-﻿@if (Visible)
+﻿@* LoadingSpinner.razor — Spinner y skeleton loaders *@
+
+@if (Mode == "spinner")
 {
-    <div class="d-flex justify-content-center align-items-center p-4">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Cargando...</span>
+    <div class="ta-loading">
+        <div class="ta-spinner"></div>
+        <span class="ta-loading__text">@Message</span>
+    </div>
+}
+else if (Mode == "skeleton-cards")
+{
+    <div class="ta-r-grid">
+        @for (int i = 0; i < Count; i++)
+        {
+            <div class="ta-sk-card">
+                <div class="ta-sk-cover ta-sk"></div>
+                <div class="ta-sk-body">
+                    <div class="ta-sk" style="height:13px;width:50%;border-radius:99px"></div>
+                    <div class="ta-sk" style="height:20px;width:75%"></div>
+                    <div class="ta-sk" style="height:13px;width:100%"></div>
+                    <div class="ta-sk" style="height:13px;width:60%"></div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else if (Mode == "skeleton-list")
+{
+    @for (int i = 0; i < Count; i++)
+    {
+        <div style="display:flex;align-items:center;gap:14px;padding:14px;background:white;border-radius:18px;border:1px solid var(--border);margin-bottom:10px;">
+            <div class="ta-sk" style="width:48px;height:48px;border-radius:10px;flex-shrink:0"></div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
+                <div class="ta-sk" style="height:14px;width:60%"></div>
+                <div class="ta-sk" style="height:12px;width:85%"></div>
+            </div>
+            <div class="ta-sk" style="width:60px;height:30px;border-radius:10px"></div>
         </div>
-        <span class="ms-2 text-muted">@Message</span>
+    }
+}
+else if (Mode == "skeleton-table")
+{
+    <div class="ta-table-wrap">
+        <table class="ta-table" style="width:100%">
+            <thead>
+                <tr>
+                    @for (int c = 0; c < Columns; c++)
+                    {
+                        <th><div class="ta-sk" style="height:12px;width:70%;border-radius:99px"></div></th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @for (int r = 0; r < Count; r++)
+                {
+                    <tr>
+                        @for (int c = 0; c < Columns; c++)
+                        {
+                            var widthVal = (60 + c * 10).ToString() + "%";
+                            <td><div class="ta-sk" style="@("height:14px;width:" + widthVal + ";border-radius:6px")"></div></td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
     </div>
 }
 
 @code {
-    [Parameter] public bool Visible { get; set; } = true;
+    [Parameter] public string Mode { get; set; } = "spinner";
     [Parameter] public string Message { get; set; } = "Cargando...";
+    [Parameter] public int Count { get; set; } = 6;
+    [Parameter] public int Columns { get; set; } = 4;
 }

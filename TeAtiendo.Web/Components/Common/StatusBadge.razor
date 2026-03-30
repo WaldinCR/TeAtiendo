@@ -1,0 +1,56 @@
+@* StatusBadge.razor — Badge visual de estado para reservas, ordenes, pagos *@
+
+<span class="ta-status ta-status--@GetStatusClass()">
+    <i class="bi @GetStatusIcon()"></i>
+    @GetStatusText()
+</span>
+
+@code {
+    [Parameter] public string Status { get; set; } = "";
+    [Parameter] public string Context { get; set; } = "reserva"; 
+
+    private string GetStatusClass()
+    {
+        var s = Status?.ToLower()?.Trim() ?? "";
+        return s switch
+        {
+            "pendiente" => "pendiente",
+            "confirmada" or "confirmado" => "confirmada",
+            "en preparacion" or "enpreparacion" or "preparacion" => "preparacion",
+            "lista" or "listo" => "lista",
+            "entregada" or "entregado" => "entregada",
+            "completada" or "completado" => "completada",
+            "cancelada" or "cancelado" => "cancelada",
+            "aprobado" or "aprobada" => "aprobado",
+            "rechazado" or "rechazada" => "rechazado",
+            _ => "pendiente"
+        };
+    }
+
+    private string GetStatusIcon()
+    {
+        var s = Status?.ToLower()?.Trim() ?? "";
+        return s switch
+        {
+            "pendiente" => "bi-clock",
+            "confirmada" or "confirmado" => "bi-check-circle-fill",
+            "en preparacion" or "enpreparacion" or "preparacion" => "bi-fire",
+            "lista" or "listo" => "bi-check2-all",
+            "entregada" or "entregado" => "bi-bag-check-fill",
+            "completada" or "completado" => "bi-check-circle-fill",
+            "cancelada" or "cancelado" => "bi-x-circle-fill",
+            "aprobado" or "aprobada" => "bi-credit-card-2-front-fill",
+            "rechazado" or "rechazada" => "bi-x-octagon-fill",
+            _ => "bi-circle"
+        };
+    }
+
+    private string GetStatusText()
+    {
+        var s = Status?.Trim() ?? "";
+        if (string.IsNullOrEmpty(s)) return "Sin estado";
+
+        // Capitalizar primera letra
+        return char.ToUpper(s[0]) + s[1..].ToLower();
+    }
+}
