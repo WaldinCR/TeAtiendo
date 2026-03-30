@@ -1,23 +1,22 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
-
-        <article class="content px-4">
-            @Body
-        </article>
+<div class="ta-app">
+    <AuthHeader />
+    <main class="ta-main" style="min-height: calc(100vh - var(--header-h));">
+        @Body
     </main>
-</div>
-
-<div id="blazor-error-ui">
-    An unhandled error has occurred.
-    <a href="" class="reload">Reload</a>
-    <a class="dismiss">🗙</a>
+    <footer class="ta-footer">
+        <div class="ta-footer__inner">
+            <div class="ta-footer__brand">
+                <div class="ta-footer__logo"><i class="bi bi-shop"></i></div>
+                <span class="ta-footer__brand-text">Te <span>Atiendo</span></span>
+            </div>
+            <p class="ta-footer__copy">2026 Te Atiendo — ITLA, Programacion 2</p>
+            <div class="ta-footer__links">
+                <span class="ta-footer__link">Terminos</span>
+                <span class="ta-footer__link">Privacidad</span>
+                <span class="ta-footer__link">Soporte</span>
+            </div>
+        </div>
+    </footer>
 </div>

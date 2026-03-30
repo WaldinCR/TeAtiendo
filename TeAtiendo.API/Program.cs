@@ -9,6 +9,7 @@ using TeAtiendo.Domain.Interfaces;
 using TeAtiendo.Persistence.Context;
 using TeAtiendo.Persistence.Interface;
 using TeAtiendo.Persistence.Repositories;
+using TeAtiendo.Persistence.Repositories.Admin;
 using TeAtiendo.Persistence.Repositories.Auditory;
 using TeAtiendo.Persistence.Repositories.Catalog;
 using TeAtiendo.Persistence.Repositories.Operaciones;
@@ -74,6 +75,7 @@ builder.Services.AddScoped<IPagoRepository, PagoRepository>();
 builder.Services.AddScoped<IResenaRepository, ResenaRepository>();
 builder.Services.AddScoped<INotificacionRepository, NotificacionRepository>();
 builder.Services.AddScoped<IAuditoriaRepository, AuditoriaRepository>();
+builder.Services.AddScoped<IModeracionContenidoRepository, ModeracionContenidoRepository>();
 
 // ===== SERVICIOS APPLICATION =====
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -89,10 +91,11 @@ builder.Services.AddScoped<IOrdenService, OrdenService>();
 builder.Services.AddScoped<IPagoService, PagoService>();
 builder.Services.AddScoped<IResenaService, ResenaService>();
 builder.Services.AddScoped<INotificacionService, NotificacionService>();
+builder.Services.AddScoped<IAuditoriaService, AuditoriaService>();
+builder.Services.AddScoped<IModeracionService, ModeracionService>();
 
-// ===== IOC - DEPENDENCIAS ADICIONALES =====
+// ===== IOC - JWT + AUTH =====
 builder.Services.AddTeAtiendoDependencies(builder.Configuration);
-
 
 builder.Services.AddCors(options =>
 {

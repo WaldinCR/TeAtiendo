@@ -1,0 +1,190 @@
+@page "/restaurante/ordenes"
+@layout TeAtiendo.Web.Components.Layout.MainLayout
+@inject IApiService ApiService
+@inject ToastService Toast
+@inject Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedSessionStorage SessionStorage
+@rendermode InteractiveServer
+
+<section class="ta-sec">
+    <div class="ta-sec__head">
+        <div>
+            <h2 class="ta-sec__title">Ordenes <span>Entrantes</span></h2>
+            <p class="ta-sec__sub">Gestiona las ordenes de tu restaurante</p>
+        </div>
+    </div>
+</section>
+
+<!-- Filtros de estado -->
+<section class="ta-sec" style="padding-top:0;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+        <button class="ta-btn-ghost @(_filtroEstado == "" ? "active" : "")" @onclick='() => FiltrarPorEstado("")'>
+            Todas
+        </button>
+        <button class="ta-btn-ghost @(_filtroEstado == "Pendiente" ? "active" : "")" @onclick='() => FiltrarPorEstado("Pendiente")'>
+            <i class="bi bi-clock"></i> Pendientes
+        </button>
+        <button class="ta-btn-ghost @(_filtroEstado == "En Preparacion" ? "active" : "")" @onclick='() => FiltrarPorEstado("En Preparacion")'>
+            <i class="bi bi-fire"></i> En Preparacion
+        </button>
+        <button class="ta-btn-ghost @(_filtroEstado == "Lista" ? "active" : "")" @onclick='() => FiltrarPorEstado("Lista")'>
+            <i class="bi bi-check2-all"></i> Listas
+        </button>
+        <button class="ta-btn-ghost @(_filtroEstado == "Entregada" ? "active" : "")" @onclick='() => FiltrarPorEstado("Entregada")'>
+            <i class="bi bi-bag-check"></i> Entregadas
+        </button>
+    </div>
+</section>
+
+<section class="ta-sec" style="padding-top:0%;">
+    @if (_isLoading)
+    {
+        <LoadingSpinner Mode="skeleton-list" Count="4" />
+    }
+    else if (_filteredOrdenes.Any())
+    {
+        <div style="display:flex;flex-direction:column;gap:14px;">
+            @foreach (var orden in _filteredOrdenes.OrderByDescending(o => o.FechaOrden))
+            {
+                <div class="ta-card ta-animate-fade-up" style="padding:20px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                        <div style="display:flex;align-items:center;gap:14px;">
+                            <div style="width:44px;height:44px;border-radius:12px;background:var(--primary-10);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--primary);">
+                                <i class="bi bi-receipt"></i>
+                            </div>
+                            <div>
+                                <div style="font-weight:700;font-size:.95rem;">Orden #@orden.Id</div>
+                                <div style="font-size:.78rem;color:var(--text-3);">
+                                    <i class="bi bi-person"></i> Usuario #@orden.UsuarioId
+                                    - <i class="bi bi-calendar3"></i> @orden.FechaOrden.ToString("dd MMM, hh:mm tt")
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <StatusBadge Status="@orden.Estado" />
+                            <span style="font-family:'Fraunces',serif;font-weight:700;font-size:1.05rem;color:var(--primary-d);">
+                                $@orden.Total.ToString("N0")
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Cambiar estado -->
+                    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+                        <span style="font-size:.82rem;color:var(--text-3);">Cambiar estado:</span>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                            @if (orden.Estado == "Pendiente")
+                            {
+                                <button class="ta-btn-ghost" style="padding:5px 12px;font-size:.75rem;" @onclick='() => CambiarEstado(orden, "En Preparacion")'>
+                                    <i class="bi bi-fire"></i> En Preparacion
+                                </button>
+                            }
+                            @if (orden.Estado == "Pendiente" || orden.Estado == "En Preparacion")
+                            {
+                                <button class="ta-btn-ghost" style="padding:5px 12px;font-size:.75rem;" @onclick='() => CambiarEstado(orden, "Lista")'>
+                                    <i class="bi bi-check2-all"></i> Lista
+                                </button>
+                            }
+                            @if (orden.Estado == "Lista")
+                            {
+                                <button class="ta-btn-success" style="padding:5px 12px;font-size:.75rem;" @onclick='() => CambiarEstado(orden, "Entregada")'>
+                                    <i class="bi bi-bag-check"></i> Entregada
+                                </button>
+                            }
+                            @if (orden.Estado != "Cancelada" && orden.Estado != "Entregada")
+                            {
+                                <button class="ta-btn-danger" style="padding:5px 12px;font-size:.75rem;" @onclick='() => CambiarEstado(orden, "Cancelada")'>
+                                    <i class="bi bi-x-lg"></i> Cancelar
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <EmptyState Icon="bi-receipt" Title="Sin ordenes" Message="No hay ordenes con ese filtro." />
+    }
+</section>
+
+@code {
+    private bool _isLoading = true;
+    private int _restauranteId = 0;
+    private string _filtroEstado = "";
+    private List<OrdenData> _ordenes = new();
+    private List<OrdenData> _filteredOrdenes = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var restIdResult = await SessionStorage.GetAsync<string>("restauranteId");
+                if (restIdResult.Success && !string.IsNullOrEmpty(restIdResult.Value))
+                {
+                    int.TryParse(restIdResult.Value, out int parsedRestId);
+                    _restauranteId = parsedRestId;
+                }
+            }
+            catch { }
+
+            await LoadOrdenes();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadOrdenes()
+    {
+        _isLoading = true;
+        try
+        {
+            if (_restauranteId > 0)
+            {
+                var result = await ApiService.GetAsync<List<OrdenData>>("api/Ordenes/restaurante/" + _restauranteId);
+                if (result != null) _ordenes = result;
+            }
+        }
+        catch { }
+        finally
+        {
+            _isLoading = false;
+            FiltrarPorEstado(_filtroEstado);
+        }
+    }
+
+    private void FiltrarPorEstado(string estado)
+    {
+        _filtroEstado = estado;
+        if (string.IsNullOrEmpty(estado))
+            _filteredOrdenes = _ordenes.ToList();
+        else
+            _filteredOrdenes = _ordenes.Where(o => o.Estado == estado).ToList();
+    }
+
+    private async Task CambiarEstado(OrdenData orden, string nuevoEstado)
+    {
+        try
+        {
+            await ApiService.PatchAsync<object>("api/Ordenes/" + orden.Id + "/estado", new { estado = nuevoEstado });
+            orden.Estado = nuevoEstado;
+            Toast.Success("Estado actualizado a: " + nuevoEstado);
+            FiltrarPorEstado(_filtroEstado);
+            StateHasChanged();
+        }
+        catch
+        {
+            Toast.Error("Error al cambiar estado");
+        }
+    }
+
+    private class OrdenData
+    {
+        public int Id { get; set; }
+        public int UsuarioId { get; set; }
+        public int RestauranteId { get; set; }
+        public DateTime FechaOrden { get; set; }
+        public string Estado { get; set; } = "Pendiente";
+        public decimal Total { get; set; }
+    }
+}

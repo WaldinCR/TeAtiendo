@@ -1,0 +1,99 @@
+﻿@page "/pagos"
+@layout TeAtiendo.Web.Components.Layout.MainLayout
+@inject IApiService ApiService
+@inject Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedSessionStorage SessionStorage
+@rendermode InteractiveServer
+
+<section class="ta-sec">
+    <div class="ta-sec__head">
+        <div>
+            <h2 class="ta-sec__title">Mis <span>Pagos</span></h2>
+            <p class="ta-sec__sub">Historial de transacciones</p>
+        </div>
+    </div>
+</section>
+
+<section class="ta-sec" style="padding-top:0;">
+    @if (_isLoading)
+    {
+        <LoadingSpinner Mode="skeleton-table" Count="4" Columns="5" />
+    }
+    else if (_pagos.Any())
+    {
+        <div class="ta-table-wrap">
+            <table class="ta-table">
+                <thead>
+                    <tr>
+                        <th>Orden</th>
+                        <th>Monto</th>
+                        <th>Metodo</th>
+                        <th>Estado</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in _pagos)
+                    {
+                        <tr>
+                            <td><div style="display:flex;align-items:center;gap:8px;"><i class="bi bi-receipt" style="color:var(--primary);"></i> Orden</div></td>
+                            <td><span style="font-family:'Fraunces',serif;font-weight:700;">$@p.Monto.ToString("N0")</span></td>
+                            <td><i class="bi bi-credit-card" style="color:var(--primary);margin-right:4px;"></i> @(p.MetodoPago ?? "Stripe")</td>
+                            <td><StatusBadge Status="@p.Estado" /></td>
+                            <td style="font-size:.82rem;color:var(--text-3);">@p.FechaPago.ToString("dd MMM yyyy")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <EmptyState Icon="bi-credit-card" Title="Sin pagos" Message="Aun no has realizado ningun pago." />
+    }
+</section>
+
+@code {
+    private bool _isLoading = true;
+    private string _userId = "";
+    private List<PagoDto> _pagos = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var idResult = await SessionStorage.GetAsync<string>("userId");
+                if (idResult.Success) _userId = idResult.Value ?? "";
+            }
+            catch { }
+            await LoadPagos();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadPagos()
+    {
+        _isLoading = true;
+        try
+        {
+            if (!string.IsNullOrEmpty(_userId))
+            {
+                var result = await ApiService.GetAsync<List<PagoDto>>("api/Pagos/usuario/" + _userId);
+                if (result != null) _pagos = result;
+            }
+        }
+        catch { }
+        finally { _isLoading = false; }
+    }
+
+    private class PagoDto
+    {
+        public Guid Id { get; set; }
+        public Guid OrdenId { get; set; }
+        public decimal Monto { get; set; }
+        public string? MetodoPago { get; set; }
+        public string Estado { get; set; } = "Pendiente";
+        public DateTime FechaPago { get; set; }
+    }
+}

@@ -1,0 +1,120 @@
+@* NotificationPanel.razor — Panel desplegable de notificaciones *@
+@inject IApiService ApiService
+
+<div class="ta-notif-panel @(IsOpen ? "open" : "")">
+    <div class="ta-notif-head">
+        <h4>
+            <i class="bi bi-bell" style="margin-right:6px;"></i>
+            Notificaciones
+        </h4>
+        @if (Notifications != null && Notifications.Any(n => !n.Leida))
+        {
+            <button class="ta-notif-clear" @onclick="MarkAllAsRead">
+                <i class="bi bi-check2-all"></i> Marcar todo leido
+            </button>
+        }
+    </div>
+
+    <div class="ta-notif-list">
+        @if (Notifications != null && Notifications.Any())
+        {
+            @foreach (var notif in Notifications.OrderByDescending(n => n.FechaCreacion).Take(15))
+            {
+                <div class="ta-notif-item @(!notif.Leida ? "unread" : "")"
+                     @onclick="() => OnNotifClick(notif)">
+                    <div class="ta-ni-ico @GetIconColorClass(notif.Tipo)">
+                        <i class="bi @GetIcon(notif.Tipo)"></i>
+                    </div>
+                    <div>
+                        <p class="ta-ni-text">@((MarkupString)notif.Mensaje)</p>
+                        <p class="ta-ni-time">@FormatTimeAgo(notif.FechaCreacion)</p>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="ta-notif-empty">
+                <i class="bi bi-bell-slash" style="font-size:2rem;display:block;margin-bottom:12px;opacity:.4;"></i>
+                No tienes notificaciones nuevas
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public List<NotificacionDto>? Notifications { get; set; }
+    [Parameter] public EventCallback<int> OnMarkRead { get; set; }
+    [Parameter] public EventCallback OnMarkAllRead { get; set; }
+
+    private async Task OnNotifClick(NotificacionDto notif)
+    {
+        if (!notif.Leida)
+        {
+            notif.Leida = true;
+            await OnMarkRead.InvokeAsync(notif.Id);
+        }
+    }
+
+    private async Task MarkAllAsRead()
+    {
+        if (Notifications != null)
+        {
+            foreach (var n in Notifications)
+                n.Leida = true;
+        }
+        await OnMarkAllRead.InvokeAsync();
+    }
+
+    private string GetIcon(string? tipo) => (tipo?.ToLower() ?? "") switch
+    {
+        "reserva_confirmada" or "reserva confirmada" => "bi-calendar-check-fill",
+        "reserva_rechazada" or "reserva rechazada" or "reserva_cancelada" => "bi-calendar-x-fill",
+        "orden_preparacion" or "orden en preparacion" => "bi-fire",
+        "orden_lista" or "orden lista" => "bi-check2-all",
+        "orden_entregada" or "orden entregada" => "bi-bag-check-fill",
+        "pago_aprobado" or "pago aprobado" => "bi-credit-card-2-front-fill",
+        "pago_rechazado" or "pago rechazado" => "bi-x-octagon-fill",
+        "resena" or "nueva_resena" => "bi-star-fill",
+        "nueva_reserva" or "reserva_nueva" => "bi-calendar-plus-fill",
+        "nueva_orden" or "orden_nueva" => "bi-receipt",
+        _ => "bi-bell-fill"
+    };
+
+    private string GetIconColorClass(string? tipo) => (tipo?.ToLower() ?? "") switch
+    {
+        "reserva_confirmada" or "reserva confirmada" or "orden_lista" or
+        "orden_entregada" or "pago_aprobado" or "orden lista" or
+        "orden entregada" or "pago aprobado" => "green",
+
+        "reserva_rechazada" or "reserva rechazada" or "pago_rechazado" or
+        "reserva_cancelada" or "pago rechazado" => "red",
+
+        "orden_preparacion" or "orden en preparacion" or "resena" or
+        "nueva_resena" or "nueva_reserva" or "nueva_orden" => "orange",
+
+        _ => "blue"
+    };
+
+    private string FormatTimeAgo(DateTime? date)
+    {
+        if (date == null) return "";
+        var diff = DateTime.Now - date.Value;
+        if (diff.TotalMinutes < 1) return "Ahora";
+        if (diff.TotalMinutes < 60) return $"Hace {(int)diff.TotalMinutes} min";
+        if (diff.TotalHours < 24) return $"Hace {(int)diff.TotalHours}h";
+        if (diff.TotalDays < 7) return $"Hace {(int)diff.TotalDays}d";
+        return date.Value.ToString("dd MMM");
+    }
+
+    // DTO para notificaciones
+    public class NotificacionDto
+    {
+        public int Id { get; set; }
+        public string Tipo { get; set; } = "";
+        public string Mensaje { get; set; } = "";
+        public bool Leida { get; set; }
+        public DateTime? FechaCreacion { get; set; }
+    }
+}

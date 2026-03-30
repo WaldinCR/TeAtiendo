@@ -1,0 +1,171 @@
+﻿@page "/register"
+@layout TeAtiendo.Web.Components.Layout.MainLayout
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<div class="ta-auth-page">
+    <div class="ta-auth-card ta-animate-fade-up" style="max-width:480px;">
+
+        <div class="ta-auth-card__logo">
+            <div class="ta-logo__mark" style="width:48px;height:48px;font-size:1.4rem;">
+                <i class="bi bi-shop"></i>
+            </div>
+            <span class="ta-logo__text" style="font-size:1.5rem;">Te <span>Atiendo</span></span>
+        </div>
+
+        <h1 class="ta-auth-card__title">Crear Cuenta</h1>
+        <p class="ta-auth-card__sub">Unete a Te Atiendo y reserva tu experiencia gastronomica</p>
+
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <ErrorAlert Type="error" Message="@_errorMessage" Dismissible="true" OnDismiss="ClearError" />
+        }
+
+        @if (!string.IsNullOrEmpty(_successMessage))
+        {
+            <ErrorAlert Type="success" Message="@_successMessage" Dismissible="false" />
+        }
+
+        <div class="ta-auth-card__form">
+            <div class="ta-form-group">
+                <label class="ta-form-label">
+                    <i class="bi bi-person" style="margin-right:4px;"></i> Nombre completo
+                </label>
+                <input class="ta-form-input" type="text" placeholder="Juan Perez" @bind="_nombre" />
+            </div>
+
+            <div class="ta-form-group">
+                <label class="ta-form-label">
+                    <i class="bi bi-envelope" style="margin-right:4px;"></i> Correo electronico
+                </label>
+                <input class="ta-form-input" type="email" placeholder="tu@correo.com" @bind="_email" />
+            </div>
+
+            <div class="ta-form-group">
+                <label class="ta-form-label">
+                    <i class="bi bi-lock" style="margin-right:4px;"></i> Contrasena
+                </label>
+                <input class="ta-form-input" type="password" placeholder="Minimo 6 caracteres" @bind="_password" />
+            </div>
+
+            <div class="ta-form-group">
+                <label class="ta-form-label">
+                    <i class="bi bi-lock-fill" style="margin-right:4px;"></i> Confirmar contrasena
+                </label>
+                <input class="ta-form-input" type="password" placeholder="Repite tu contrasena" @bind="_confirmPassword" />
+            </div>
+
+            <div class="ta-form-group">
+                <label class="ta-form-label">
+                    <i class="bi bi-person-badge" style="margin-right:4px;"></i> Tipo de cuenta
+                </label>
+                <select class="ta-form-select" @bind="_rol">
+                    <option value="1">Cliente — Reservar y ordenar</option>
+                    <option value="2">Restaurante — Gestionar mi negocio</option>
+                </select>
+            </div>
+
+            <button class="ta-btn-primary ta-btn-primary--lg ta-btn-primary--full"
+                    @onclick="HandleRegister"
+                    disabled="@_isLoading">
+                @if (_isLoading)
+                {
+                    <div class="ta-spinner" style="width:18px;height:18px;border-width:2px;border-top-color:white;border-color:rgba(255,255,255,.3);"></div>
+                    <span>Creando cuenta...</span>
+                }
+                else
+                {
+                    <i class="bi bi-person-plus"></i>
+                    <span>Crear Cuenta</span>
+                }
+            </button>
+        </div>
+
+        <div class="ta-auth-card__footer">
+            Ya tienes cuenta? <a href="/login">Inicia sesion</a>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    private string _nombre = "";
+    private string _email = "";
+    private string _password = "";
+    private string _confirmPassword = "";
+    private int _rol = 1;
+    private string _errorMessage = "";
+    private string _successMessage = "";
+    private bool _isLoading = false;
+
+    private void ClearError()
+    {
+        _errorMessage = "";
+    }
+
+   
+    private async Task HandleRegister()
+    {
+        _errorMessage = "";
+        _successMessage = "";
+
+        if (string.IsNullOrWhiteSpace(_nombre) || string.IsNullOrWhiteSpace(_email) ||
+            string.IsNullOrWhiteSpace(_password))
+        {
+            _errorMessage = "Todos los campos son requeridos.";
+            return;
+        }
+
+        if (_password != _confirmPassword)
+        {
+            _errorMessage = "Las contrasenas no coinciden.";
+            return;
+        }
+
+        if (_password.Length < 6)
+        {
+            _errorMessage = "La contrasena debe tener al menos 6 caracteres.";
+            return;
+        }
+
+        _isLoading = true;
+
+        try
+        {
+            var request = new RegisterRequest
+            {
+                Nombre = _nombre,
+                Correo = _email,
+                Password = _password,
+                Rol = _rol
+            };
+
+            var result = await AuthService.RegisterAsync(request);
+
+            if (result is not null && result.Success && result.User is not null)
+            {
+                _successMessage = string.IsNullOrWhiteSpace(result.Message)
+                    ? "Cuenta creada exitosamente! Redirigiendo al login..."
+                    : result.Message;
+
+                await Task.Delay(1500);
+                Navigation.NavigateTo("/login");
+            }
+            else
+            {
+                _errorMessage = string.IsNullOrWhiteSpace(result?.Message)
+                    ? "Error al crear la cuenta. Intenta con otro correo."
+                    : result!.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = "Error de conexion: " + ex.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

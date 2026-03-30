@@ -1,0 +1,159 @@
+﻿@page "/ordenes/crear/{RestauranteId:guid}"
+@rendermode InteractiveServer
+
+<h3>Crear Orden Anticipada</h3>
+
+<ErrorAlert Message="@_error" />
+
+@if (_success)
+{
+    <div class="alert alert-success">
+        Orden creada exitosamente. <a href="/ordenes">Ver mis ordenes</a>
+    </div>
+}
+else
+{
+    <div class="card shadow">
+        <div class="card-body">
+            <h5>Selecciona platos del menu</h5>
+
+            @if (_platos is null || _platos.Count == 0)
+            {
+                <p class="text-muted">No hay platos disponibles para este restaurante.</p>
+            }
+            else
+            {
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Plato</th>
+                            <th>Precio</th>
+                            <th>Cantidad</th>
+                            <th>Agregar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in _platos)
+                        {
+                            <tr>
+                                <td>@p.Nombre</td>
+                                <td>$@p.Precio.ToString("N2")</td>
+                                <td>
+                                    <input type="number" class="form-control form-control-sm" style="width:80px"
+                                           min="1" value="1" @onchange="(e) => SetCantidad(p.Id, e)" />
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => Agregar(p)">+</button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+
+            @if (_detalles.Count > 0)
+            {
+                <hr />
+                <h5>Tu orden</h5>
+                <table class="table table-sm">
+                    <thead>
+                        <tr><th>Plato</th><th>Cant.</th><th>Subtotal</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var d in _detalles)
+                        {
+                            <tr>
+                                <td>@d.NombrePlato</td>
+                                <td>@d.Cantidad</td>
+                                <td>$@((d.Cantidad * d.PrecioUnitario).ToString("N2"))</td>
+                                <td><button class="btn btn-sm btn-outline-danger" @onclick="() => Quitar(d)">X</button></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <h5>Total: $@_detalles.Sum(d => d.Cantidad * d.PrecioUnitario).ToString("N2")</h5>
+
+                <button class="btn btn-success mt-2" @onclick="Crear" disabled="@_loading">
+                    @if (_loading)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1"></span>
+                    }
+                    Confirmar Orden
+                </button>
+            }
+
+            <a href="/restaurantes/@RestauranteId" class="btn btn-outline-secondary mt-2 ms-2">Cancelar</a>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid RestauranteId { get; set; }
+    [Inject] private IApiService _api { get; set; } = default!;
+    [Inject] private IAuthService _auth { get; set; } = default!;
+
+    private List<PlatoResponse>? _platos;
+    private List<DetalleItem> _detalles = new();
+    private Dictionary<Guid, int> _cantidades = new();
+    private string _error = string.Empty;
+    private bool _loading = false;
+    private bool _success = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _platos = await _api.GetAsync<List<PlatoResponse>>("api/Platos");
+    }
+
+    private void SetCantidad(Guid platoId, ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int val) && val > 0)
+            _cantidades[platoId] = val;
+    }
+
+    private void Agregar(PlatoResponse plato)
+    {
+        int cant = _cantidades.ContainsKey(plato.Id) ? _cantidades[plato.Id] : 1;
+        var existente = _detalles.FirstOrDefault(d => d.PlatoId == plato.Id);
+        if (existente is not null)
+            existente.Cantidad += cant;
+        else
+            _detalles.Add(new DetalleItem { PlatoId = plato.Id, NombrePlato = plato.Nombre, Cantidad = cant, PrecioUnitario = plato.Precio });
+    }
+
+    private void Quitar(DetalleItem item) => _detalles.Remove(item);
+
+    private async Task Crear()
+    {
+        _error = string.Empty;
+        _loading = true;
+
+        var orden = new
+        {
+            UsuarioId = _auth.CurrentUser!.Id,
+            RestauranteId = RestauranteId,
+            Detalles = _detalles.Select(d => new
+            {
+                d.PlatoId,
+                d.Cantidad,
+                d.PrecioUnitario
+            }).ToList()
+        };
+
+        var result = await _api.PostAsync<OrdenResponse>("api/Ordenes", orden);
+
+        if (result is not null)
+            _success = true;
+        else
+            _error = "Error al crear la orden";
+
+        _loading = false;
+    }
+
+    private class DetalleItem
+    {
+        public Guid PlatoId { get; set; }
+        public string NombrePlato { get; set; } = string.Empty;
+        public int Cantidad { get; set; }
+        public decimal PrecioUnitario { get; set; }
+    }
+}

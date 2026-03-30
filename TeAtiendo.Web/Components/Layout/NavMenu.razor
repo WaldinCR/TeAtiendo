@@ -1,30 +1,105 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">TeAtiendo.Web</a>
-    </div>
-</div>
+﻿@inject NavigationManager Navigation
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+<nav class="ta-nav-sidebar @(_isOpen ? "open" : "")">
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
+    @if (UserRole == 1)
+    {
+        <!-- CLIENTE:  -->
+        <div class="ta-nav-sidebar__section">Mi Cuenta</div>
+        <NavLink class="ta-nav-sidebar__link" href="/" Match="NavLinkMatch.All">
+            <i class="bi bi-house"></i> Inicio
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/restaurantes">
+            <i class="bi bi-shop-window"></i> Restaurantes
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/reservas">
+            <i class="bi bi-calendar-check"></i> Mis Reservas
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/ordenes">
+            <i class="bi bi-receipt"></i> Mis Ordenes
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/pagos">
+            <i class="bi bi-credit-card"></i> Mis Pagos
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/resenas">
+            <i class="bi bi-star"></i> Mis Resenas
+        </NavLink>
+    }
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
+    @if (UserRole == 2)
+    {
+        <!-- RESTAURANTE -->
+        <div class="ta-nav-sidebar__section">Restaurante</div>
+        <NavLink class="ta-nav-sidebar__link" href="/restaurante/dashboard" Match="NavLinkMatch.All">
+            <i class="bi bi-speedometer2"></i> Dashboard
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/restaurante/reservas">
+            <i class="bi bi-calendar-check"></i> Reservas
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/restaurante/ordenes">
+            <i class="bi bi-receipt"></i> Ordenes
+        </NavLink>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-    </nav>
-</div>
+        <div class="ta-nav-sidebar__section">Gestion</div>
+        <NavLink class="ta-nav-sidebar__link" href="/restaurante/menu">
+            <i class="bi bi-book"></i> Menu
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/restaurante/mesas">
+            <i class="bi bi-grid-3x3"></i> Mesas
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/restaurante/resenas">
+            <i class="bi bi-star"></i> Resenas
+        </NavLink>
+    }
 
+    @if (UserRole == 3)
+    {
+        <!-- ADMIN -->
+        <div class="ta-nav-sidebar__section">Dashboard</div>
+        <NavLink class="ta-nav-sidebar__link" href="/" Match="NavLinkMatch.All">
+            <i class="bi bi-speedometer2"></i> Inicio
+        </NavLink>
+
+        <div class="ta-nav-sidebar__section">Gestion</div>
+        <NavLink class="ta-nav-sidebar__link" href="/admin/usuarios">
+            <i class="bi bi-people"></i> Usuarios
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/restaurantes">
+            <i class="bi bi-shop-window"></i> Restaurantes
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/reservas">
+            <i class="bi bi-calendar-check"></i> Reservas
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/ordenes">
+            <i class="bi bi-receipt"></i> Ordenes
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/pagos">
+            <i class="bi bi-credit-card"></i> Pagos
+        </NavLink>
+
+        <div class="ta-nav-sidebar__section">Sistema</div>
+        <NavLink class="ta-nav-sidebar__link" href="/admin/auditoria">
+            <i class="bi bi-clipboard-data"></i> Auditoria
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/admin/moderacion">
+            <i class="bi bi-shield-check"></i> Moderacion
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/admin/notificaciones">
+            <i class="bi bi-bell"></i> Notificaciones
+        </NavLink>
+    }
+
+</nav>
+
+@code {
+    [Parameter]
+    public int UserRole { get; set; } = 1;
+
+    private bool _isOpen = false;
+
+    public void Toggle()
+    {
+        _isOpen = !_isOpen;
+        StateHasChanged();
+    }
+}

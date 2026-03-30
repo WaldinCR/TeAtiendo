@@ -1,0 +1,390 @@
+@* ReservaModal.razor —  *@
+
+<div class="ta-overlay @(IsOpen ? "open" : "")" @onclick="HandleOverlayClick">
+    <div class="ta-modal" @onclick:stopPropagation="true">
+
+        @if (!_showSuccess)
+        {
+            <!-- ═══ LEFT: Calendario + Horarios ═══ -->
+            <div class="ta-modal-l">
+                <div>
+                    <div style="font-size:1.5rem;margin-bottom:8px;color:var(--primary);">
+                        <i class="bi bi-shop"></i>
+                    </div>
+                    <div class="ta-modal-rest-name">@RestauranteNombre</div>
+                    <div class="ta-modal-rest-sub">@RestauranteDireccion</div>
+                </div>
+
+                <!-- Calendario -->
+                <div class="ta-cal">
+                    <div class="ta-cal-nav">
+                        <button class="ta-cal-nav-btn" @onclick="PrevMonth">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <span class="ta-cal-month">@_monthNames[_currentMonth] @_currentYear</span>
+                        <button class="ta-cal-nav-btn" @onclick="NextMonth">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="ta-cal-grid">
+                        @foreach (var wd in _weekDays)
+                        {
+                            <div class="ta-cal-wd">@wd</div>
+                        }
+                        @for (int i = 0; i < _firstDayOffset; i++)
+                        {
+                            <div class="ta-cal-day empty"></div>
+                        }
+                        @for (int d = 1; d <= _daysInMonth; d++)
+                        {
+                            var day = d;
+                            var isPast = new DateTime(_currentYear, _currentMonth + 1, day) < DateTime.Today;
+                            var isToday = _currentYear == DateTime.Today.Year && _currentMonth == DateTime.Today.Month - 1 && day == DateTime.Today.Day;
+                            var isSelected = day == _selectedDay && _currentMonth == _selectedMonth && _currentYear == _selectedYear;
+
+                            <button class="ta-cal-day @(isPast ? "disabled" : "") @(isToday ? "today" : "") @(isSelected ? "selected" : "")"
+                                    disabled="@isPast"
+                                    @onclick="() => SelectDay(day)">
+                                @day
+                            </button>
+                        }
+                    </div>
+                </div>
+
+                <!-- Time Slots -->
+                <div>
+                    <div class="ta-modal-section-label">
+                        <i class="bi bi-clock" style="margin-right:4px;"></i> Selecciona la hora
+                    </div>
+                    <div class="ta-time-slots">
+                        @if (TimeSlots != null)
+                        {
+                            @foreach (var slot in TimeSlots)
+                            {
+                                <button class="ta-ts @(slot.Disponible ? "" : "unavail") @(_selectedTime == slot.Hora ? "selected" : "")"
+                                        disabled="@(!slot.Disponible)"
+                                        @onclick="() => SelectTime(slot)">
+                                    @slot.Hora
+                                </button>
+                            }
+                        }
+                        else
+                        {
+                            @foreach (var hora in _defaultSlots)
+                            {
+                                <button class="ta-ts @(_selectedTime == hora ? "selected" : "")"
+                                        @onclick='() => _selectedTime = hora'>
+                                    @hora
+                                </button>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══ RIGHT: Mesa + Confirmar ═══ -->
+            <div class="ta-modal-r">
+                <div class="ta-modal-header">
+                    <h2 class="ta-modal-title">Elige tu mesa</h2>
+                    <button class="ta-modal-close" @onclick="Close">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Comensales -->
+                <div>
+                    <div class="ta-modal-section-label">
+                        <i class="bi bi-people" style="margin-right:4px;"></i> Numero de personas
+                    </div>
+                    <div class="ta-guest-box">
+                        <div class="ta-guest-label">
+                            <strong>Comensales</strong>
+                            <small>Mesas disponibles para 1-8 personas</small>
+                        </div>
+                        <div class="ta-guest-ctrl">
+                            <button class="ta-g-btn" @onclick="() => ChangeGuests(-1)">
+                                <i class="bi bi-dash"></i>
+                            </button>
+                            <span class="ta-g-val">@_guests</span>
+                            <button class="ta-g-btn" @onclick="() => ChangeGuests(1)">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mapa de Mesas -->
+                @if (Mesas != null && Mesas.Any())
+                {
+                    <div>
+                        <div class="ta-modal-section-label">
+                            <i class="bi bi-grid-3x3-gap" style="margin-right:4px;"></i> Plano del restaurante
+                        </div>
+                        <div class="ta-table-map-wrap">
+                            <div class="ta-tmap-floor">
+                                <svg width="100%" height="100%" viewBox="0 0 340 180" aria-label="Mapa de mesas">
+                                    @{ int idx = 0; }
+                                    @foreach (var mesa in Mesas.Take(8))
+                                    {
+                                        var m = mesa;
+                                        var x = _mesaPositions[idx % 8].x;
+                                        var y = _mesaPositions[idx % 8].y;
+                                        var isRound = idx >= 4;
+                                        var isOccupied = !m.Disponible;
+                                        var isSelected = _selectedMesaId == m.Id;
+                                        var cssClass = $"ta-table-svg-g {(isOccupied ? "t-occ" : "")} {(isSelected ? "t-sel" : "")}";
+
+                                        if (isRound)
+                                        {
+                                            <g class="@cssClass" @onclick="() => SelectMesa(m)" tabindex="0" role="button">
+                                                <circle cx="@(x + 27)" cy="@(y + 19)" r="27"
+                                                        fill="@(isSelected ? "rgba(243,112,33,.28)" : isOccupied ? "rgba(220,53,69,.08)" : "#F5EEE4")"
+                                                        stroke="@(isSelected ? "#F37021" : isOccupied ? "rgba(220,53,69,.35)" : "#D4C4B8")"
+                                                        stroke-width="@(isSelected ? "2.5" : "1.5")" />
+                                                <text x="@(x + 27)" y="@(y + 24)" text-anchor="middle"
+                                                      font-size="11" font-weight="@(isSelected ? "700" : "600")"
+                                                      fill="@(isSelected ? "#F37021" : isOccupied ? "rgba(220,53,69,.55)" : "#7A5548")">
+                                                    M@(m.Numero)
+                                                </text>
+                                            </g>
+                                        }
+                                        else
+                                        {
+                                            <g class="@cssClass" @onclick="() => SelectMesa(m)" tabindex="0" role="button">
+                                                <rect x="@x" y="@y" width="54" height="38" rx="9"
+                                                      fill="@(isSelected ? "rgba(243,112,33,.28)" : isOccupied ? "rgba(220,53,69,.08)" : "#F5EEE4")"
+                                                      stroke="@(isSelected ? "#F37021" : isOccupied ? "rgba(220,53,69,.35)" : "#D4C4B8")"
+                                                      stroke-width="@(isSelected ? "2.5" : "1.5")" />
+                                                <text x="@(x + 27)" y="@(y + 24)" text-anchor="middle"
+                                                      font-size="11" font-weight="@(isSelected ? "700" : "600")"
+                                                      fill="@(isSelected ? "#F37021" : isOccupied ? "rgba(220,53,69,.55)" : "#7A5548")">
+                                                    M@(m.Numero)
+                                                </text>
+                                            </g>
+                                        }
+                                        idx++;
+                                    }
+                                    <text x="320" y="175" font-size="9" fill="#B89488" text-anchor="middle">Entrada</text>
+                                    <line x1="304" y1="162" x2="336" y2="162" stroke="#D4C4B8" stroke-width="1.5" />
+                                </svg>
+                            </div>
+                            <div class="ta-tmap-legend">
+                                <div class="ta-tmap-leg-item"><div class="ta-tmap-dot ta-tleg-free"></div> Libre</div>
+                                <div class="ta-tmap-leg-item"><div class="ta-tmap-dot ta-tleg-sel"></div> Seleccionada</div>
+                                <div class="ta-tmap-leg-item"><div class="ta-tmap-dot ta-tleg-occ"></div> Ocupada</div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Notas -->
+                <div>
+                    <div class="ta-modal-section-label">
+                        <i class="bi bi-chat-text" style="margin-right:4px;"></i> Solicitudes especiales
+                    </div>
+                    <textarea class="ta-modal-textarea"
+                              placeholder="Alergias, celebracion, silla de bebe, menu vegano..."
+                              @bind="_notes"></textarea>
+                </div>
+
+                <!-- Confirmar -->
+                <button class="ta-btn-primary ta-btn-primary--lg ta-btn-primary--full"
+                        @onclick="ConfirmReservation"
+                        disabled="@(!CanConfirm)">
+                    <i class="bi bi-check-circle"></i>
+                    Confirmar Reserva
+                </button>
+
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <div class="ta-alert ta-alert--error" style="margin-top:8px;">
+                        <i class="ta-alert__ico bi bi-exclamation-triangle-fill"></i>
+                        @_errorMessage
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <!-- ═══ SUCCESS ═══ -->
+            <div class="ta-success-panel show">
+                <div class="ta-succ-ico">
+                    <i class="bi bi-check-lg"></i>
+                </div>
+                <div class="ta-succ-title">Reserva Confirmada!</div>
+                <p class="ta-succ-msg">
+                    Tu mesa en <strong>@RestauranteNombre</strong> esta reservada.
+                    Recibiras una notificacion de confirmacion.
+                </p>
+                <div class="ta-succ-code">@_reservationCode</div>
+                <button class="ta-btn-primary ta-btn-primary--lg" @onclick="Close" style="margin-top:12px;">
+                    <i class="bi bi-calendar-check"></i> Ver mis reservas
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public string RestauranteNombre { get; set; } = "";
+    [Parameter] public string? RestauranteDireccion { get; set; }
+    [Parameter] public int RestauranteId { get; set; }
+    [Parameter] public List<MesaDto>? Mesas { get; set; }
+    [Parameter] public List<TimeSlotDto>? TimeSlots { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<ReservaRequest> OnConfirm { get; set; }
+
+    // Calendar state
+    private int _currentMonth;
+    private int _currentYear;
+    private int _selectedDay;
+    private int _selectedMonth;
+    private int _selectedYear;
+    private int _firstDayOffset;
+    private int _daysInMonth;
+
+    // Form state
+    private int _guests = 2;
+    private string _selectedTime = "";
+    private int? _selectedMesaId;
+    private string _notes = "";
+    private bool _showSuccess = false;
+    private string _reservationCode = "";
+    private string _errorMessage = "";
+
+    private readonly string[] _monthNames = { "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" };
+    private readonly string[] _weekDays = { "Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa" };
+    private readonly string[] _defaultSlots = { "6:00 PM", "6:30 PM", "7:00 PM", "7:30 PM", "8:00 PM", "8:30 PM", "9:00 PM", "9:30 PM", "10:00 PM" };
+
+    private readonly (int x, int y)[] _mesaPositions = {
+        (18, 18), (90, 18), (162, 18), (234, 18),
+        (18, 95), (90, 95), (162, 95), (234, 95)
+    };
+
+    private bool CanConfirm => _selectedMesaId.HasValue &&
+                               !string.IsNullOrEmpty(_selectedTime) &&
+                               _selectedDay > 0;
+
+    protected override void OnInitialized()
+    {
+        var today = DateTime.Today;
+        _currentMonth = today.Month - 1;
+        _currentYear = today.Year;
+        _selectedDay = today.Day;
+        _selectedMonth = _currentMonth;
+        _selectedYear = _currentYear;
+        RecalcCalendar();
+    }
+
+    private void RecalcCalendar()
+    {
+        _firstDayOffset = (int)new DateTime(_currentYear, _currentMonth + 1, 1).DayOfWeek;
+        _daysInMonth = DateTime.DaysInMonth(_currentYear, _currentMonth + 1);
+    }
+
+    private void PrevMonth()
+    {
+        _currentMonth--;
+        if (_currentMonth < 0) { _currentMonth = 11; _currentYear--; }
+        RecalcCalendar();
+    }
+
+    private void NextMonth()
+    {
+        _currentMonth++;
+        if (_currentMonth > 11) { _currentMonth = 0; _currentYear++; }
+        RecalcCalendar();
+    }
+
+    private void SelectDay(int day)
+    {
+        _selectedDay = day;
+        _selectedMonth = _currentMonth;
+        _selectedYear = _currentYear;
+    }
+
+    private void SelectTime(TimeSlotDto slot)
+    {
+        if (slot.Disponible)
+            _selectedTime = slot.Hora;
+    }
+
+    private void ChangeGuests(int delta)
+    {
+        _guests = Math.Clamp(_guests + delta, 1, 8);
+    }
+
+    private void SelectMesa(MesaDto mesa)
+    {
+        if (mesa.Disponible)
+            _selectedMesaId = _selectedMesaId == mesa.Id ? null : mesa.Id;
+    }
+
+    private async Task ConfirmReservation()
+    {
+        _errorMessage = "";
+
+        if (!CanConfirm)
+        {
+            _errorMessage = "Selecciona fecha, hora y mesa para continuar.";
+            return;
+        }
+
+        var request = new ReservaRequest
+        {
+            RestauranteId = RestauranteId,
+            MesaId = _selectedMesaId!.Value,
+            Fecha = new DateTime(_selectedYear, _selectedMonth + 1, _selectedDay),
+            Hora = _selectedTime,
+            NumeroPersonas = _guests,
+            Notas = _notes
+        };
+
+        await OnConfirm.InvokeAsync(request);
+
+        _reservationCode = $"TA-{DateTime.Now:yyyy}-{Random.Shared.Next(1000, 9999)}";
+        _showSuccess = true;
+    }
+
+    private async Task Close()
+    {
+        _showSuccess = false;
+        _selectedMesaId = null;
+        _selectedTime = "";
+        _notes = "";
+        _errorMessage = "";
+        await OnClose.InvokeAsync();
+    }
+
+    private void HandleOverlayClick()
+    {
+        _ = Close();
+    }
+
+    // DTOs
+    public class MesaDto
+    {
+        public int Id { get; set; }
+        public int Numero { get; set; }
+        public int Capacidad { get; set; }
+        public bool Disponible { get; set; } = true;
+    }
+
+    public class TimeSlotDto
+    {
+        public string Hora { get; set; } = "";
+        public bool Disponible { get; set; } = true;
+    }
+
+    public class ReservaRequest
+    {
+        public int RestauranteId { get; set; }
+        public int MesaId { get; set; }
+        public DateTime Fecha { get; set; }
+        public string Hora { get; set; } = "";
+        public int NumeroPersonas { get; set; }
+        public string? Notas { get; set; }
+    }
+}

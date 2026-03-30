@@ -1,7 +1,243 @@
 ﻿@page "/"
+@layout TeAtiendo.Web.Components.Layout.MainLayout
+@inject IApiService ApiService
+@inject NavigationManager Navigation
+@inject Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedSessionStorage SessionStorage
+@rendermode InteractiveServer
 
-<PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<section class="ta-hero">
+    <div class="ta-hero__content">
+        <div class="ta-hero__pill">
+            <i class="bi bi-lightning-charge-fill"></i> Ordena antes - Llega y disfruta
+        </div>
+        <h1 class="ta-hero__title">
+            Reserva tu<br /><em>mesa ideal</em><br />y ordena antes
+        </h1>
+        <p class="ta-hero__sub">
+            Elige tu restaurante, selecciona tu mesa y anticipa tu orden.
+            Sin esperas, sin sorpresas — solo experiencias perfectas.
+        </p>
+        <div class="ta-hero__btns">
+            @if (_isAuthenticated)
+            {
+                <button class="ta-btn-hero-primary" @onclick="GoToRestaurantes">
+                    <i class="bi bi-calendar-plus"></i> Reservar ahora
+                </button>
+                <button class="ta-btn-hero-secondary" @onclick="GoToRestaurantes">
+                    <i class="bi bi-compass"></i> Explorar locales
+                </button>
+            }
+            else
+            {
+                <a href="/login" class="ta-btn-hero-primary">
+                    <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesion
+                </a>
+                <a href="/register" class="ta-btn-hero-secondary">
+                    <i class="bi bi-person-plus"></i> Registrarse
+                </a>
+            }
+        </div>
+    </div>
+    <div class="ta-hero__stats">
+        <div class="ta-hero-stat">
+            <div class="ta-hero-stat__val">@_restaurantCount+</div>
+            <div class="ta-hero-stat__label">Restaurantes afiliados</div>
+        </div>
+        <div class="ta-hero-stat">
+            <div class="ta-hero-stat__val">98%</div>
+            <div class="ta-hero-stat__label">Satisfaccion clientes</div>
+        </div>
+        <div class="ta-hero-stat">
+            <div class="ta-hero-stat__val">0 min</div>
+            <div class="ta-hero-stat__label">Tiempo de espera</div>
+        </div>
+    </div>
+</section>
 
-Welcome to your new app.
+<CategoryPills OnCategoryChanged="HandleCategoryChange" />
+
+<section class="ta-sec">
+    <div class="ta-sec__head">
+        <div>
+            <h2 class="ta-sec__title">Restaurantes <span>Destacados</span></h2>
+            <p class="ta-sec__sub">Con mesa disponible para hoy</p>
+        </div>
+        <button class="ta-see-all" @onclick="GoToRestaurantes">
+            Ver todos <i class="bi bi-arrow-right"></i>
+        </button>
+    </div>
+
+    @if (_isLoading)
+    {
+        <LoadingSpinner Mode="skeleton-cards" Count="6" />
+    }
+    else if (_restaurantes != null && _restaurantes.Any())
+    {
+        <div class="ta-r-grid">
+            @foreach (var rest in _restaurantes.Take(6))
+            {
+                <RestauranteCard RestauranteId="@rest.Id.ToString()"
+                                 Nombre="@rest.Nombre"
+                                 ImageUrl="@GetImage(rest.Nombre)"
+                                 Direccion="@GetShortAddress(rest.Direccion)"
+                                 Telefono="@rest.Telefono"
+                                 Horario="@FormatHorario(rest.HorarioApertura, rest.HorarioCierre)"
+                                 Rating="@GetRating(rest.Nombre)"
+                                 TotalResenas="@GetReviews(rest.Nombre)"
+                                 MesasDisponibles="5"
+                                 Tags="@GetTags(rest.Nombre)"
+                                 Categoria="@GetCategoria(rest.Nombre)" />
+            }
+        </div>
+    }
+    else
+    {
+        <EmptyState Icon="bi-shop-window" Title="Sin restaurantes" Message="No hay restaurantes registrados aun." />
+    }
+</section>
+
+<section class="ta-sec" style="padding-bottom:28px;">
+    <div class="ta-sec__head">
+        <div>
+            <h2 class="ta-sec__title">Como <span>Funciona</span></h2>
+            <p class="ta-sec__sub">En 4 simples pasos</p>
+        </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;">
+        <div class="ta-card ta-animate-fade-up" style="text-align:center;padding:32px 20px;">
+            <div style="width:56px;height:56px;border-radius:16px;background:var(--primary-10);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.4rem;color:var(--primary);"><i class="bi bi-search"></i></div>
+            <h3 style="font-family:'Fraunces',serif;font-size:1.05rem;font-weight:700;margin-bottom:6px;">1. Explora</h3>
+            <p style="font-size:.82rem;color:var(--text-3);line-height:1.5;">Busca entre restaurantes por categoria, ubicacion o nombre</p>
+        </div>
+        <div class="ta-card ta-animate-fade-up" style="text-align:center;padding:32px 20px;">
+            <div style="width:56px;height:56px;border-radius:16px;background:var(--primary-10);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.4rem;color:var(--primary);"><i class="bi bi-calendar-check"></i></div>
+            <h3 style="font-family:'Fraunces',serif;font-size:1.05rem;font-weight:700;margin-bottom:6px;">2. Reserva</h3>
+            <p style="font-size:.82rem;color:var(--text-3);line-height:1.5;">Elige fecha, hora y mesa en el mapa interactivo</p>
+        </div>
+        <div class="ta-card ta-animate-fade-up" style="text-align:center;padding:32px 20px;">
+            <div style="width:56px;height:56px;border-radius:16px;background:var(--primary-10);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.4rem;color:var(--primary);"><i class="bi bi-cart-check"></i></div>
+            <h3 style="font-family:'Fraunces',serif;font-size:1.05rem;font-weight:700;margin-bottom:6px;">3. Ordena</h3>
+            <p style="font-size:.82rem;color:var(--text-3);line-height:1.5;">Arma tu orden anticipada desde el menu del restaurante</p>
+        </div>
+        <div class="ta-card ta-animate-fade-up" style="text-align:center;padding:32px 20px;">
+            <div style="width:56px;height:56px;border-radius:16px;background:var(--success-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.4rem;color:var(--success);"><i class="bi bi-emoji-smile"></i></div>
+            <h3 style="font-family:'Fraunces',serif;font-size:1.05rem;font-weight:700;margin-bottom:6px;">4. Disfruta</h3>
+            <p style="font-size:.82rem;color:var(--text-3);line-height:1.5;">Llega, sientate y tu comida estara lista. Sin esperas!</p>
+        </div>
+    </div>
+</section>
+
+@code {
+    private bool _isLoading = true;
+    private bool _isAuthenticated = false;
+    private List<RestauranteDto>? _restaurantes;
+    private int _restaurantCount = 0;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var tokenResult = await SessionStorage.GetAsync<string>("token");
+                _isAuthenticated = tokenResult.Success && !string.IsNullOrEmpty(tokenResult.Value);
+            }
+            catch { }
+
+            // Si no está logueado, redirigir al login
+            if (!_isAuthenticated)
+            {
+                Navigation.NavigateTo("/login", true);
+                return;
+            }
+
+            await LoadRestaurantes();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadRestaurantes()
+    {
+        _isLoading = true;
+        try
+        {
+            var response = await ApiService.GetAsync<ApiListResponse>("api/Restaurantes");
+            if (response != null && response.Data != null)
+            {
+                _restaurantes = response.Data;
+                _restaurantCount = _restaurantes.Count;
+            }
+        }
+        catch { }
+        finally { _isLoading = false; }
+    }
+
+    private void GoToRestaurantes() { Navigation.NavigateTo("/restaurantes"); }
+    private void HandleCategoryChange(int? c) { }
+
+    private string GetImage(string? n)
+    {
+        var imgs = new string[] {
+            "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=700&q=80",
+            "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=700&q=80",
+            "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=700&q=80",
+            "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=700&q=80",
+            "https://images.unsplash.com/photo-1544025162-d76694265947?w=700&q=80",
+            "https://images.unsplash.com/photo-1565299507177-b0ac66763828?w=700&q=80"
+        };
+        return imgs[Math.Abs((n ?? "").GetHashCode()) % imgs.Length];
+    }
+
+    private string GetShortAddress(string? d)
+    {
+        if (string.IsNullOrEmpty(d)) return "Santo Domingo";
+        var p = d.Split(',');
+        return p.Length > 1 ? p[p.Length - 1].Trim() : d;
+    }
+
+    private string FormatHorario(string? a, string? c)
+    {
+        if (string.IsNullOrEmpty(a) || string.IsNullOrEmpty(c)) return "";
+        var ha = a.Length >= 5 ? a.Substring(0, 5) : a;
+        var hc = c.Length >= 5 ? c.Substring(0, 5) : c;
+        return ha + " - " + hc;
+    }
+
+    private double GetRating(string? n) { return 4.0 + Math.Abs((n ?? "").GetHashCode() % 10) * 0.1; }
+    private int GetReviews(string? n) { return 50 + Math.Abs((n ?? "").GetHashCode() % 200); }
+    private List<string> GetTags(string? n)
+    {
+        if (string.IsNullOrEmpty(n)) return new List<string> { "Restaurante" };
+        var l = n.ToLower();
+        if (l.Contains("criolla") || l.Contains("abuela")) return new List<string> { "Criolla", "Local" };
+        if (l.Contains("seafood")) return new List<string> { "Mariscos", "Fresco" };
+        if (l.Contains("sabores")) return new List<string> { "Dominicana", "Tipica" };
+        return new List<string> { "Restaurante" };
+    }
+    private string GetCategoria(string? n)
+    {
+        if (string.IsNullOrEmpty(n)) return "Restaurante";
+        var l = n.ToLower();
+        if (l.Contains("criolla") || l.Contains("abuela")) return "Criolla";
+        if (l.Contains("seafood")) return "Mariscos";
+        return "Dominicana";
+    }
+
+    private class ApiListResponse
+    {
+        public string? Message { get; set; }
+        public List<RestauranteDto>? Data { get; set; }
+    }
+
+    private class RestauranteDto
+    {
+        public Guid Id { get; set; }
+        public string Nombre { get; set; } = "";
+        public string? Direccion { get; set; }
+        public string? Telefono { get; set; }
+        public string? Correo { get; set; }
+        public string? HorarioApertura { get; set; }
+        public string? HorarioCierre { get; set; }
+    }
+}
