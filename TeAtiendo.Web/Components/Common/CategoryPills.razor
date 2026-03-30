@@ -1,0 +1,94 @@
+@* CategoryPills.razor — Filtros de categoría en pills scrollables *@
+
+<div class="ta-cat-strip" role="group" aria-label="Filtrar por categoria">
+    <button class="ta-cat-pill @(_selectedCategory == null ? "active" : "")"
+            @onclick="() => SelectCategory(null)">
+        <i class="ta-cat-pill__ico bi bi-fire"></i> Todos
+    </button>
+
+    @if (Categories != null)
+    {
+        @foreach (var cat in Categories)
+        {
+            <button class="ta-cat-pill @(_selectedCategory == cat.Id ? "active" : "")"
+                    @onclick="() => SelectCategory(cat.Id)">
+                <i class="ta-cat-pill__ico bi @GetCategoryIcon(cat.Nombre)"></i>
+                @cat.Nombre
+            </button>
+        }
+    }
+    else
+    {
+        @* Default categories cuando no hay data *@
+        @foreach (var cat in _defaultCategories)
+        {
+            <button class="ta-cat-pill @(_selectedCategory?.ToString() == cat.Name ? "active" : "")"
+                    @onclick="() => SelectCategoryByName(cat.Name)">
+                <i class="ta-cat-pill__ico bi @cat.Icon"></i>
+                @cat.Name
+            </button>
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public List<CategoryDto>? Categories { get; set; }
+    [Parameter] public EventCallback<int?> OnCategoryChanged { get; set; }
+
+    private int? _selectedCategory = null;
+
+    private async Task SelectCategory(int? categoryId)
+    {
+        _selectedCategory = categoryId;
+        await OnCategoryChanged.InvokeAsync(categoryId);
+    }
+
+    private async Task SelectCategoryByName(string name)
+    {
+        // Fallback para cuando no hay categorias de la API
+        await OnCategoryChanged.InvokeAsync(null);
+    }
+
+    private string GetCategoryIcon(string? nombre)
+    {
+        var n = nombre?.ToLower() ?? "";
+        return n switch
+        {
+            "pasta" or "italiana" => "bi-cup-hot",
+            "carnes" or "parrilla" or "bbq" => "bi-fire",
+            "vegano" or "vegetariano" or "vegana" => "bi-tree",
+            "sushi" or "japonesa" => "bi-flower1",
+            "pizza" => "bi-pie-chart",
+            "mexicana" => "bi-sun",
+            "brunch" or "cafe" or "café" => "bi-cup-hot-fill",
+            "postres" => "bi-cake2",
+            "mariscos" or "seafood" => "bi-water",
+            "criolla" or "dominicana" => "bi-sun-fill",
+            "francesa" => "bi-cup-straw",
+            "cockteles" or "cócteles" or "bar" => "bi-cup-straw",
+            "entradas" => "bi-egg-fried",
+            "sopas" => "bi-droplet-half",
+            "ensaladas" => "bi-tree-fill",
+            _ => "bi-grid"
+        };
+    }
+
+    private readonly List<(string Name, string Icon)> _defaultCategories = new()
+    {
+        ("Destacados", "bi-star-fill"),
+        ("Pasta", "bi-cup-hot"),
+        ("Carnes", "bi-fire"),
+        ("Vegano", "bi-tree"),
+        ("Sushi", "bi-flower1"),
+        ("Italiana", "bi-cup-hot"),
+        ("Mexicana", "bi-sun"),
+        ("Brunch", "bi-cup-hot-fill"),
+        ("Postres", "bi-cake2"),
+    };
+
+    public class CategoryDto
+    {
+        public int Id { get; set; }
+        public string Nombre { get; set; } = "";
+    }
+}

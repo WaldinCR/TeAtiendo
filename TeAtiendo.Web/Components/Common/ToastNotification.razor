@@ -1,0 +1,87 @@
+@* ToastNotification.razor — Toast notifications con auto-dismiss *@
+@implements IDisposable
+
+<div class="ta-toast-container">
+    @foreach (var toast in _toasts)
+    {
+        <div class="ta-toast @(toast.IsVisible ? "show" : "") @GetToastClass(toast.Type)">
+            <i class="ta-toast__ico bi @GetToastIcon(toast.Type)"></i>
+            <span>@toast.Message</span>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public ToastService? Service { get; set; }
+
+    private List<ToastItem> _toasts = new();
+
+    protected override void OnInitialized()
+    {
+        if (Service != null)
+        {
+            Service.OnShow += ShowToast;
+        }
+    }
+
+    private async void ShowToast(string message, string type)
+    {
+        await InvokeAsync(async () =>
+        {
+            var toast = new ToastItem
+            {
+                Message = message,
+                Type = type,
+                IsVisible = false
+            };
+
+            _toasts.Add(toast);
+            StateHasChanged();
+
+            // Small delay for animation
+            await Task.Delay(50);
+            toast.IsVisible = true;
+            StateHasChanged();
+
+            // Auto dismiss
+            await Task.Delay(3000);
+            toast.IsVisible = false;
+            StateHasChanged();
+
+            await Task.Delay(400);
+            _toasts.Remove(toast);
+            StateHasChanged();
+        });
+    }
+
+    private string GetToastClass(string type) => type switch
+    {
+        "success" => "ta-toast--success",
+        "error" => "ta-toast--error",
+        "warning" => "ta-toast--warning",
+        _ => ""
+    };
+
+    private string GetToastIcon(string type) => type switch
+    {
+        "success" => "bi-check-circle-fill",
+        "error" => "bi-x-circle-fill",
+        "warning" => "bi-exclamation-triangle-fill",
+        _ => "bi-info-circle-fill"
+    };
+
+    public void Dispose()
+    {
+        if (Service != null)
+        {
+            Service.OnShow -= ShowToast;
+        }
+    }
+
+    private class ToastItem
+    {
+        public string Message { get; set; } = "";
+        public string Type { get; set; } = "info";
+        public bool IsVisible { get; set; }
+    }
+}

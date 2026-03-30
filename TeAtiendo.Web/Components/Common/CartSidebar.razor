@@ -1,0 +1,185 @@
+@* CartSidebar.razor — Sidebar de orden anticipada con totales y pago *@
+
+<aside class="ta-side-cart @(IsOpen ? "open" : "")" role="complementary" aria-label="Orden anticipada">
+
+    @if (Items != null && Items.Any())
+    {
+        <!-- Header -->
+        <div class="ta-cart-head">
+            @if (!string.IsNullOrEmpty(RestauranteNombre))
+            {
+                <div class="ta-cart-restaurant">
+                    <div class="ta-cart-rest-logo">
+                        <i class="bi bi-shop"></i>
+                    </div>
+                    <div>
+                        <div class="ta-cart-rest-name">@RestauranteNombre</div>
+                        <div class="ta-cart-rest-info">
+                            <i class="bi bi-calendar3"></i> @(FechaReserva?.ToString("dd MMM") ?? "Sin reserva")
+                            · @(HoraReserva ?? "--:--")
+                            · @Comensales personas
+                        </div>
+                    </div>
+                </div>
+            }
+            <div class="ta-cart-title">Orden Anticipada</div>
+            <div class="ta-cart-sub">@Items.Sum(i => i.Cantidad) platos seleccionados</div>
+        </div>
+
+        <!-- Items -->
+        <div class="ta-cart-items">
+            @foreach (var item in Items)
+            {
+                <div class="ta-cart-item">
+                    @if (!string.IsNullOrEmpty(item.ImageUrl))
+                    {
+                        <img class="ta-cart-item__img" src="@item.ImageUrl" alt="@item.Nombre" />
+                    }
+                    else
+                    {
+                        <div class="ta-cart-item__img" style="display:flex;align-items:center;justify-content:center;background:var(--bg-warm);">
+                            <i class="bi bi-egg-fried" style="color:var(--text-3);"></i>
+                        </div>
+                    }
+                    <div style="flex:1;min-width:0;">
+                        <div class="ta-cart-item__name">@item.Nombre</div>
+                        <div class="ta-cart-item__unit">@FormatPrice(item.PrecioUnitario) c/u</div>
+                    </div>
+                    <div class="ta-cart-item__controls">
+                        <button class="ta-ci-btn" @onclick="() => UpdateQuantity(item, -1)">
+                            <i class="bi bi-dash"></i>
+                        </button>
+                        <span class="ta-ci-qty">@item.Cantidad</span>
+                        <button class="ta-ci-btn" @onclick="() => UpdateQuantity(item, 1)">
+                            <i class="bi bi-plus"></i>
+                        </button>
+                    </div>
+                    <span class="ta-cart-item__price">@FormatPrice(item.PrecioUnitario * item.Cantidad)</span>
+                    <button class="ta-cart-item__del" @onclick="() => RemoveItem(item)">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+            }
+        </div>
+
+        <!-- Totales -->
+        <div class="ta-cart-totals">
+            <div class="ta-tot-row">
+                <span>Subtotal</span>
+                <span>@FormatPrice(Subtotal)</span>
+            </div>
+            <div class="ta-tot-row">
+                <span>ITBIS (18%)</span>
+                <span>@FormatPrice(Tax)</span>
+            </div>
+            <div class="ta-tot-row">
+                <span>Propina sugerida (10%)</span>
+                <span>@FormatPrice(Tip)</span>
+            </div>
+            <div class="ta-promo-row">
+                <input class="ta-promo-input" type="text" placeholder="Codigo de descuento" @bind="_promoCode" />
+                <button class="ta-promo-btn" @onclick="ApplyPromo">Aplicar</button>
+            </div>
+            <div class="ta-tot-row ta-tot-row--grand">
+                <span>Total</span>
+                <span class="ta-tot-val">@FormatPrice(Total)</span>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="ta-cart-cta">
+            <button class="ta-btn-stripe" @onclick="ProcessPayment" disabled="@_processing">
+                @if (_processing)
+                {
+                    <div class="ta-spinner" style="width:20px;height:20px;border-width:2px;"></div>
+                    <span>Procesando...</span>
+                }
+                else
+                {
+                    <i class="bi bi-credit-card-fill"></i>
+                    <span>Pagar con Stripe</span>
+                    <span style="margin-left:auto;font-size:.8rem;opacity:.8;">@FormatPrice(Total)</span>
+                }
+            </button>
+            <p class="ta-cart-sec-note">
+                <i class="bi bi-shield-lock-fill"></i> Pago SSL · Cancelacion gratis hasta 2h antes
+            </p>
+        </div>
+    }
+    else
+    {
+        <!-- Empty cart -->
+        <div class="ta-cart-empty">
+            <div class="ta-cart-empty__ico">
+                <i class="bi bi-bag"></i>
+            </div>
+            <div class="ta-cart-empty__title">Tu orden esta vacia</div>
+            <div class="ta-cart-empty__sub">
+                Explora el menu del restaurante y agrega platos a tu orden anticipada
+            </div>
+        </div>
+    }
+
+</aside>
+
+@code {
+    [Parameter] public List<CartItemModel>? Items { get; set; }
+    [Parameter] public string? RestauranteNombre { get; set; }
+    [Parameter] public DateTime? FechaReserva { get; set; }
+    [Parameter] public string? HoraReserva { get; set; }
+    [Parameter] public int Comensales { get; set; } = 2;
+    [Parameter] public bool IsOpen { get; set; } = true;
+    [Parameter] public EventCallback<CartItemModel> OnUpdateItem { get; set; }
+    [Parameter] public EventCallback<CartItemModel> OnRemoveItem { get; set; }
+    [Parameter] public EventCallback OnPayment { get; set; }
+
+    private string _promoCode = "";
+    private bool _processing = false;
+
+    private decimal Subtotal => Items?.Sum(i => i.PrecioUnitario * i.Cantidad) ?? 0;
+    private decimal Tax => Math.Round(Subtotal * 0.18m);
+    private decimal Tip => Math.Round(Subtotal * 0.10m);
+    private decimal Total => Subtotal + Tax + Tip;
+
+    private async Task UpdateQuantity(CartItemModel item, int delta)
+    {
+        item.Cantidad += delta;
+        if (item.Cantidad < 1)
+        {
+            await RemoveItem(item);
+            return;
+        }
+        await OnUpdateItem.InvokeAsync(item);
+    }
+
+    private async Task RemoveItem(CartItemModel item)
+    {
+        await OnRemoveItem.InvokeAsync(item);
+    }
+
+    private async Task ProcessPayment()
+    {
+        _processing = true;
+        await OnPayment.InvokeAsync();
+        _processing = false;
+    }
+
+    private void ApplyPromo()
+    {
+        // TODO: implementar logica de promo
+    }
+
+    private string FormatPrice(decimal price)
+    {
+        return $"${price:N0}".Replace(",", ".");
+    }
+
+    public class CartItemModel
+    {
+        public int PlatoId { get; set; }
+        public string Nombre { get; set; } = "";
+        public decimal PrecioUnitario { get; set; }
+        public int Cantidad { get; set; } = 1;
+        public string? ImageUrl { get; set; }
+    }
+}

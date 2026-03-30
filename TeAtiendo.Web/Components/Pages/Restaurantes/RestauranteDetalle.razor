@@ -1,64 +1,310 @@
-﻿@page "/restaurantes/{Id:guid}"
+﻿@page "/restaurantes/{RestId}"
+@layout TeAtiendo.Web.Components.Layout.MainLayout
+@inject IApiService ApiService
+@inject NavigationManager Navigation
+@inject Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedSessionStorage SessionStorage
+@inject CartState Cart
+@inject ToastService Toast
 @rendermode InteractiveServer
 
-@if (_loading)
+@if (_isLoading)
 {
-    <LoadingSpinner />
+    <LoadingSpinner Message="Cargando restaurante..." />
 }
-else if (_restaurante is null)
+else if (_rest == null)
 {
-    <div class="alert alert-warning">Restaurante no encontrado.</div>
+    <EmptyState Icon="bi-shop-window" Title="Restaurante no encontrado" Message="El restaurante que buscas no existe.">
+        <button class="ta-btn-primary" @onclick="GoBack"><i class="bi bi-arrow-left"></i> Volver</button>
+    </EmptyState>
 }
 else
 {
-    <div class="card shadow">
-        <div class="card-body">
-            <h3>@_restaurante.Nombre</h3>
-            <p><strong>Direccion:</strong> @_restaurante.Direccion</p>
-            <p><strong>Telefono:</strong> @_restaurante.Telefono</p>
-            <p><strong>Correo:</strong> @_restaurante.Correo</p>
-            <p><strong>Horario:</strong> @_restaurante.HorarioApertura - @_restaurante.HorarioCierre</p>
-        </div>
-    </div>
+    <div class="ta-body-grid has-cart">
+        <div class="ta-main" style="padding-bottom:40px;">
 
-    <div class="mt-4 d-flex gap-2">
-        <a href="/reservas/crear/@Id" class="btn btn-success">Hacer Reserva</a>
-        <a href="/ordenes/crear/@Id" class="btn btn-primary">Crear Orden</a>
-        <a href="/restaurantes" class="btn btn-outline-secondary">Volver</a>
-    </div>
-
-    <h4 class="mt-4">Menus</h4>
-    @if (_menus is null || _menus.Count == 0)
-    {
-        <p class="text-muted">Este restaurante no tiene menus registrados.</p>
-    }
-    else
-    {
-        @foreach (var menu in _menus)
-        {
-            <div class="card mb-2">
-                <div class="card-body">
-                    <h5>@menu.Nombre</h5>
-                    <p class="text-muted">@menu.Descripcion</p>
+            <!-- Header -->
+            <section class="ta-hero" style="min-height:200px;margin:28px 28px 0;">
+                <div class="ta-hero__content">
+                    <button class="ta-btn-hero-secondary" style="padding:8px 16px;font-size:.8rem;margin-bottom:14px;" @onclick="GoBack">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </button>
+                    <h1 class="ta-hero__title" style="font-size:clamp(1.5rem,3vw,2.2rem);">@_rest.Nombre</h1>
+                    <div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:12px;">
+                        @if (!string.IsNullOrEmpty(_rest.Direccion))
+                        {
+                            <span style="color:rgba(255,255,255,.7);font-size:.88rem;display:flex;align-items:center;gap:5px;">
+                                <i class="bi bi-geo-alt"></i> @_rest.Direccion
+                            </span>
+                        }
+                        @if (!string.IsNullOrEmpty(_rest.Telefono))
+                        {
+                            <span style="color:rgba(255,255,255,.7);font-size:.88rem;display:flex;align-items:center;gap:5px;">
+                                <i class="bi bi-telephone"></i> @_rest.Telefono
+                            </span>
+                        }
+                        @if (!string.IsNullOrEmpty(_rest.HorarioApertura))
+                        {
+                            <span style="color:rgba(255,255,255,.7);font-size:.88rem;display:flex;align-items:center;gap:5px;">
+                                <i class="bi bi-clock"></i> @FmtH(_rest.HorarioApertura) - @FmtH(_rest.HorarioCierre)
+                            </span>
+                        }
+                    </div>
                 </div>
+                <div class="ta-hero__stats" style="gap:10px;">
+                    <div class="ta-hero-stat" style="padding:12px 18px;">
+                        <div class="ta-hero-stat__val" style="font-size:1.3rem;">@_mesas.Count</div>
+                        <div class="ta-hero-stat__label">Mesas</div>
+                    </div>
+                    <div class="ta-hero-stat" style="padding:12px 18px;">
+                        <div class="ta-hero-stat__val" style="font-size:1.3rem;">@_menus.Count</div>
+                        <div class="ta-hero-stat__label">Menus</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Acciones -->
+            <section class="ta-sec" style="padding-top:20px;">
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <button class="ta-btn-primary" @onclick="() => _showModal = true">
+                        <i class="bi bi-calendar-plus"></i> Hacer Reserva
+                    </button>
+                    <button class="ta-btn-ghost" @onclick="GoBack">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </button>
+                </div>
+            </section>
+
+            <!-- Mesas -->
+            <section class="ta-sec" style="padding-top:20px;">
+                <div class="ta-sec__head">
+                    <div>
+                        <h2 class="ta-sec__title">Mesas <span>Disponibles</span></h2>
+                        <p class="ta-sec__sub">@_mesas.Count(m => m.Disponible) de @_mesas.Count mesas libres</p>
+                    </div>
+                </div>
+
+                @if (_mesas.Any())
+                {
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;">
+                        @foreach (var mesa in _mesas)
+                        {
+                            var avail = mesa.Disponible;
+                            var bg = avail ? "white" : "rgba(220,53,69,.03)";
+                            var ibg = avail ? "var(--primary-10)" : "var(--danger-bg)";
+                            var ic = avail ? "var(--primary)" : "var(--danger)";
+                            <div class="ta-card" style="@("padding:18px;text-align:center;background:" + bg)">
+                                <div style="@("width:44px;height:44px;border-radius:12px;background:" + ibg + ";display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:1.1rem;color:" + ic)">
+                                    <i class="bi bi-grid-3x3-gap"></i>
+                                </div>
+                                <div style="font-weight:700;font-size:.95rem;">Mesa @mesa.NumeroMesa</div>
+                                <div style="font-size:.78rem;color:var(--text-3);margin-top:2px;">@mesa.Capacidad personas</div>
+                                <div style="margin-top:8px;">
+                                    <StatusBadge Status="@(avail ? "Disponible" : "Ocupada")" />
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <EmptyState Icon="bi-grid-3x3" Title="Sin mesas" Message="Este restaurante no tiene mesas registradas." />
+                }
+            </section>
+
+            <!-- Menus -->
+            <div class="ta-menu-sec" style="margin:20px 28px 0;border-radius:var(--r);">
+                <div class="ta-sec__head" style="margin-bottom:18px;">
+                    <div>
+                        <h2 class="ta-sec__title">Menu - <span>@_rest.Nombre</span></h2>
+                        <p class="ta-sec__sub">Anade platos a tu Orden Anticipada</p>
+                    </div>
+                </div>
+
+                @if (_menus.Any())
+                {
+                    @foreach (var menu in _menus)
+                    {
+                        <div style="margin-bottom:20px;">
+                            <h3 style="font-family:'Fraunces',serif;font-size:1.15rem;font-weight:700;color:var(--text);margin-bottom:12px;">
+                                <i class="bi bi-book" style="color:var(--primary);margin-right:6px;"></i> @menu.Nombre
+                            </h3>
+                            @if (!string.IsNullOrEmpty(menu.Descripcion))
+                            {
+                                <p style="font-size:.82rem;color:var(--text-3);margin-bottom:14px;">@menu.Descripcion</p>
+                            }
+                            <p style="font-size:.82rem;color:var(--text-3);">
+                                <i class="bi bi-info-circle"></i> Platos disponibles al visitar el restaurante.
+                            </p>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <EmptyState Icon="bi-book" Title="Sin menus" Message="Este restaurante aun no tiene menus." />
+                }
             </div>
-        }
-    }
+
+        </div>
+
+        <!-- CART SIDEBAR -->
+        <CartSidebar Items="@_cartItems"
+                     RestauranteNombre="@_rest.Nombre"
+                     Comensales="2"
+                     OnUpdateItem="HandleUpdateCart"
+                     OnRemoveItem="HandleRemoveCart"
+                     OnPayment="HandlePayment" />
+    </div>
+
+    <!-- RESERVA MODAL -->
+    <ReservaModal IsOpen="@_showModal"
+                  RestauranteNombre="@_rest.Nombre"
+                  RestauranteDireccion="@_rest.Direccion"
+                  RestauranteId="0"
+                  Mesas="@_mesasModal"
+                  OnClose="() => _showModal = false"
+                  OnConfirm="HandleReserva" />
 }
 
 @code {
-    [Parameter] public Guid Id { get; set; }
-    [Inject] private IApiService _api { get; set; } = default!;
+    [Parameter] public string RestId { get; set; } = "";
 
-    private RestauranteResponse? _restaurante;
-    private List<MenuResponse>? _menus;
-    private bool _loading = true;
+    private bool _isLoading = true;
+    private bool _showModal = false;
+    private string _userId = "";
+    private RestDto? _rest;
+    private List<MesaDto> _mesas = new();
+    private List<MenuDto> _menus = new();
+    private List<CartSidebar.CartItemModel> _cartItems = new();
+    private List<ReservaModal.MesaDto> _mesasModal = new();
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        _restaurante = await _api.GetAsync<RestauranteResponse>($"api/Restaurantes/{Id}");
-        _menus = await _api.GetAsync<List<MenuResponse>>("api/Menus");
-        _menus = _menus?.Where(m => m.RestauranteId == Id).ToList();
-        _loading = false;
+        if (firstRender)
+        {
+            try
+            {
+                var idResult = await SessionStorage.GetAsync<string>("userId");
+                if (idResult.Success) _userId = idResult.Value ?? "";
+            }
+            catch { }
+            await LoadAll();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadAll()
+    {
+        _isLoading = true;
+        try
+        {
+            // Restaurante
+            var rResp = await ApiService.GetAsync<SingleResp>("api/Restaurantes/" + RestId);
+            if (rResp?.Data != null) _rest = rResp.Data;
+
+            // Mesas por restaurante
+            try
+            {
+                var mesasResp = await ApiService.GetAsync<List<MesaDto>>("api/Mesas/restaurante/" + RestId);
+                if (mesasResp != null) _mesas = mesasResp;
+            }
+            catch { }
+
+            // Menus por restaurante
+            try
+            {
+                var menusResp = await ApiService.GetAsync<List<MenuDto>>("api/Menus/restaurante/" + RestId);
+                if (menusResp != null) _menus = menusResp;
+            }
+            catch { }
+
+            // Preparar mesas para modal
+            int num = 1;
+            _mesasModal = _mesas.Select(m => new ReservaModal.MesaDto
+            {
+                Id = num++,
+                Numero = m.NumeroMesa,
+                Capacidad = m.Capacidad,
+                Disponible = m.Disponible
+            }).ToList();
+
+            if (_rest != null)
+                Cart.SetRestaurante(0, _rest.Nombre);
+        }
+        catch { }
+        finally { _isLoading = false; }
+    }
+
+    private void GoBack() { Navigation.NavigateTo("/restaurantes"); }
+    private string FmtH(string? h) { if (string.IsNullOrEmpty(h)) return ""; return h.Length >= 5 ? h.Substring(0, 5) : h; }
+
+    private async Task HandleReserva(ReservaModal.ReservaRequest req)
+    {
+        try
+        {
+            var body = new
+            {
+                usuarioId = _userId,
+                restauranteId = RestId,
+                mesaId = _mesas.Count > 0 ? _mesas.First().Id.ToString() : "",
+                fechaReserva = req.Fecha.ToString("yyyy-MM-dd") + "T" + ConvertTo24h(req.Hora),
+                numeroPersonas = req.NumeroPersonas,
+                notas = req.Notas ?? ""
+            };
+            await ApiService.PostAsync<object>("api/Reservas", body);
+            Toast.Success("Reserva creada exitosamente!");
+        }
+        catch { Toast.Error("Error al crear la reserva"); }
+    }
+
+    private void HandleUpdateCart(CartSidebar.CartItemModel item) { StateHasChanged(); }
+    private void HandleRemoveCart(CartSidebar.CartItemModel item) { _cartItems.Remove(item); Toast.Info("Plato eliminado"); StateHasChanged(); }
+
+    private async Task HandlePayment()
+    {
+        if (!_cartItems.Any()) { Toast.Warning("Agrega platos primero"); return; }
+        try
+        {
+            var body = new
+            {
+                usuarioId = _userId,
+                restauranteId = RestId,
+                detalles = _cartItems.Select(i => new { platoId = i.PlatoId, cantidad = i.Cantidad, precioUnitario = i.PrecioUnitario }).ToList()
+            };
+            await ApiService.PostAsync<object>("api/Ordenes", body);
+            Toast.Success("Orden creada y pago procesado!");
+            _cartItems.Clear();
+            StateHasChanged();
+        }
+        catch { Toast.Error("Error al procesar"); }
+    }
+
+    private string ConvertTo24h(string t) { DateTime dt; if (DateTime.TryParse(t, out dt)) return dt.ToString("HH:mm:ss"); return "19:00:00"; }
+
+    // api modelos 
+    private class SingleResp { public string? Message { get; set; } public RestDto? Data { get; set; } }
+    private class RestDto
+    {
+        public Guid Id { get; set; }
+        public string Nombre { get; set; } = "";
+        public string? Direccion { get; set; }
+        public string? Telefono { get; set; }
+        public string? Correo { get; set; }
+        public string? HorarioApertura { get; set; }
+        public string? HorarioCierre { get; set; }
+    }
+    private class MesaDto
+    {
+        public Guid Id { get; set; }
+        public Guid RestauranteId { get; set; }
+        public int NumeroMesa { get; set; }
+        public int Capacidad { get; set; }
+        public bool Disponible { get; set; }
+    }
+    private class MenuDto
+    {
+        public Guid Id { get; set; }
+        public string Nombre { get; set; } = "";
+        public string? Descripcion { get; set; }
+        public Guid RestauranteId { get; set; }
     }
 }

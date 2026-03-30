@@ -1,18 +1,50 @@
-﻿@if (!string.IsNullOrEmpty(Message))
+﻿@* ErrorAlert.razor — Alertas con variantes (error, success, warning, info) *@
+
+@if (Visible)
 {
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <strong>Error:</strong> @Message
-        <button type="button" class="btn-close" @onclick="Close"></button>
+    <div class="ta-alert ta-alert--@Type ta-animate-slide-up">
+        <i class="ta-alert__ico bi @GetIcon()"></i>
+        <div style="flex:1;">
+            @if (!string.IsNullOrEmpty(Title))
+            {
+                <strong style="display:block;margin-bottom:2px;">@Title</strong>
+            }
+            <span>@Message</span>
+            @if (ChildContent != null)
+            {
+                @ChildContent
+            }
+        </div>
+        @if (Dismissible)
+        {
+            <button class="ta-alert__close" @onclick="Dismiss">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        }
     </div>
 }
 
 @code {
-    [Parameter] public string Message { get; set; } = string.Empty;
-    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public string Type { get; set; } = "error"; // error, success, warning, info
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string Message { get; set; } = "";
+    [Parameter] public bool Visible { get; set; } = true;
+    [Parameter] public bool Dismissible { get; set; } = true;
+    [Parameter] public EventCallback OnDismiss { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    private async Task Close()
+    private string GetIcon() => Type switch
     {
-        Message = string.Empty;
-        await OnClose.InvokeAsync();
+        "error" => "bi-exclamation-triangle-fill",
+        "success" => "bi-check-circle-fill",
+        "warning" => "bi-exclamation-circle-fill",
+        "info" => "bi-info-circle-fill",
+        _ => "bi-exclamation-triangle-fill"
+    };
+
+    private async Task Dismiss()
+    {
+        Visible = false;
+        await OnDismiss.InvokeAsync();
     }
 }

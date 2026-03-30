@@ -1,0 +1,159 @@
+@page "/restaurante/reservas"
+@layout TeAtiendo.Web.Components.Layout.MainLayout
+@inject IApiService ApiService
+@inject ToastService Toast
+@inject Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedSessionStorage SessionStorage
+@rendermode InteractiveServer
+
+<section class="ta-sec">
+    <div class="ta-sec__head">
+        <div>
+            <h2 class="ta-sec__title">Reservas <span>Entrantes</span></h2>
+            <p class="ta-sec__sub">Gestiona las reservas de tu restaurante</p>
+        </div>
+    </div>
+</section>
+
+<section class="ta-sec" style="padding-top:0%;">
+    @if (_isLoading)
+    {
+        <LoadingSpinner Mode="skeleton-table" Count="5" Columns="6" />
+    }
+    else if (_reservas.Any())
+    {
+        <div class="ta-table-wrap">
+            <table class="ta-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Cliente</th>
+                        <th>Fecha</th>
+                        <th>Personas</th>
+                        <th>Mesa</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var reserva in _reservas.OrderByDescending(r => r.FechaReserva))
+                    {
+                        <tr>
+                            <td style="font-weight:600;color:var(--text-3);">#@reserva.Id</td>
+                            <td>
+                                <div style="display:flex;align-items:center;gap:8px;">
+                                    <div style="width:32px;height:32px;border-radius:50%;background:var(--primary-10);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:var(--primary);">
+                                        U@reserva.UsuarioId
+                                    </div>
+                                    <span style="font-weight:600;">Usuario #@reserva.UsuarioId</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div style="font-weight:600;">@reserva.FechaReserva.ToString("dd MMM yyyy")</div>
+                                <div style="font-size:.75rem;color:var(--text-3);">@reserva.FechaReserva.ToString("hh:mm tt")</div>
+                            </td>
+                            <td>
+                                <i class="bi bi-people" style="margin-right:4px;color:var(--text-3);"></i>
+                                @reserva.NumeroPersonas
+                            </td>
+                            <td>Mesa @reserva.MesaId</td>
+                            <td><StatusBadge Status="@reserva.Estado" /></td>
+                            <td>
+                                @if (reserva.Estado == "Pendiente")
+                                {
+                                    <div style="display:flex;gap:6px;">
+                                        <button class="ta-btn-success" style="padding:5px 10px;font-size:.75rem;" @onclick="() => ConfirmReserva(reserva)">
+                                            <i class="bi bi-check-lg"></i> Confirmar
+                                        </button>
+                                        <button class="ta-btn-danger" style="padding:5px 10px;font-size:.75rem;" @onclick="() => RejectReserva(reserva)">
+                                            <i class="bi bi-x-lg"></i> Rechazar
+                                        </button>
+                                    </div>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <EmptyState Icon="bi-calendar-x" Title="Sin reservas" Message="No hay reservas para tu restaurante." />
+    }
+</section>
+
+@code {
+    private bool _isLoading = true;
+    private int _restauranteId = 0;
+    private List<ReservaData> _reservas = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var restIdResult = await SessionStorage.GetAsync<string>("restauranteId");
+                if (restIdResult.Success && !string.IsNullOrEmpty(restIdResult.Value))
+                {
+                    int.TryParse(restIdResult.Value, out int parsedRestId);
+                    _restauranteId = parsedRestId;
+                }
+            }
+            catch { }
+
+            await LoadReservas();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadReservas()
+    {
+        _isLoading = true;
+        try
+        {
+            if (_restauranteId > 0)
+            {
+                var result = await ApiService.GetAsync<List<ReservaData>>("api/Reservas/restaurante/" + _restauranteId);
+                if (result != null) _reservas = result;
+            }
+        }
+        catch { }
+        finally { _isLoading = false; }
+    }
+
+    private async Task ConfirmReserva(ReservaData reserva)
+    {
+        try
+        {
+            await ApiService.PatchAsync<object>("api/Reservas/" + reserva.Id + "/estado", new { estado = "Confirmada" });
+            reserva.Estado = "Confirmada";
+            Toast.Success("Reserva confirmada!");
+            StateHasChanged();
+        }
+        catch { Toast.Error("Error al confirmar"); }
+    }
+
+    private async Task RejectReserva(ReservaData reserva)
+    {
+        try
+        {
+            await ApiService.PatchAsync<object>("api/Reservas/" + reserva.Id + "/estado", new { estado = "Rechazada" });
+            reserva.Estado = "Rechazada";
+            Toast.Success("Reserva rechazada");
+            StateHasChanged();
+        }
+        catch { Toast.Error("Error al rechazar"); }
+    }
+
+    private class ReservaData
+    {
+        public int Id { get; set; }
+        public int UsuarioId { get; set; }
+        public int RestauranteId { get; set; }
+        public int MesaId { get; set; }
+        public DateTime FechaReserva { get; set; }
+        public int NumeroPersonas { get; set; }
+        public string Estado { get; set; } = "Pendiente";
+    }
+}

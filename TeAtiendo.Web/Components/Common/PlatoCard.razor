@@ -1,0 +1,70 @@
+@* PlatoCard.razor  *@
+
+<div class="ta-dcard" tabindex="0">
+    @if (!string.IsNullOrEmpty(ImageUrl))
+    {
+        <img class="ta-dcard__img" src="@ImageUrl" alt="@Nombre" loading="lazy" />
+    }
+    else
+    {
+        <div class="ta-dcard__img" style="display:flex;align-items:center;justify-content:center;background:var(--bg-warm);">
+            <i class="bi bi-egg-fried" style="font-size:1.4rem;color:var(--text-3);"></i>
+        </div>
+    }
+
+    <div class="ta-dcard__body">
+        <div class="ta-dcard__name">@Nombre</div>
+        @if (!string.IsNullOrEmpty(Descripcion))
+        {
+            <div class="ta-dcard__desc">@Descripcion</div>
+        }
+        <div class="ta-dcard__foot">
+            <span class="ta-dcard__price">@FormatPrice(Precio)</span>
+            <button class="ta-dcard__add @(_added ? "added" : "")"
+                    @onclick="AddToCart"
+                    aria-label="Agregar @Nombre">
+                <i class="bi @(_added ? "bi-check-lg" : "bi-plus-lg")"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    [Parameter] public string Nombre { get; set; } = "";
+    [Parameter] public string? Descripcion { get; set; }
+    [Parameter] public decimal Precio { get; set; }
+    [Parameter] public string? ImageUrl { get; set; }
+    [Parameter] public EventCallback<PlatoAddedEventArgs> OnAdd { get; set; }
+
+    private bool _added = false;
+
+    private async Task AddToCart()
+    {
+        _added = true;
+        await OnAdd.InvokeAsync(new PlatoAddedEventArgs
+        {
+            PlatoId = Id,
+            Nombre = Nombre,
+            Precio = Precio,
+            ImageUrl = ImageUrl
+        });
+
+        // Reset animation
+        await Task.Delay(1200);
+        _added = false;
+    }
+
+    private string FormatPrice(decimal price)
+    {
+        return $"${price:N0}".Replace(",", ".");
+    }
+
+    public class PlatoAddedEventArgs
+    {
+        public int PlatoId { get; set; }
+        public string Nombre { get; set; } = "";
+        public decimal Precio { get; set; }
+        public string? ImageUrl { get; set; }
+    }
+}

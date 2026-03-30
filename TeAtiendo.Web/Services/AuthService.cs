@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
-using TeAtiendo.Web.Models.Requets;
+using TeAtiendo.Web.Models.Requests;
 using TeAtiendo.Web.Models.Reponses;
 
 namespace TeAtiendo.Web.Services
@@ -28,6 +28,7 @@ namespace TeAtiendo.Web.Services
                 Token = response.Token;
                 CurrentUser = response.User;
                 IsAuthenticated = true;
+
                 _api.SetToken(response.Token!);
 
                 await _storage.SetAsync("token", response.Token!);
@@ -35,6 +36,25 @@ namespace TeAtiendo.Web.Services
                 await _storage.SetAsync("userName", response.User.Nombre);
                 await _storage.SetAsync("userEmail", response.User.Correo);
                 await _storage.SetAsync("userRol", response.User.Rol.ToString());
+
+                // Si es rol Restaurante, buscar su restauranteId
+                if (response.User.Rol == 2)
+                {
+                    try
+                    {
+                        var restaurantes = await _api.GetAsync<RestauranteListResponse>("api/Restaurantes");
+                        if (restaurantes != null && restaurantes.Data != null && restaurantes.Data.Any())
+                        {
+                            // Buscar el restaurante que pertenece a este usuario
+                            var miRest = restaurantes.Data.FirstOrDefault();
+                            if (miRest != null)
+                            {
+                                await _storage.SetAsync("restauranteId", miRest.Id.ToString());
+                            }
+                        }
+                    }
+                    catch { }
+                }
             }
 
             return response;
@@ -62,12 +82,18 @@ namespace TeAtiendo.Web.Services
                     var emailResult = await _storage.GetAsync<string>("userEmail");
                     var rolResult = await _storage.GetAsync<string>("userRol");
 
+                    var userId = Guid.Empty;
+                    try { userId = Guid.Parse(idResult.Value ?? ""); } catch { }
+
+                    var rol = 1;
+                    try { rol = int.Parse(rolResult.Value ?? "1"); } catch { }
+
                     CurrentUser = new UserInfo
                     {
-                        Id = Guid.Parse(idResult.Value ?? Guid.Empty.ToString()),
-                        Nombre = nameResult.Value ?? "",
+                        Id = userId,
+                        Nombre = nameResult.Value ?? "Usuario",
                         Correo = emailResult.Value ?? "",
-                        Rol = int.Parse(rolResult.Value ?? "1")
+                        Rol = rol
                     };
                 }
             }
@@ -88,6 +114,20 @@ namespace TeAtiendo.Web.Services
             await _storage.DeleteAsync("userName");
             await _storage.DeleteAsync("userEmail");
             await _storage.DeleteAsync("userRol");
+            await _storage.DeleteAsync("restauranteId");
         }
+    }
+
+    // Clase auxiliar para deserializar la lista de restaurantes
+    public class RestauranteListResponse
+    {
+        public string? Message { get; set; }
+        public List<RestauranteBasic>? Data { get; set; }
+    }
+
+    public class RestauranteBasic
+    {
+        public int Id { get; set; }
+        public string Nombre { get; set; } = "";
     }
 }

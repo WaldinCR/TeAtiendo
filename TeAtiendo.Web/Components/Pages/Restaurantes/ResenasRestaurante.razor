@@ -1,0 +1,126 @@
+@page "/restaurante/resenas"
+@layout TeAtiendo.Web.Components.Layout.MainLayout
+@inject IApiService ApiService
+@inject Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedSessionStorage SessionStorage
+@rendermode InteractiveServer
+
+<section class="ta-sec">
+    <div class="ta-sec__head">
+        <div>
+            <h2 class="ta-sec__title">Resenas del <span>Restaurante</span></h2>
+            <p class="ta-sec__sub">Lo que dicen tus clientes</p>
+        </div>
+        @if (_promedioRating > 0)
+        {
+            <div style="display:flex;align-items:center;gap:8px;">
+                <StarRating Value="@_promedioRating" ReadOnly="true" />
+                <span style="font-family:'Fraunces',serif;font-weight:700;font-size:1.3rem;color:var(--text);">
+                    @_promedioRating.ToString("0.0")
+                </span>
+            </div>
+        }
+    </div>
+</section>
+
+<section class="ta-sec" style="padding-top:0%;">
+    @if (_isLoading)
+    {
+        <LoadingSpinner Mode="skeleton-list" Count="3" />
+    }
+    else if (_resenas.Any())
+    {
+        <div style="display:flex;flex-direction:column;gap:14px;">
+            @foreach (var resena in _resenas.OrderByDescending(r => r.FechaCreacion))
+            {
+                <div class="ta-card ta-animate-fade-up" style="padding:20px;">
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <div style="width:40px;height:40px;border-radius:50%;background:var(--primary-10);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.82rem;color:var(--primary);">
+                                U@resena.UsuarioId
+                            </div>
+                            <div>
+                                <div style="font-weight:700;font-size:.92rem;">Usuario #@resena.UsuarioId</div>
+                                <div style="font-size:.75rem;color:var(--text-3);">@resena.FechaCreacion.ToString("dd MMM yyyy")</div>
+                            </div>
+                        </div>
+                        <StarRating Value="@resena.Calificacion" ReadOnly="true" ShowValue="true" />
+                    </div>
+                    @if (!string.IsNullOrEmpty(resena.Comentario))
+                    {
+                        <p style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);font-size:.88rem;color:var(--text-2);line-height:1.6;">
+                            @resena.Comentario
+                        </p>
+                    }
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <EmptyState Icon="bi-star" Title="Sin resenas" Message="Tus clientes aun no han dejado resenas." />
+    }
+</section>
+
+@code {
+    private bool _isLoading = true;
+    private int _restauranteId = 0;
+    private double _promedioRating = 0;
+    private List<ResenaData> _resenas = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var restIdResult = await SessionStorage.GetAsync<string>("restauranteId");
+                if (restIdResult.Success && !string.IsNullOrEmpty(restIdResult.Value))
+                {
+                    int.TryParse(restIdResult.Value, out int parsedRestId);
+                    _restauranteId = parsedRestId;
+                }
+            }
+            catch { }
+
+            await LoadResenas();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadResenas()
+    {
+        _isLoading = true;
+        try
+        {
+            if (_restauranteId > 0)
+            {
+                var result = await ApiService.GetAsync<List<ResenaData>>("api/Resenas/restaurante/" + _restauranteId);
+                if (result != null) _resenas = result;
+
+                try
+                {
+                    var promResp = await ApiService.GetAsync<PromedioResp>("api/Resenas/restaurante/" + _restauranteId + "/promedio");
+                    if (promResp != null) _promedioRating = promResp.Promedio;
+                }
+                catch { }
+            }
+        }
+        catch { }
+        finally { _isLoading = false; }
+    }
+
+    private class ResenaData
+    {
+        public int Id { get; set; }
+        public int UsuarioId { get; set; }
+        public int RestauranteId { get; set; }
+        public int Calificacion { get; set; }
+        public string? Comentario { get; set; }
+        public DateTime FechaCreacion { get; set; }
+    }
+
+    private class PromedioResp
+    {
+        public double Promedio { get; set; }
+    }
+}

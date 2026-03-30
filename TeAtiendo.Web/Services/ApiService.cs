@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Headers;
+﻿using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
 namespace TeAtiendo.Web.Services
@@ -75,6 +76,26 @@ namespace TeAtiendo.Web.Services
             catch
             {
                 return false;
+            }
+        }
+
+        public async Task<T?> PatchAsync<T>(string url, object data)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Patch, url)
+                {
+                    Content = JsonContent.Create(data)
+                };
+
+                var response = await _http.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                    return await response.Content.ReadFromJsonAsync<T>();
+                return default;
+            }
+            catch
+            {
+                return default;
             }
         }
     }

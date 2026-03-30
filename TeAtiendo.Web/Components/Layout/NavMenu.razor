@@ -1,68 +1,105 @@
-﻿<div class="bg-dark text-white d-flex flex-column" style="width: 250px; min-height: 100vh;">
-    <div class="p-3 border-bottom border-secondary">
-        <h5 class="mb-0">Te Atiendo</h5>
-        <small class="text-muted">Plataforma de Reservas</small>
-    </div>
+﻿@inject NavigationManager Navigation
 
-    <nav class="nav flex-column p-2 flex-grow-1">
-        <NavLink class="nav-link text-white" href="/" Match="NavLinkMatch.All">
-            Inicio
+<nav class="ta-nav-sidebar @(_isOpen ? "open" : "")">
+
+    @if (UserRole == 1)
+    {
+        <!-- CLIENTE:  -->
+        <div class="ta-nav-sidebar__section">Mi Cuenta</div>
+        <NavLink class="ta-nav-sidebar__link" href="/" Match="NavLinkMatch.All">
+            <i class="bi bi-house"></i> Inicio
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/restaurantes">
+            <i class="bi bi-shop-window"></i> Restaurantes
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/reservas">
+            <i class="bi bi-calendar-check"></i> Mis Reservas
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/ordenes">
+            <i class="bi bi-receipt"></i> Mis Ordenes
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/pagos">
+            <i class="bi bi-credit-card"></i> Mis Pagos
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/resenas">
+            <i class="bi bi-star"></i> Mis Resenas
+        </NavLink>
+    }
+
+    @if (UserRole == 2)
+    {
+        <!-- RESTAURANTE -->
+        <div class="ta-nav-sidebar__section">Restaurante</div>
+        <NavLink class="ta-nav-sidebar__link" href="/restaurante/dashboard" Match="NavLinkMatch.All">
+            <i class="bi bi-speedometer2"></i> Dashboard
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/restaurante/reservas">
+            <i class="bi bi-calendar-check"></i> Reservas
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/restaurante/ordenes">
+            <i class="bi bi-receipt"></i> Ordenes
         </NavLink>
 
-        @if (_authService.IsAuthenticated)
-        {
-            <NavLink class="nav-link text-white" href="/restaurantes">
-                Restaurantes
-            </NavLink>
-            <NavLink class="nav-link text-white" href="/reservas">
-                Reservas
-            </NavLink>
-            <NavLink class="nav-link text-white" href="/ordenes">
-                Ordenes
-            </NavLink>
-            <NavLink class="nav-link text-white" href="/pagos">
-                Pagos
-            </NavLink>
-            <NavLink class="nav-link text-white" href="/resenas">
-                Resenas
-            </NavLink>
+        <div class="ta-nav-sidebar__section">Gestion</div>
+        <NavLink class="ta-nav-sidebar__link" href="/restaurante/menu">
+            <i class="bi bi-book"></i> Menu
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/restaurante/mesas">
+            <i class="bi bi-grid-3x3"></i> Mesas
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/restaurante/resenas">
+            <i class="bi bi-star"></i> Resenas
+        </NavLink>
+    }
 
-            @if (_authService.CurrentUser?.Rol == 3)
-            {
-                <hr class="border-secondary" />
-                <small class="text-muted px-3">ADMINISTRACION</small>
-                <NavLink class="nav-link text-white" href="/usuarios">
-                    Usuarios
-                </NavLink>
-                <NavLink class="nav-link text-white" href="/auditoria">
-                    Auditoria
-                </NavLink>
-                <NavLink class="nav-link text-white" href="/moderacion">
-                    Moderacion
-                </NavLink>
-            }
-        }
-        else
-        {
-            <NavLink class="nav-link text-white" href="/login">
-                Iniciar Sesion
-            </NavLink>
-            <NavLink class="nav-link text-white" href="/register">
-                Registrarse
-            </NavLink>
-        }
-    </nav>
-</div>
+    @if (UserRole == 3)
+    {
+        <!-- ADMIN -->
+        <div class="ta-nav-sidebar__section">Dashboard</div>
+        <NavLink class="ta-nav-sidebar__link" href="/" Match="NavLinkMatch.All">
+            <i class="bi bi-speedometer2"></i> Inicio
+        </NavLink>
+
+        <div class="ta-nav-sidebar__section">Gestion</div>
+        <NavLink class="ta-nav-sidebar__link" href="/admin/usuarios">
+            <i class="bi bi-people"></i> Usuarios
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/restaurantes">
+            <i class="bi bi-shop-window"></i> Restaurantes
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/reservas">
+            <i class="bi bi-calendar-check"></i> Reservas
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/ordenes">
+            <i class="bi bi-receipt"></i> Ordenes
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/pagos">
+            <i class="bi bi-credit-card"></i> Pagos
+        </NavLink>
+
+        <div class="ta-nav-sidebar__section">Sistema</div>
+        <NavLink class="ta-nav-sidebar__link" href="/admin/auditoria">
+            <i class="bi bi-clipboard-data"></i> Auditoria
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/admin/moderacion">
+            <i class="bi bi-shield-check"></i> Moderacion
+        </NavLink>
+        <NavLink class="ta-nav-sidebar__link" href="/admin/notificaciones">
+            <i class="bi bi-bell"></i> Notificaciones
+        </NavLink>
+    }
+
+</nav>
 
 @code {
-    [Inject] private IAuthService _authService { get; set; } = default!;
+    [Parameter]
+    public int UserRole { get; set; } = 1;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    private bool _isOpen = false;
+
+    public void Toggle()
     {
-        if (firstRender)
-        {
-            await _authService.LoadSession();
-            StateHasChanged();
-        }
+        _isOpen = !_isOpen;
+        StateHasChanged();
     }
 }

@@ -21,20 +21,29 @@ namespace TeAtiendo.API.Controllers
         {
             try
             {
-                var result = await _authService.RegisterAsync(dto, ct);
-                return CreatedAtAction(nameof(Register), new { id = result.Id }, result);
+                var user = await _authService.RegisterAsync(dto, ct);
+
+                var response = new
+                {
+                    success = true,
+                    message = "Cuenta creada exitosamente",
+                    user = user
+                };
+
+                return Ok(response);
+
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new { success = false, message = ex.Message });
             }
             catch (InvalidOperationException ex)
             {
-                return Conflict(new { message = ex.Message }); 
+                return Conflict(new { success = false, message = ex.Message });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = ex.Message });
+                return StatusCode(500, new { success = false, message = ex.Message });
             }
         }
 
