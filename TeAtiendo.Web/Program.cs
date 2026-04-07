@@ -16,7 +16,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddScoped<TeAtiendo.Web.Services.ToastService>();
 builder.Services.AddScoped<TeAtiendo.Web.Services.CartState>();
-
+builder.Services.AddScoped<TeAtiendo.Web.Services.NotificationService>();
+builder.Services.AddScoped<TeAtiendo.Web.Services.FavoritosService>();
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())

@@ -1,106 +1,86 @@
-﻿@page "/usuarios"
+﻿@page "/admin/usuarios"
+@using TeAtiendo.Web.Services
+@layout TeAtiendo.Web.Components.Layout.MainLayout
+@inject IApiService ApiService
+@inject ToastService Toast
 @rendermode InteractiveServer
 
-<h3>Gestion de Usuarios</h3>
+<section class="ta-sec">
+    <div class="ta-sec__head">
+        <div>
+            <h2 class="ta-sec__title">Gestion de <span>Usuarios</span></h2>
+            <p class="ta-sec__sub">Administrar cuentas del sistema</p>
+        </div>
+    </div>
+</section>
 
-@if (_auth.CurrentUser?.Rol != 3)
-{
-    <div class="alert alert-danger">No tienes permisos para acceder a esta seccion.</div>
-}
-else
-{
-    @if (_loading)
+<section class="ta-sec" style="padding-top:0;">
+    @if (_isLoading)
     {
-        <LoadingSpinner />
+        <div class="ta-loading"><div class="ta-spinner"></div></div>
     }
-    else if (_usuarios is null || _usuarios.Count == 0)
+    else if (_usuarios.Any())
     {
-        <div class="alert alert-info">No hay usuarios registrados.</div>
+        <div class="ta-table-wrap">
+            <table class="ta-table">
+                <thead><tr><th>Usuario</th><th>Correo</th><th>Rol</th><th>Acciones</th></tr></thead>
+                <tbody>
+                    @foreach (var u in _usuarios)
+                    {
+                        <tr>
+                            <td>
+                                <div style="display:flex;align-items:center;gap:10px;">
+                                    <div style="width:36px;height:36px;border-radius:50%;background:var(--primary-10);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.78rem;color:var(--primary);">@GetInitials(u.Nombre)</div>
+                                    <span style="font-weight:600;">@u.Nombre</span>
+                                </div>
+                            </td>
+                            <td style="color:var(--text-3);">@u.Correo</td>
+                            <td><span class="ta-status @GetRolClass(u.Rol)">@GetRolText(u.Rol)</span></td>
+                            <td>
+                                <button class="ta-btn-ghost" style="padding:6px 12px;font-size:.78rem;color:var(--danger);" @onclick="() => DeleteUser(u.Id)"><i class="bi bi-trash"></i> Eliminar</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     }
     else
     {
-        <div class="mb-3">
-            <input type="text" class="form-control" placeholder="Buscar por nombre o correo..." @bind="_busqueda" @bind:event="oninput" />
-        </div>
-
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Nombre</th>
-                    <th>Correo</th>
-                    <th>Rol</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var u in UsuariosFiltrados)
-                {
-                    <tr>
-                        <td>@u.Nombre</td>
-                        <td>@u.Correo</td>
-                        <td>
-                            <span class="badge @GetRolBadge(u.Rol)">@GetRolNombre(u.Rol)</span>
-                        </td>
-                        <td>
-                            <button class="btn btn-danger btn-sm" @onclick="() => Eliminar(u.Id)">Eliminar</button>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-
-        <p class="text-muted">Total: @UsuariosFiltrados.Count usuarios</p>
+        <div class="ta-empty-state"><div class="ta-empty-state__ico"><i class="bi bi-people"></i></div><div class="ta-empty-state__title">Sin usuarios</div></div>
     }
-}
+</section>
 
 @code {
-    [Inject] private IApiService _api { get; set; } = default!;
-    [Inject] private IAuthService _auth { get; set; } = default!;
+    private bool _isLoading = true;
+    private List<UsuarioItem> _usuarios = new();
 
-    private List<UsuarioItem>? _usuarios;
-    private string _busqueda = string.Empty;
-    private bool _loading = true;
-
-    private List<UsuarioItem> UsuariosFiltrados =>
-        string.IsNullOrWhiteSpace(_busqueda)
-            ? _usuarios ?? new()
-            : (_usuarios ?? new()).Where(u =>
-                u.Nombre.Contains(_busqueda, StringComparison.OrdinalIgnoreCase) ||
-                u.Correo.Contains(_busqueda, StringComparison.OrdinalIgnoreCase)).ToList();
-
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        _usuarios = await _api.GetAsync<List<UsuarioItem>>("api/Usuarios");
-        _loading = false;
+        if (firstRender)
+        {
+            _isLoading = true;
+            try { var r = await ApiService.GetAsync<List<UsuarioItem>>("api/Usuarios"); if (r != null) _usuarios = r; }
+            catch { }
+            finally { _isLoading = false; }
+            StateHasChanged();
+        }
     }
 
-    private async Task Eliminar(Guid id)
+    private async Task DeleteUser(Guid id)
     {
-        await _api.DeleteAsync($"api/Usuarios/{id}?userId={_auth.CurrentUser!.Id}");
-        _usuarios = await _api.GetAsync<List<UsuarioItem>>("api/Usuarios");
+        try
+        {
+            await ApiService.DeleteAsync($"api/Usuarios/{id}"); Toast.Success("Usuario eliminado");
+            _isLoading = true; try { var r = await ApiService.GetAsync<List<UsuarioItem>>("api/Usuarios"); if (r != null) _usuarios = r; } catch { } finally { _isLoading = false; }
+            StateHasChanged();
+        }
+        catch { Toast.Error("Error al eliminar"); }
     }
 
-    private string GetRolNombre(int rol) => rol switch
-    {
-        1 => "Cliente",
-        2 => "Restaurante",
-        3 => "Admin",
-        _ => "Desconocido"
-    };
+    private string GetInitials(string? n) { if (string.IsNullOrWhiteSpace(n)) return "U"; var p = n.Split(' '); return p.Length >= 2 ? $"{p[0][0]}{p[1][0]}".ToUpper() : p[0][0].ToString().ToUpper(); }
+    private string GetRolClass(int r) => r switch { 1 => "ta-status--confirmada", 2 => "ta-status--preparacion", 3 => "ta-status--pendiente", _ => "ta-status--pendiente" };
+    private string GetRolText(int r) => r switch { 1 => "Cliente", 2 => "Restaurante", 3 => "Admin", _ => "Desconocido" };
 
-    private string GetRolBadge(int rol) => rol switch
-    {
-        1 => "bg-primary",
-        2 => "bg-success",
-        3 => "bg-danger",
-        _ => "bg-dark"
-    };
-
-    private class UsuarioItem
-    {
-        public Guid Id { get; set; }
-        public string Nombre { get; set; } = string.Empty;
-        public string Correo { get; set; } = string.Empty;
-        public int Rol { get; set; }
-    }
+    private class UsuarioItem { public Guid Id { get; set; } public string Nombre { get; set; } = ""; public string Correo { get; set; } = ""; public int Rol { get; set; } }
 }
