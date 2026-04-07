@@ -1,4 +1,6 @@
 ﻿@page "/ordenes"
+@using TeAtiendo.Web.Services
+@using TeAtiendo.Web.Models.Reponses
 @layout TeAtiendo.Web.Components.Layout.MainLayout
 @inject IApiService ApiService
 @inject NavigationManager Navigation
@@ -11,98 +13,76 @@
             <h2 class="ta-sec__title">Mis <span>Ordenes</span></h2>
             <p class="ta-sec__sub">Pedidos anticipados y su estado</p>
         </div>
-        <button class="ta-btn-primary" @onclick="GoToRest">
-            <i class="bi bi-plus-lg"></i> Nueva Orden
-        </button>
+        <button class="ta-btn-primary" @onclick='() => Navigation.NavigateTo("/restaurantes")'><i class="bi bi-plus-lg"></i> Nueva Orden</button>
     </div>
 </section>
 
 <section class="ta-sec" style="padding-top:0;">
     @if (_isLoading)
     {
-        <LoadingSpinner Mode="skeleton-list" Count="4" />
+        <div class="ta-loading"><div class="ta-spinner"></div></div>
     }
-    else if (_ordenes.Any())
+    else if (_ordenes != null && _ordenes.Any())
     {
         <div style="display:flex;flex-direction:column;gap:14px;">
-            @foreach (var o in _ordenes.OrderByDescending(x => x.FechaOrden))
+            @foreach (var orden in _ordenes)
             {
                 <div class="ta-card ta-animate-fade-up" style="padding:20px;">
                     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
                         <div style="display:flex;align-items:center;gap:14px;">
-                            <div style="width:44px;height:44px;border-radius:12px;background:var(--primary-10);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--primary);">
-                                <i class="bi bi-receipt"></i>
-                            </div>
+                            <div style="width:44px;height:44px;border-radius:12px;background:var(--primary-10);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--primary);"><i class="bi bi-receipt"></i></div>
                             <div>
                                 <div style="font-weight:700;font-size:.95rem;">Orden</div>
-                                <div style="font-size:.78rem;color:var(--text-3);">
-                                    <i class="bi bi-calendar3"></i> @o.FechaOrden.ToString("dd MMM yyyy, hh:mm tt")
-                                </div>
+                                <div style="font-size:.78rem;color:var(--text-3);"><i class="bi bi-calendar3"></i> @orden.Fecha.ToString("dd MMM yyyy, hh:mm tt")</div>
                             </div>
                         </div>
                         <div style="display:flex;align-items:center;gap:12px;">
-                            <StatusBadge Status="@o.Estado" />
-                            <span style="font-family:'Fraunces',serif;font-weight:700;font-size:1.05rem;color:var(--primary-d);">
-                                $@o.Total.ToString("N0")
-                            </span>
+                            <span class="ta-status @GetSC(orden.Estado)">@GetST(orden.Estado)</span>
+                            <span style="font-family:'Fraunces',serif;font-weight:700;font-size:1.05rem;color:var(--primary-d);">$@orden.Total.ToString("N0")</span>
                         </div>
                     </div>
+                    @if (orden.Detalles != null && orden.Detalles.Any())
+                    {
+                        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:8px;">
+                            @foreach (var det in orden.Detalles)
+                            {
+                                <div style="background:var(--bg-warm);border-radius:10px;padding:6px 12px;font-size:.8rem;display:flex;align-items:center;gap:6px;">
+                                    <i class="bi bi-egg-fried" style="color:var(--primary);"></i>
+                                    <span style="font-weight:600;">Plato</span>
+                                    <span style="color:var(--text-3);">x@det.Cantidad</span>
+                                    <span style="color:var(--primary-d);font-weight:700;">$@det.PrecioUnitario.ToString("N0")</span>
+                                </div>
+                            }
+                        </div>
+                    }
                 </div>
             }
         </div>
     }
     else
     {
-        <EmptyState Icon="bi-receipt" Title="Sin ordenes" Message="Aun no has hecho ninguna orden anticipada.">
-            <button class="ta-btn-primary" @onclick="GoToRest"><i class="bi bi-cart-plus"></i> Hacer mi primera orden</button>
-        </EmptyState>
+        <div class="ta-empty-state"><div class="ta-empty-state__ico"><i class="bi bi-receipt"></i></div><div class="ta-empty-state__title">Sin ordenes</div><div class="ta-empty-state__sub">Aun no has hecho ninguna orden anticipada.</div><button class="ta-btn-primary" @onclick='() => Navigation.NavigateTo("/restaurantes")'><i class="bi bi-cart-plus"></i> Hacer orden</button></div>
     }
 </section>
 
 @code {
     private bool _isLoading = true;
-    private string _userId = "";
-    private List<OrdenDto> _ordenes = new();
+    private Guid _userId;
+    private List<OrdenResponse>? _ordenes;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            try
-            {
-                var idResult = await SessionStorage.GetAsync<string>("userId");
-                if (idResult.Success) _userId = idResult.Value ?? "";
-            }
-            catch { }
-            await LoadOrdenes();
+            try { var r = await SessionStorage.GetAsync<string>("userId"); if (r.Success && Guid.TryParse(r.Value, out var uid)) _userId = uid; } catch { }
+            _isLoading = true;
+            try { _ordenes = await ApiService.GetAsync<List<OrdenResponse>>($"api/Ordenes/usuario/{_userId}"); }
+            catch { _ordenes = new(); }
+            finally { _isLoading = false; }
             StateHasChanged();
         }
     }
 
-    private async Task LoadOrdenes()
-    {
-        _isLoading = true;
-        try
-        {
-            if (!string.IsNullOrEmpty(_userId))
-            {
-                var result = await ApiService.GetAsync<List<OrdenDto>>("api/Ordenes/usuario/" + _userId);
-                if (result != null) _ordenes = result;
-            }
-        }
-        catch { }
-        finally { _isLoading = false; }
-    }
-
-    private void GoToRest() { Navigation.NavigateTo("/restaurantes"); }
-
-    private class OrdenDto
-    {
-        public Guid Id { get; set; }
-        public Guid UsuarioId { get; set; }
-        public Guid RestauranteId { get; set; }
-        public DateTime FechaOrden { get; set; }
-        public string Estado { get; set; } = "Pendiente";
-        public decimal Total { get; set; }
-    }
+    private string GetSC(int s) => s switch { 0 => "ta-status--pendiente", 1 => "ta-status--preparacion", 2 => "ta-status--lista", 3 => "ta-status--entregada", 4 => "ta-status--cancelada", _ => "ta-status--pendiente" };
+    private string GetST(int s) => s switch { 0 => "Pendiente", 1 => "En Preparacion", 2 => "Lista", 3 => "Entregada", 4 => "Cancelada", _ => "Pendiente" };
 }

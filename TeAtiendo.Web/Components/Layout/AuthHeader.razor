@@ -3,6 +3,8 @@
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
 @inject ProtectedSessionStorage SessionStorage
+@inject NotificationService Notif
+@inject FavoritosService Favs
 @rendermode InteractiveServer
 
 @if (_isAuthenticated)
@@ -13,24 +15,60 @@
                 <div class="ta-logo__mark"><i class="bi bi-shop"></i></div>
                 <span class="ta-logo__text">Te <span>Atiendo</span></span>
             </a>
-            <div class="ta-search" role="search">
-                <div class="ta-search__wrap">
-                    <i class="ta-search__ico bi bi-search"></i>
-                    <input class="ta-search__input" type="search" placeholder="Restaurantes, platos, cocinas..." autocomplete="off" @bind="_searchQuery" @bind:event="oninput" @onkeydown="HandleSearchKeyDown" />
-                    <div class="ta-search__sep"></div>
-                    <div class="ta-search__loc"><i class="bi bi-geo-alt-fill"></i> Sto. Domingo</div>
+
+            @if (_userRole == 1)
+            {
+                <div class="ta-search" role="search">
+                    <div class="ta-search__wrap">
+                        <i class="ta-search__ico bi bi-search"></i>
+                        <input class="ta-search__input" type="search" placeholder="Restaurantes, platos, cocinas..." autocomplete="off" @bind="_searchQuery" @bind:event="oninput" @onkeydown="HandleSearchKeyDown" />
+                        <div class="ta-search__sep"></div>
+                        <div class="ta-search__loc"><i class="bi bi-geo-alt-fill"></i> Sto. Domingo</div>
+                    </div>
                 </div>
-            </div>
+            }
+
+            @if (_userRole == 2)
+            {
+                <div style="display:flex;align-items:center;gap:6px;margin-left:12px;">
+                    <a href="/restaurante/dashboard" class="ta-nav-btn" title="Dashboard" style="@ActiveStyle("/restaurante/dashboard")"><i class="bi bi-speedometer2"></i></a>
+                    <a href="/restaurante/menu" class="ta-nav-btn" title="Menu" style="@ActiveStyle("/restaurante/menu")"><i class="bi bi-book"></i></a>
+                    <a href="/restaurante/mesas" class="ta-nav-btn" title="Mesas" style="@ActiveStyle("/restaurante/mesas")"><i class="bi bi-grid-3x3"></i></a>
+                    <a href="/restaurante/reservas" class="ta-nav-btn" title="Reservas" style="@ActiveStyle("/restaurante/reservas")"><i class="bi bi-calendar-check"></i></a>
+                    <a href="/restaurante/ordenes" class="ta-nav-btn" title="Ordenes" style="@ActiveStyle("/restaurante/ordenes")"><i class="bi bi-receipt"></i></a>
+                </div>
+            }
+
+            @if (_userRole == 3)
+            {
+                <div style="display:flex;align-items:center;gap:6px;margin-left:12px;">
+                    <a href="/admin/usuarios" class="ta-nav-btn" title="Usuarios" style="@ActiveStyle("/admin/usuarios")"><i class="bi bi-people"></i></a>
+                    <a href="/admin/auditoria" class="ta-nav-btn" title="Auditoria" style="@ActiveStyle("/admin/auditoria")"><i class="bi bi-clipboard-data"></i></a>
+                    <a href="/admin/moderacion" class="ta-nav-btn" title="Moderacion" style="@ActiveStyle("/admin/moderacion")"><i class="bi bi-shield-check"></i></a>
+                </div>
+            }
+
             <div class="ta-nav-actions">
                 <button class="ta-nav-btn" @onclick="ToggleNotifications" @onclick:stopPropagation="true">
                     <i class="bi bi-bell"></i>
-                    @if (_unreadCount > 0)
+                    @if (Notif.UnreadCount > 0)
                     {
-                        <span class="ta-badge-count">@(_unreadCount > 9 ? "9+" : _unreadCount.ToString())</span>
+                        <span class="ta-badge-count">@(Notif.UnreadCount > 9 ? "9+" : Notif.UnreadCount.ToString())</span>
                     }
                 </button>
-                <button class="ta-nav-btn" @onclick="GoToReservas" title="Mis reservas"><i class="bi bi-calendar-check"></i></button>
-                <button class="ta-nav-btn" title="Favoritos"><i class="bi bi-heart"></i></button>
+
+                @if (_userRole == 1)
+                {
+                    <button class="ta-nav-btn" @onclick="GoToReservas" title="Mis reservas"><i class="bi bi-calendar-check"></i></button>
+                    <button class="ta-nav-btn" title="Favoritos (@Favs.Count)" @onclick="GoToFavoritos">
+                        <i class="bi bi-heart-fill" style="color:@(Favs.Count > 0 ? "var(--primary)" : "inherit");"></i>
+                        @if (Favs.Count > 0)
+                        {
+                            <span class="ta-badge-count" style="background:var(--primary);">@Favs.Count</span>
+                        }
+                    </button>
+                }
+
                 <div class="ta-profile-chip" @onclick="ToggleProfileMenu" @onclick:stopPropagation="true" tabindex="0" role="button">
                     <div class="ta-profile-chip__av">@_userInitials</div>
                     <span class="ta-profile-chip__name">@_userName</span>
@@ -40,21 +78,22 @@
         </div>
     </header>
 
+    <!-- Notificaciones -->
     <div class="ta-notif-panel @(_showNotifications ? "open" : "")">
         <div class="ta-notif-head">
-            <h4>Notificaciones</h4>
-            <button class="ta-notif-clear" @onclick="MarkAllRead">Marcar todo leido</button>
+            <h4>Notificaciones (@Notif.UnreadCount)</h4>
+            <button class="ta-notif-clear" @onclick="() => { Notif.MarkAllRead(); }">Marcar todo leido</button>
         </div>
         <div class="ta-notif-list">
-            @if (_notifications.Any())
+            @if (Notif.Notifications.Any())
             {
-                @foreach (var notif in _notifications.Take(10))
+                @foreach (var notif in Notif.Notifications.Take(15))
                 {
-                    <div class="ta-notif-item @(notif.Leida ? "" : "unread")" @onclick="() => MarkAsRead(notif.Id)">
+                    <div class="ta-notif-item @(notif.Leida ? "" : "unread")" @onclick="() => HandleNotifClick(notif)">
                         <div class="ta-ni-ico @GetNotifIconClass(notif.Tipo)"><i class="bi @GetNotifIcon(notif.Tipo)"></i></div>
                         <div>
                             <p class="ta-ni-text">@((MarkupString)notif.Mensaje)</p>
-                            <p class="ta-ni-time">@FormatTimeAgo(notif.FechaCreacion)</p>
+                            <p class="ta-ni-time">@FormatTimeAgo(notif.Fecha)</p>
                         </div>
                     </div>
                 }
@@ -66,16 +105,30 @@
         </div>
     </div>
 
+    <!-- Profile Dropdown -->
     <div class="ta-profile-dropdown @(_showProfileMenu ? "open" : "")">
-        <button class="ta-profile-dropdown__item" @onclick="GoToReservas"><i class="bi bi-calendar-check"></i> Mis Reservas</button>
-        <button class="ta-profile-dropdown__item" @onclick="GoToOrdenes"><i class="bi bi-receipt"></i> Mis Ordenes</button>
-        <button class="ta-profile-dropdown__item" @onclick="GoToPagos"><i class="bi bi-credit-card"></i> Mis Pagos</button>
-        <button class="ta-profile-dropdown__item" @onclick="GoToResenas"><i class="bi bi-star"></i> Mis Resenas</button>
+        @if (_userRole == 1)
+        {
+            <button class="ta-profile-dropdown__item" @onclick="GoToReservas"><i class="bi bi-calendar-check"></i> Mis Reservas</button>
+            <button class="ta-profile-dropdown__item" @onclick="GoToOrdenes"><i class="bi bi-receipt"></i> Mis Ordenes</button>
+            <button class="ta-profile-dropdown__item" @onclick="GoToPagos"><i class="bi bi-credit-card"></i> Mis Pagos</button>
+            <button class="ta-profile-dropdown__item" @onclick="GoToResenas"><i class="bi bi-star"></i> Mis Resenas</button>
+            <button class="ta-profile-dropdown__item" @onclick="GoToFavoritos"><i class="bi bi-heart"></i> Favoritos (@Favs.Count)</button>
+        }
+        @if (_userRole == 2)
+        {
+            <button class="ta-profile-dropdown__item" @onclick="GoToDashboard"><i class="bi bi-speedometer2"></i> Dashboard</button>
+            <button class="ta-profile-dropdown__item" @onclick="GoToMenu"><i class="bi bi-book"></i> Gestionar Menu</button>
+            <button class="ta-profile-dropdown__item" @onclick="GoToMesas"><i class="bi bi-grid-3x3"></i> Gestionar Mesas</button>
+            <button class="ta-profile-dropdown__item" @onclick="GoToReservasRest"><i class="bi bi-calendar-check"></i> Reservas Entrantes</button>
+            <button class="ta-profile-dropdown__item" @onclick="GoToOrdenesRest"><i class="bi bi-receipt"></i> Ordenes Entrantes</button>
+        }
         @if (_userRole == 3)
         {
-            <div class="ta-profile-dropdown__divider"></div>
-            <button class="ta-profile-dropdown__item" @onclick="GoToAdmin"><i class="bi bi-shield-lock"></i> Admin Panel</button>
-     }
+            <button class="ta-profile-dropdown__item" @onclick="GoToAdmin"><i class="bi bi-people"></i> Gestionar Usuarios</button>
+            <button class="ta-profile-dropdown__item" @onclick="GoToAuditoria"><i class="bi bi-clipboard-data"></i> Auditoria</button>
+            <button class="ta-profile-dropdown__item" @onclick="GoToModeracion"><i class="bi bi-shield-check"></i> Moderacion</button>
+        }
         <div class="ta-profile-dropdown__divider"></div>
         <button class="ta-profile-dropdown__item ta-profile-dropdown__item--danger" @onclick="Logout"><i class="bi bi-box-arrow-right"></i> Cerrar Sesion</button>
     </div>
@@ -98,15 +151,15 @@ else
 
 @code {
     private bool _isAuthenticated = false;
-    private string _userName = "";
-    private string _userInitials = "";
+    private string _userName = "", _userInitials = "", _userId = "", _searchQuery = "";
     private int _userRole = 1;
-    private string _userId = "";
-    private string _searchQuery = "";
-    private bool _showNotifications = false;
-    private bool _showProfileMenu = false;
-    private int _unreadCount = 0;
-    private List<NotificationItem> _notifications = new();
+    private bool _showNotifications = false, _showProfileMenu = false;
+
+    protected override void OnInitialized()
+    {
+        Notif.OnChange += () => InvokeAsync(StateHasChanged);
+        Favs.OnChange += () => InvokeAsync(StateHasChanged);
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -122,7 +175,6 @@ else
                     _userRole = AuthService.CurrentUser.Rol;
                     _userId = AuthService.CurrentUser.Id.ToString();
                     _userInitials = GetInitials(_userName);
-                    LoadNotifications();
                     StateHasChanged();
                 }
             }
@@ -138,14 +190,36 @@ else
         return parts[0][0].ToString().ToUpper();
     }
 
+    private string ActiveStyle(string path)
+    {
+        var current = Navigation.Uri.Replace(Navigation.BaseUri, "/");
+        return current.StartsWith(path, StringComparison.OrdinalIgnoreCase) ? "background:var(--primary-10);color:var(--primary);border-radius:12px;" : "";
+    }
+
     private void ToggleNotifications() { _showNotifications = !_showNotifications; _showProfileMenu = false; }
     private void ToggleProfileMenu() { _showProfileMenu = !_showProfileMenu; _showNotifications = false; }
     private void HandleSearchKeyDown(KeyboardEventArgs e) { if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_searchQuery)) Navigation.NavigateTo("/restaurantes?buscar=" + Uri.EscapeDataString(_searchQuery)); }
+
+    private void HandleNotifClick(AppNotification notif)
+    {
+        Notif.MarkAsRead(notif.Id);
+        if (!string.IsNullOrEmpty(notif.Link)) Navigation.NavigateTo(notif.Link);
+        _showNotifications = false;
+    }
+
     private void GoToReservas() { Navigation.NavigateTo("/reservas"); }
     private void GoToOrdenes() { Navigation.NavigateTo("/ordenes"); }
     private void GoToPagos() { Navigation.NavigateTo("/pagos"); }
     private void GoToResenas() { Navigation.NavigateTo("/resenas"); }
+    private void GoToFavoritos() { Navigation.NavigateTo("/restaurantes?favoritos=true"); }
+    private void GoToDashboard() { Navigation.NavigateTo("/restaurante/dashboard"); }
+    private void GoToMenu() { Navigation.NavigateTo("/restaurante/menu"); }
+    private void GoToMesas() { Navigation.NavigateTo("/restaurante/mesas"); }
+    private void GoToReservasRest() { Navigation.NavigateTo("/restaurante/reservas"); }
+    private void GoToOrdenesRest() { Navigation.NavigateTo("/restaurante/ordenes"); }
     private void GoToAdmin() { Navigation.NavigateTo("/admin/usuarios"); }
+    private void GoToAuditoria() { Navigation.NavigateTo("/admin/auditoria"); }
+    private void GoToModeracion() { Navigation.NavigateTo("/admin/moderacion"); }
 
     private async Task Logout()
     {
@@ -160,26 +234,39 @@ else
         }
         catch { }
         _isAuthenticated = false;
+        Notif.Clear();
         Navigation.NavigateTo("/login", true);
     }
 
-    private void LoadNotifications()
+    private string GetNotifIcon(string t) => t switch
     {
-        _notifications = new List<NotificationItem>
-        {
-            new NotificationItem { Id = 1, Tipo = "reserva_confirmada", Mensaje = "Tu reserva fue <strong>confirmada</strong>", Leida = false, FechaCreacion = DateTime.Now.AddMinutes(-5) },
-            new NotificationItem { Id = 2, Tipo = "orden_preparacion", Mensaje = "Tu orden esta siendo <strong>preparada</strong>", Leida = false, FechaCreacion = DateTime.Now.AddMinutes(-28) },
-            new NotificationItem { Id = 3, Tipo = "resena", Mensaje = "Dejanos tu resena del restaurante", Leida = true, FechaCreacion = DateTime.Now.AddHours(-12) },
-        };
-        _unreadCount = _notifications.Count(n => !n.Leida);
+        "reserva_confirmada" => "bi-calendar-check-fill",
+        "reserva_rechazada" => "bi-calendar-x-fill",
+        "orden_preparacion" => "bi-fire",
+        "orden_lista" => "bi-check-circle-fill",
+        "pago_aprobado" or "pago_pendiente" => "bi-credit-card-fill",
+        "resena" => "bi-star-fill",
+        "mesa" => "bi-grid-3x3-gap-fill",
+        "menu" => "bi-book-fill",
+        _ => "bi-bell-fill"
+    };
+
+    private string GetNotifIconClass(string t) => t switch
+    {
+        "reserva_confirmada" or "orden_lista" or "pago_aprobado" => "green",
+        "reserva_rechazada" => "red",
+        "orden_preparacion" or "resena" or "pago_pendiente" => "orange",
+        "mesa" or "menu" => "blue",
+        _ => "blue"
+    };
+
+    private string FormatTimeAgo(DateTime d)
+    {
+        var diff = DateTime.Now - d;
+        if (diff.TotalMinutes < 1) return "Ahora";
+        if (diff.TotalMinutes < 60) return "Hace " + (int)diff.TotalMinutes + " min";
+        if (diff.TotalHours < 24) return "Hace " + (int)diff.TotalHours + "h";
+        if (diff.TotalDays < 7) return "Hace " + (int)diff.TotalDays + "d";
+        return d.ToString("dd MMM");
     }
-
-    private void MarkAsRead(int notifId) { var n = _notifications.FirstOrDefault(x => x.Id == notifId); if (n != null) { n.Leida = true; _unreadCount = _notifications.Count(x => !x.Leida); } }
-    private void MarkAllRead() { foreach (var n in _notifications) n.Leida = true; _unreadCount = 0; }
-
-    private string GetNotifIcon(string t) => t switch { "reserva_confirmada" => "bi-calendar-check-fill", "orden_preparacion" => "bi-fire", "orden_lista" => "bi-check-circle-fill", "pago_aprobado" => "bi-credit-card-fill", "resena" => "bi-star-fill", _ => "bi-bell-fill" };
-    private string GetNotifIconClass(string t) => t switch { "reserva_confirmada" or "orden_lista" or "pago_aprobado" => "green", "reserva_rechazada" => "red", "orden_preparacion" or "resena" => "orange", _ => "blue" };
-    private string FormatTimeAgo(DateTime d) { var diff = DateTime.Now - d; if (diff.TotalMinutes < 1) return "Ahora"; if (diff.TotalMinutes < 60) return "Hace " + (int)diff.TotalMinutes + " min"; if (diff.TotalHours < 24) return "Hace " + (int)diff.TotalHours + "h"; return "Hace " + (int)diff.TotalDays + "d"; }
-
-    private class NotificationItem { public int Id { get; set; } public string Tipo { get; set; } = ""; public string Mensaje { get; set; } = ""; public bool Leida { get; set; } public DateTime FechaCreacion { get; set; } }
 }

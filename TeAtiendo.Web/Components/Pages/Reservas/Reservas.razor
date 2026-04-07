@@ -1,9 +1,12 @@
 ﻿@page "/reservas"
+@using TeAtiendo.Web.Services
+@using TeAtiendo.Web.Models.Reponses
 @layout TeAtiendo.Web.Components.Layout.MainLayout
 @inject IApiService ApiService
 @inject NavigationManager Navigation
 @inject Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedSessionStorage SessionStorage
 @inject ToastService Toast
+@inject NotificationService Notif
 @rendermode InteractiveServer
 
 <section class="ta-sec">
@@ -12,54 +15,32 @@
             <h2 class="ta-sec__title">Mis <span>Reservas</span></h2>
             <p class="ta-sec__sub">Historial y estado de tus reservas</p>
         </div>
-        <button class="ta-btn-primary" @onclick="GoToRest">
-            <i class="bi bi-plus-lg"></i> Nueva Reserva
-        </button>
+        <button class="ta-btn-primary" @onclick='() => Navigation.NavigateTo("/restaurantes")'><i class="bi bi-plus-lg"></i> Nueva Reserva</button>
     </div>
 </section>
 
 <section class="ta-sec" style="padding-top:0;">
     @if (_isLoading)
     {
-        <LoadingSpinner Mode="skeleton-list" Count="4" />
+        <div class="ta-loading"><div class="ta-spinner"></div></div>
     }
-    else if (_reservas.Any())
+    else if (_reservas != null && _reservas.Any())
     {
         <div class="ta-table-wrap">
             <table class="ta-table">
-                <thead>
-                    <tr>
-                        <th>Restaurante</th>
-                        <th>Fecha</th>
-                        <th>Personas</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
+                <thead><tr><th>Restaurante</th><th>Fecha</th><th>Personas</th><th>Estado</th><th>Acciones</th></tr></thead>
                 <tbody>
                     @foreach (var r in _reservas)
                     {
                         <tr>
+                            <td><div style="display:flex;align-items:center;gap:10px;"><div style="width:36px;height:36px;border-radius:10px;background:var(--primary-10);display:flex;align-items:center;justify-content:center;color:var(--primary);"><i class="bi bi-shop"></i></div><span style="font-weight:600;">Restaurante</span></div></td>
+                            <td><div style="font-weight:600;">@r.FechaReserva.ToString("dd MMM yyyy")</div><div style="font-size:.75rem;color:var(--text-3);">@r.FechaReserva.ToString("hh:mm tt")</div></td>
+                            <td><i class="bi bi-people" style="margin-right:4px;color:var(--text-3);"></i> @r.CantidadPersonas</td>
+                            <td><span class="ta-status @GetSC(r.EstadoReserva)">@GetST(r.EstadoReserva)</span></td>
                             <td>
-                                <div style="display:flex;align-items:center;gap:10px;">
-                                    <div style="width:36px;height:36px;border-radius:10px;background:var(--primary-10);display:flex;align-items:center;justify-content:center;color:var(--primary);">
-                                        <i class="bi bi-shop"></i>
-                                    </div>
-                                    <span style="font-weight:600;">Restaurante</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div style="font-weight:600;">@r.FechaReserva.ToString("dd MMM yyyy")</div>
-                                <div style="font-size:.75rem;color:var(--text-3);">@r.FechaReserva.ToString("hh:mm tt")</div>
-                            </td>
-                            <td><i class="bi bi-people" style="margin-right:4px;color:var(--text-3);"></i> @r.NumeroPersonas</td>
-                            <td><StatusBadge Status="@r.Estado" /></td>
-                            <td>
-                                @if (r.Estado == "Pendiente" || r.Estado == "Confirmada")
+                                @if (r.EstadoReserva == 0 || r.EstadoReserva == 1)
                                 {
-                                    <button class="ta-btn-ghost" style="padding:6px 12px;font-size:.78rem;" @onclick="() => CancelReserva(r)">
-                                        <i class="bi bi-x-circle"></i> Cancelar
-                                    </button>
+                                    <button class="ta-btn-ghost" style="padding:6px 12px;font-size:.78rem;" @onclick="() => CancelReserva(r)"><i class="bi bi-x-circle"></i> Cancelar</button>
                                 }
                             </td>
                         </tr>
@@ -70,69 +51,41 @@
     }
     else
     {
-        <EmptyState Icon="bi-calendar-x" Title="Sin reservas" Message="Aun no has hecho ninguna reserva.">
-            <button class="ta-btn-primary" @onclick="GoToRest"><i class="bi bi-search"></i> Explorar Restaurantes</button>
-        </EmptyState>
+        <div class="ta-empty-state"><div class="ta-empty-state__ico"><i class="bi bi-calendar-x"></i></div><div class="ta-empty-state__title">Sin reservas</div><div class="ta-empty-state__sub">Aun no has hecho ninguna reserva.</div><button class="ta-btn-primary" @onclick='() => Navigation.NavigateTo("/restaurantes")'><i class="bi bi-search"></i> Explorar</button></div>
     }
 </section>
 
 @code {
     private bool _isLoading = true;
-    private string _userId = "";
-    private List<ReservaDto> _reservas = new();
+    private Guid _userId;
+    private List<ReservaResponse>? _reservas;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            try
-            {
-                var idResult = await SessionStorage.GetAsync<string>("userId");
-                if (idResult.Success) _userId = idResult.Value ?? "";
-            }
-            catch { }
-            await LoadReservas();
+            try { var r = await SessionStorage.GetAsync<string>("userId"); if (r.Success && Guid.TryParse(r.Value, out var uid)) _userId = uid; } catch { }
+            _isLoading = true;
+            try { _reservas = await ApiService.GetAsync<List<ReservaResponse>>($"api/Reservas/usuario/{_userId}"); }
+            catch { _reservas = new(); }
+            finally { _isLoading = false; }
             StateHasChanged();
         }
     }
 
-    private async Task LoadReservas()
-    {
-        _isLoading = true;
-        try
-        {
-            if (!string.IsNullOrEmpty(_userId))
-            {
-                var result = await ApiService.GetAsync<List<ReservaDto>>("api/Reservas/usuario/" + _userId);
-                if (result != null) _reservas = result;
-            }
-        }
-        catch { }
-        finally { _isLoading = false; }
-    }
-
-    private void GoToRest() { Navigation.NavigateTo("/restaurantes"); }
-
-    private async Task CancelReserva(ReservaDto r)
+    private async Task CancelReserva(ReservaResponse r)
     {
         try
         {
-            await ApiService.PostAsync<object>("api/Reservas/" + r.Id + "/cancelar?userId=" + _userId, null);
-            r.Estado = "Cancelada";
+            await ApiService.PatchAsync<object>($"api/Reservas/{r.Id}/estado", new { estadoReserva = 3 });
+            r.EstadoReserva = 3;
             Toast.Success("Reserva cancelada");
+            Notif.ReservaCancelada("Restaurante");
             StateHasChanged();
         }
         catch { Toast.Error("Error al cancelar"); }
     }
 
-    private class ReservaDto
-    {
-        public Guid Id { get; set; }
-        public Guid UsuarioId { get; set; }
-        public Guid RestauranteId { get; set; }
-        public Guid MesaId { get; set; }
-        public DateTime FechaReserva { get; set; }
-        public int NumeroPersonas { get; set; }
-        public string Estado { get; set; } = "Pendiente";
-    }
+    private string GetSC(int s) => s switch { 0 => "ta-status--pendiente", 1 => "ta-status--confirmada", 2 => "ta-status--completada", 3 => "ta-status--cancelada", _ => "ta-status--pendiente" };
+    private string GetST(int s) => s switch { 0 => "Pendiente", 1 => "Confirmada", 2 => "Completada", 3 => "Cancelada", _ => "Pendiente" };
 }

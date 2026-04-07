@@ -7,5 +7,6 @@
         public decimal Monto { get; set; }
         public int EstadoPago { get; set; }
         public int MetodoPago { get; set; }
+        public DateTime FechaPago { get; set; }
     }
 }
