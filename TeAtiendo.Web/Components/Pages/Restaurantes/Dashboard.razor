@@ -1,4 +1,6 @@
 @page "/restaurante/dashboard"
+@using TeAtiendo.Web.Services
+@using TeAtiendo.Web.Models.Reponses
 @layout TeAtiendo.Web.Components.Layout.MainLayout
 @inject IApiService ApiService
 @inject NavigationManager Navigation
@@ -14,84 +16,46 @@
     </div>
 </section>
 
-<!-- Metricas -->
 <section class="ta-sec" style="padding-top:0;">
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;">
-
         <div class="ta-card" style="padding:20px;display:flex;align-items:center;gap:16px;">
-            <div style="width:48px;height:48px;border-radius:14px;background:var(--primary-10);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:var(--primary);">
-                <i class="bi bi-calendar-check"></i>
-            </div>
-            <div>
-                <div style="font-family:'Fraunces',serif;font-size:1.5rem;font-weight:700;color:var(--text);">@_reservasHoy</div>
-                <div style="font-size:.78rem;color:var(--text-3);">Reservas hoy</div>
-            </div>
+            <div style="width:48px;height:48px;border-radius:14px;background:var(--primary-10);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:var(--primary);"><i class="bi bi-calendar-check"></i></div>
+            <div><div style="font-family:'Fraunces',serif;font-size:1.5rem;font-weight:700;">@_reservasHoy</div><div style="font-size:.78rem;color:var(--text-3);">Reservas hoy</div></div>
         </div>
-
         <div class="ta-card" style="padding:20px;display:flex;align-items:center;gap:16px;">
-            <div style="width:48px;height:48px;border-radius:14px;background:var(--info-bg);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:var(--info);">
-                <i class="bi bi-receipt"></i>
-            </div>
-            <div>
-                <div style="font-family:'Fraunces',serif;font-size:1.5rem;font-weight:700;color:var(--text);">@_ordenesActivas</div>
-                <div style="font-size:.78rem;color:var(--text-3);">Ordenes activas</div>
-            </div>
+            <div style="width:48px;height:48px;border-radius:14px;background:var(--info-bg);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:var(--info);"><i class="bi bi-receipt"></i></div>
+            <div><div style="font-family:'Fraunces',serif;font-size:1.5rem;font-weight:700;">@_ordenesActivas</div><div style="font-size:.78rem;color:var(--text-3);">Ordenes activas</div></div>
         </div>
-
         <div class="ta-card" style="padding:20px;display:flex;align-items:center;gap:16px;">
-            <div style="width:48px;height:48px;border-radius:14px;background:var(--success-bg);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:var(--success);">
-                <i class="bi bi-grid-3x3-gap"></i>
-            </div>
-            <div>
-                <div style="font-family:'Fraunces',serif;font-size:1.5rem;font-weight:700;color:var(--text);">@_mesasLibres</div>
-                <div style="font-size:.78rem;color:var(--text-3);">Mesas libres</div>
-            </div>
+            <div style="width:48px;height:48px;border-radius:14px;background:var(--success-bg);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:var(--success);"><i class="bi bi-grid-3x3-gap"></i></div>
+            <div><div style="font-family:'Fraunces',serif;font-size:1.5rem;font-weight:700;">@_mesasLibres</div><div style="font-size:.78rem;color:var(--text-3);">Mesas libres</div></div>
         </div>
-
         <div class="ta-card" style="padding:20px;display:flex;align-items:center;gap:16px;">
-            <div style="width:48px;height:48px;border-radius:14px;background:var(--warning-bg);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:var(--warning);">
-                <i class="bi bi-star-fill"></i>
-            </div>
-            <div>
-                <div style="font-family:'Fraunces',serif;font-size:1.5rem;font-weight:700;color:var(--text);">@_promedioRating</div>
-                <div style="font-size:.78rem;color:var(--text-3);">Rating promedio</div>
-            </div>
+            <div style="width:48px;height:48px;border-radius:14px;background:var(--warning-bg);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:var(--warning);"><i class="bi bi-star-fill"></i></div>
+            <div><div style="font-family:'Fraunces',serif;font-size:1.5rem;font-weight:700;">4.7</div><div style="font-size:.78rem;color:var(--text-3);">Rating promedio</div></div>
         </div>
-
     </div>
 </section>
 
-<!-- Accesos rapidos -->
-<section class="ta-sec" style="padding-top:0%;">
-    <div class="ta-sec__head">
-        <div>
-            <h2 class="ta-sec__title" style="font-size:1.3rem;">Accesos <span>Rapidos</span></h2>
-        </div>
-    </div>
+<section class="ta-sec" style="padding-top:0;">
+    <div class="ta-sec__head"><div><h2 class="ta-sec__title" style="font-size:1.3rem;">Accesos <span>Rapidos</span></h2></div></div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;">
-        <button class="ta-card" style="padding:24px;text-align:center;cursor:pointer;transition:all .25s;border:1.5px solid var(--border);"
-                @onclick='() => Navigation.NavigateTo("/restaurante/reservas")'>
+        <button class="ta-card" style="padding:24px;text-align:center;cursor:pointer;border:1.5px solid var(--border);" @onclick='() => Navigation.NavigateTo("/restaurante/reservas")'>
             <i class="bi bi-calendar-check" style="font-size:1.8rem;color:var(--primary);display:block;margin-bottom:10px;"></i>
             <div style="font-weight:700;font-size:.92rem;">Ver Reservas</div>
             <div style="font-size:.78rem;color:var(--text-3);margin-top:4px;">Gestionar reservas entrantes</div>
         </button>
-
-        <button class="ta-card" style="padding:24px;text-align:center;cursor:pointer;transition:all .25s;border:1.5px solid var(--border);"
-                @onclick='() => Navigation.NavigateTo("/restaurante/ordenes")'>
+        <button class="ta-card" style="padding:24px;text-align:center;cursor:pointer;border:1.5px solid var(--border);" @onclick='() => Navigation.NavigateTo("/restaurante/ordenes")'>
             <i class="bi bi-receipt" style="font-size:1.8rem;color:var(--primary);display:block;margin-bottom:10px;"></i>
             <div style="font-weight:700;font-size:.92rem;">Ver Ordenes</div>
             <div style="font-size:.78rem;color:var(--text-3);margin-top:4px;">Ordenes activas y pendientes</div>
         </button>
-
-        <button class="ta-card" style="padding:24px;text-align:center;cursor:pointer;transition:all .25s;border:1.5px solid var(--border);"
-                @onclick='() => Navigation.NavigateTo("/restaurante/menu")'>
+        <button class="ta-card" style="padding:24px;text-align:center;cursor:pointer;border:1.5px solid var(--border);" @onclick='() => Navigation.NavigateTo("/restaurante/menu")'>
             <i class="bi bi-book" style="font-size:1.8rem;color:var(--primary);display:block;margin-bottom:10px;"></i>
             <div style="font-weight:700;font-size:.92rem;">Editar Menu</div>
             <div style="font-size:.78rem;color:var(--text-3);margin-top:4px;">Platos y categorias</div>
         </button>
-
-        <button class="ta-card" style="padding:24px;text-align:center;cursor:pointer;transition:all .25s;border:1.5px solid var(--border);"
-                @onclick='() => Navigation.NavigateTo("/restaurante/mesas")'>
+        <button class="ta-card" style="padding:24px;text-align:center;cursor:pointer;border:1.5px solid var(--border);" @onclick='() => Navigation.NavigateTo("/restaurante/mesas")'>
             <i class="bi bi-grid-3x3" style="font-size:1.8rem;color:var(--primary);display:block;margin-bottom:10px;"></i>
             <div style="font-weight:700;font-size:.92rem;">Gestionar Mesas</div>
             <div style="font-size:.78rem;color:var(--text-3);margin-top:4px;">Agregar y configurar mesas</div>
@@ -100,12 +64,8 @@
 </section>
 
 @code {
-    private string _userId = "";
-    private int _restauranteId = 0;
-    private int _reservasHoy = 0;
-    private int _ordenesActivas = 0;
-    private int _mesasLibres = 0;
-    private string _promedioRating = "0.0";
+    private Guid _restauranteId;
+    private int _reservasHoy = 0, _ordenesActivas = 0, _mesasLibres = 0;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -113,59 +73,24 @@
         {
             try
             {
-                var idResult = await SessionStorage.GetAsync<string>("userId");
-                if (idResult.Success) _userId = idResult.Value ?? "";
-
-                var restIdResult = await SessionStorage.GetAsync<string>("restauranteId");
-                if (restIdResult.Success && !string.IsNullOrEmpty(restIdResult.Value))
-                {
-                    int.TryParse(restIdResult.Value, out int parsedRestId);
-                    _restauranteId = parsedRestId;
-                }
+                var restResult = await SessionStorage.GetAsync<string>("restauranteId");
+                if (restResult.Success && Guid.TryParse(restResult.Value, out var rid)) _restauranteId = rid;
             }
             catch { }
-
-            await LoadDashboardData();
+            await LoadData();
             StateHasChanged();
         }
     }
 
-    private async Task LoadDashboardData()
+    private async Task LoadData()
     {
         try
         {
-            if (_restauranteId > 0)
+            if (_restauranteId != Guid.Empty)
             {
-                try
-                {
-                    var mesas = await ApiService.GetAsync<List<MesaDto>>("api/Mesas/restaurante/" + _restauranteId);
-                    if (mesas != null)
-                        _mesasLibres = mesas.Count(m => m.Estado == "Disponible");
-                }
-                catch { }
-
-                try
-                {
-                    var promResp = await ApiService.GetAsync<PromedioResponse>("api/Resenas/restaurante/" + _restauranteId + "/promedio");
-                    if (promResp != null)
-                        _promedioRating = promResp.Promedio.ToString("0.0");
-                }
-                catch { }
-
-               
+                try { var m = await ApiService.GetAsync<List<MesaResponse>>($"api/Mesas/restaurante/{_restauranteId}"); if (m != null) _mesasLibres = m.Count(x => x.Disponible); } catch { }
             }
         }
         catch { }
-    }
-
-    private class MesaDto
-    {
-        public int Id { get; set; }
-        public string Estado { get; set; } = "Disponible";
-    }
-
-    private class PromedioResponse
-    {
-        public double Promedio { get; set; }
     }
 }

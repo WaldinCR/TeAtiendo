@@ -1,4 +1,6 @@
 ﻿@page "/pagos"
+@using TeAtiendo.Web.Services
+@using TeAtiendo.Web.Models.Reponses
 @layout TeAtiendo.Web.Components.Layout.MainLayout
 @inject IApiService ApiService
 @inject Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedSessionStorage SessionStorage
@@ -16,30 +18,21 @@
 <section class="ta-sec" style="padding-top:0;">
     @if (_isLoading)
     {
-        <LoadingSpinner Mode="skeleton-table" Count="4" Columns="5" />
+        <div class="ta-loading"><div class="ta-spinner"></div></div>
     }
-    else if (_pagos.Any())
+    else if (_pagos != null && _pagos.Any())
     {
         <div class="ta-table-wrap">
             <table class="ta-table">
-                <thead>
-                    <tr>
-                        <th>Orden</th>
-                        <th>Monto</th>
-                        <th>Metodo</th>
-                        <th>Estado</th>
-                        <th>Fecha</th>
-                    </tr>
-                </thead>
+                <thead><tr><th>Monto</th><th>Metodo</th><th>Estado</th><th>Fecha</th></tr></thead>
                 <tbody>
-                    @foreach (var p in _pagos)
+                    @foreach (var pago in _pagos)
                     {
                         <tr>
-                            <td><div style="display:flex;align-items:center;gap:8px;"><i class="bi bi-receipt" style="color:var(--primary);"></i> Orden</div></td>
-                            <td><span style="font-family:'Fraunces',serif;font-weight:700;">$@p.Monto.ToString("N0")</span></td>
-                            <td><i class="bi bi-credit-card" style="color:var(--primary);margin-right:4px;"></i> @(p.MetodoPago ?? "Stripe")</td>
-                            <td><StatusBadge Status="@p.Estado" /></td>
-                            <td style="font-size:.82rem;color:var(--text-3);">@p.FechaPago.ToString("dd MMM yyyy")</td>
+                            <td><span style="font-family:'Fraunces',serif;font-weight:700;color:var(--text);">$@pago.Monto.ToString("N0")</span></td>
+                            <td><div style="display:flex;align-items:center;gap:6px;"><i class="bi bi-credit-card" style="color:var(--primary);"></i> @GetMetodo(pago.MetodoPago)</div></td>
+                            <td><span class="ta-status @GetSC(pago.EstadoPago)">@GetST(pago.EstadoPago)</span></td>
+                            <td style="font-size:.82rem;color:var(--text-3);">@pago.FechaPago.ToString("dd MMM yyyy")</td>
                         </tr>
                     }
                 </tbody>
@@ -48,52 +41,29 @@
     }
     else
     {
-        <EmptyState Icon="bi-credit-card" Title="Sin pagos" Message="Aun no has realizado ningun pago." />
+        <div class="ta-empty-state"><div class="ta-empty-state__ico"><i class="bi bi-credit-card"></i></div><div class="ta-empty-state__title">Sin pagos</div><div class="ta-empty-state__sub">Aun no has realizado ningun pago.</div></div>
     }
 </section>
 
 @code {
     private bool _isLoading = true;
-    private string _userId = "";
-    private List<PagoDto> _pagos = new();
+    private Guid _userId;
+    private List<PagoResponse>? _pagos;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            try
-            {
-                var idResult = await SessionStorage.GetAsync<string>("userId");
-                if (idResult.Success) _userId = idResult.Value ?? "";
-            }
-            catch { }
-            await LoadPagos();
+            try { var r = await SessionStorage.GetAsync<string>("userId"); if (r.Success && Guid.TryParse(r.Value, out var uid)) _userId = uid; } catch { }
+            _isLoading = true;
+            try { _pagos = await ApiService.GetAsync<List<PagoResponse>>($"api/Pagos/usuario/{_userId}"); }
+            catch { _pagos = new(); }
+            finally { _isLoading = false; }
             StateHasChanged();
         }
     }
 
-    private async Task LoadPagos()
-    {
-        _isLoading = true;
-        try
-        {
-            if (!string.IsNullOrEmpty(_userId))
-            {
-                var result = await ApiService.GetAsync<List<PagoDto>>("api/Pagos/usuario/" + _userId);
-                if (result != null) _pagos = result;
-            }
-        }
-        catch { }
-        finally { _isLoading = false; }
-    }
-
-    private class PagoDto
-    {
-        public Guid Id { get; set; }
-        public Guid OrdenId { get; set; }
-        public decimal Monto { get; set; }
-        public string? MetodoPago { get; set; }
-        public string Estado { get; set; } = "Pendiente";
-        public DateTime FechaPago { get; set; }
-    }
+    private string GetMetodo(int m) => m switch { 0 => "Efectivo", 1 => "Tarjeta", 2 => "Transferencia", _ => "Otro" };
+    private string GetSC(int s) => s switch { 0 => "ta-status--pendiente", 1 => "ta-status--confirmada", 2 => "ta-status--cancelada", _ => "ta-status--pendiente" };
+    private string GetST(int s) => s switch { 0 => "Pendiente", 1 => "Aprobado", 2 => "Rechazado", _ => "Pendiente" };
 }

@@ -6,8 +6,8 @@
         public string Nombre { get; set; } = string.Empty;
         public string? Descripcion { get; set; }
         public Guid RestauranteId { get; set; }
+        public List<PlatoResponse>? Platos { get; set; }
     }
-
     public class PlatoResponse
     {
         public Guid Id { get; set; }

@@ -1,7 +1,10 @@
 ﻿@page "/resenas"
+@using TeAtiendo.Web.Services
+@using TeAtiendo.Web.Models.Reponses
 @layout TeAtiendo.Web.Components.Layout.MainLayout
 @inject IApiService ApiService
 @inject Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedSessionStorage SessionStorage
+@inject ToastService Toast
 @rendermode InteractiveServer
 
 <section class="ta-sec">
@@ -16,29 +19,34 @@
 <section class="ta-sec" style="padding-top:0;">
     @if (_isLoading)
     {
-        <LoadingSpinner Mode="skeleton-list" Count="3" />
+        <div class="ta-loading"><div class="ta-spinner"></div></div>
     }
-    else if (_resenas.Any())
+    else if (_resenas != null && _resenas.Any())
     {
         <div style="display:flex;flex-direction:column;gap:14px;">
-            @foreach (var r in _resenas.OrderByDescending(x => x.FechaCreacion))
+            @foreach (var resena in _resenas)
             {
                 <div class="ta-card ta-animate-fade-up" style="padding:20px;">
                     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
-                        <div style="display:flex;align-items:center;gap:12px;">
-                            <div style="width:44px;height:44px;border-radius:12px;background:var(--warning-bg);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--warning);">
-                                <i class="bi bi-star-fill"></i>
-                            </div>
+                        <div style="display:flex;align-items:center;gap:14px;">
+                            <div style="width:44px;height:44px;border-radius:12px;background:var(--warning-bg);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--warning);"><i class="bi bi-star-fill"></i></div>
                             <div>
-                                <div style="font-weight:700;font-size:.92rem;">Restaurante</div>
-                                <div style="font-size:.75rem;color:var(--text-3);">@r.FechaCreacion.ToString("dd MMM yyyy")</div>
+                                <div style="font-weight:700;font-size:.95rem;">Restaurante</div>
+                                <div style="font-size:.75rem;color:var(--text-3);">@resena.Fecha.ToString("dd MMM yyyy")</div>
                             </div>
                         </div>
-                        <StarRating Value="@r.Calificacion" ReadOnly="true" ShowValue="true" />
+                        <div class="ta-stars">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                var idx = i;
+                                <i class="bi @(idx <= resena.Calificacion ? "bi-star-fill" : "bi-star") ta-star @(idx <= resena.Calificacion ? "filled" : "")" style="cursor:default;"></i>
+                            }
+                            <span style="font-weight:700;font-size:.85rem;margin-left:4px;">@resena.Calificacion</span>
+                        </div>
                     </div>
-                    @if (!string.IsNullOrEmpty(r.Comentario))
+                    @if (!string.IsNullOrEmpty(resena.Comentario))
                     {
-                        <p style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);font-size:.88rem;color:var(--text-2);line-height:1.6;">@r.Comentario</p>
+                        <p style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);font-size:.88rem;color:var(--text-2);line-height:1.6;">@resena.Comentario</p>
                     }
                 </div>
             }
@@ -46,52 +54,25 @@
     }
     else
     {
-        <EmptyState Icon="bi-star" Title="Sin resenas" Message="Aun no has dejado ninguna resena." />
+        <div class="ta-empty-state"><div class="ta-empty-state__ico"><i class="bi bi-star"></i></div><div class="ta-empty-state__title">Sin resenas</div><div class="ta-empty-state__sub">Aun no has dejado ninguna resena.</div></div>
     }
 </section>
 
 @code {
     private bool _isLoading = true;
-    private string _userId = "";
-    private List<ResenaDto> _resenas = new();
+    private Guid _userId;
+    private List<ResenaResponse>? _resenas;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            try
-            {
-                var idResult = await SessionStorage.GetAsync<string>("userId");
-                if (idResult.Success) _userId = idResult.Value ?? "";
-            }
-            catch { }
-            await LoadResenas();
+            try { var r = await SessionStorage.GetAsync<string>("userId"); if (r.Success && Guid.TryParse(r.Value, out var uid)) _userId = uid; } catch { }
+            _isLoading = true;
+            try { _resenas = await ApiService.GetAsync<List<ResenaResponse>>($"api/Resenas/usuario/{_userId}"); }
+            catch { _resenas = new(); }
+            finally { _isLoading = false; }
             StateHasChanged();
         }
-    }
-
-    private async Task LoadResenas()
-    {
-        _isLoading = true;
-        try
-        {
-            if (!string.IsNullOrEmpty(_userId))
-            {
-                var result = await ApiService.GetAsync<List<ResenaDto>>("api/Resenas/usuario/" + _userId);
-                if (result != null) _resenas = result;
-            }
-        }
-        catch { }
-        finally { _isLoading = false; }
-    }
-
-    private class ResenaDto
-    {
-        public Guid Id { get; set; }
-        public Guid UsuarioId { get; set; }
-        public Guid RestauranteId { get; set; }
-        public int Calificacion { get; set; }
-        public string? Comentario { get; set; }
-        public DateTime FechaCreacion { get; set; }
     }
 }
