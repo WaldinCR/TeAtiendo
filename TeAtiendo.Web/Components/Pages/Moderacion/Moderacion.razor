@@ -1,6 +1,5 @@
 ﻿@page "/admin/moderacion"
 @using TeAtiendo.Web.Services
-@using TeAtiendo.Web.Models.Reponses
 @layout TeAtiendo.Web.Components.Layout.MainLayout
 @inject IApiService ApiService
 @inject ToastService Toast
@@ -10,7 +9,7 @@
     <div class="ta-sec__head">
         <div>
             <h2 class="ta-sec__title">Moderacion de <span>Contenido</span></h2>
-            <p class="ta-sec__sub">Revisar resenas y contenido reportado</p>
+            <p class="ta-sec__sub">Revisar contenido reportado</p>
         </div>
     </div>
 </section>
@@ -20,62 +19,69 @@
     {
         <div class="ta-loading"><div class="ta-spinner"></div></div>
     }
-    else if (_resenas.Any())
+    else if (_items.Any())
     {
         <div style="display:flex;flex-direction:column;gap:14px;">
-            @foreach (var r in _resenas)
+            @foreach (var item in _items)
             {
                 <div class="ta-card ta-animate-fade-up" style="padding:20px;">
-                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
                         <div style="display:flex;align-items:center;gap:14px;">
-                            <div style="width:44px;height:44px;border-radius:12px;background:var(--warning-bg);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--warning);"><i class="bi bi-star-fill"></i></div>
+                            <div style="width:44px;height:44px;border-radius:12px;background:var(--warning-bg);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--warning);"><i class="bi bi-shield-exclamation"></i></div>
                             <div>
-                                <div style="font-weight:700;font-size:.95rem;">Resena</div>
-                                <div style="font-size:.75rem;color:var(--text-3);">@r.Fecha.ToString("dd MMM yyyy")</div>
+                                <div style="font-weight:700;font-size:.95rem;">@item.TipoContenido</div>
+                                <div style="font-size:.75rem;color:var(--text-3);">Estado: @GetEstadoText(item.Estado)</div>
                             </div>
                         </div>
-                        <div class="ta-stars">
-                            @for (int i = 1; i <= 5; i++)
-                            {
-                                var idx = i;
-                                <i class="bi @(idx <= r.Calificacion ? "bi-star-fill" : "bi-star") ta-star @(idx <= r.Calificacion ? "filled" : "")" style="cursor:default;"></i>
-                            }
-                        </div>
+                        <span class="ta-status @GetEstadoClass(item.Estado)">@GetEstadoText(item.Estado)</span>
                     </div>
-                    @if (!string.IsNullOrEmpty(r.Comentario))
+                    @if (item.Estado == 0)
                     {
-                        <p style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);font-size:.88rem;color:var(--text-2);line-height:1.6;">@r.Comentario</p>
+                        <div style="margin-top:14px;display:flex;gap:8px;">
+                            <button class="ta-btn-success" style="padding:6px 14px;font-size:.78rem;" @onclick="() => ChangeEstado(item, 1)"><i class="bi bi-check-lg"></i> Aprobar</button>
+                            <button class="ta-btn-danger" style="padding:6px 14px;font-size:.78rem;" @onclick="() => ChangeEstado(item, 2)"><i class="bi bi-x-lg"></i> Rechazar</button>
+                        </div>
                     }
-                    <div style="margin-top:14px;display:flex;gap:8px;">
-                        <button class="ta-btn-success" style="padding:6px 14px;font-size:.78rem;" @onclick="() => Approve(r)"><i class="bi bi-check-lg"></i> Aprobar</button>
-                        <button class="ta-btn-danger" style="padding:6px 14px;font-size:.78rem;" @onclick="() => Reject(r)"><i class="bi bi-x-lg"></i> Rechazar</button>
-                    </div>
                 </div>
             }
         </div>
     }
     else
     {
-        <div class="ta-empty-state"><div class="ta-empty-state__ico"><i class="bi bi-shield-check"></i></div><div class="ta-empty-state__title">Todo limpio</div><div class="ta-empty-state__sub">No hay contenido pendiente de moderacion.</div></div>
+        <div class="ta-empty-state"><div class="ta-empty-state__ico"><i class="bi bi-shield-check"></i></div><div class="ta-empty-state__title">Todo limpio</div><div class="ta-empty-state__sub">No hay contenido pendiente.</div></div>
     }
 </section>
 
 @code {
     private bool _isLoading = true;
-    private List<ResenaResponse> _resenas = new();
+    private List<ModItem> _items = new();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
             _isLoading = true;
-            try { var r = await ApiService.GetAsync<List<ResenaResponse>>("api/Resenas"); if (r != null) _resenas = r; }
+            try { var r = await ApiService.GetAsync<List<ModItem>>("api/Moderacion"); if (r != null) _items = r; }
             catch { }
             finally { _isLoading = false; }
             StateHasChanged();
         }
     }
 
-    private async Task Approve(ResenaResponse r) { try { await ApiService.PatchAsync<object>($"api/Resenas/{r.Id}/aprobar", new { }); _resenas.Remove(r); Toast.Success("Resena aprobada"); StateHasChanged(); } catch { Toast.Error("Error"); } }
-    private async Task Reject(ResenaResponse r) { try { await ApiService.DeleteAsync($"api/Resenas/{r.Id}"); _resenas.Remove(r); Toast.Success("Resena eliminada"); StateHasChanged(); } catch { Toast.Error("Error"); } }
+    private async Task ChangeEstado(ModItem item, int estado)
+    {
+        try
+        {
+            await ApiService.PatchAsync<object>($"api/Moderacion/{item.Id}/estado", new { estado });
+            item.Estado = estado;
+            Toast.Success(estado == 1 ? "Aprobado" : "Rechazado");
+            StateHasChanged();
+        }
+        catch { Toast.Error("Error"); }
+    }
+
+    private string GetEstadoClass(int s) => s switch { 0 => "ta-status--pendiente", 1 => "ta-status--confirmada", 2 => "ta-status--cancelada", _ => "ta-status--pendiente" };
+    private string GetEstadoText(int s) => s switch { 0 => "Pendiente", 1 => "Aprobado", 2 => "Rechazado", _ => "Pendiente" };
+
+    private class ModItem { public Guid Id { get; set; } public string TipoContenido { get; set; } = ""; public Guid ContenidoId { get; set; } public int Estado { get; set; } }
 }

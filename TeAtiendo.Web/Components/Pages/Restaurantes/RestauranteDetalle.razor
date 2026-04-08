@@ -12,123 +12,276 @@
 
 @if (_isLoading)
 {
-    <div class="ta-loading"><div class="ta-spinner"></div><span class="ta-loading__text">Cargando restaurante...</span></div>
+    <div class="ta-loading"><div class="ta-spinner"></div><span class="ta-loading__text">Cargando...</span></div>
 }
 else if (_restaurante == null)
 {
 
-    <div class="ta-empty-state"><div class="ta-empty-state__ico"><i class="bi bi-shop-window"></i></div><div class="ta-empty-state__title">Restaurante no encontrado</div><button class="ta-btn-primary" @onclick='() => Navigation.NavigateTo("/restaurantes")'><i class="bi bi-arrow-left"></i> Volver</button></div>
+    <div class="ta-empty-state"><div class="ta-empty-state__ico"><i class="bi bi-shop-window"></i></div><div class="ta-empty-state__title">No encontrado</div><button class="ta-btn-primary" @onclick='() => Navigation.NavigateTo("/restaurantes")'><i class="bi bi-arrow-left"></i> Volver</button></div>
 }
 else
 {
-    <!-- HERO -->
     <section class="ta-hero" style="min-height:200px;margin:28px 28px 0;">
         <div class="ta-hero__content">
             <div style="display:flex;gap:8px;margin-bottom:14px;">
                 <button class="ta-btn-hero-secondary" style="padding:8px 16px;font-size:.8rem;" @onclick='() => Navigation.NavigateTo("/restaurantes")'><i class="bi bi-arrow-left"></i> Volver</button>
-                <button class="ta-btn-hero-secondary" style="padding:8px 16px;font-size:.8rem;" @onclick="() => Favs.Toggle(_restaurante.Id)">
-                    <i class="bi @(Favs.IsFavorito(_restaurante.Id) ? "bi-heart-fill" : "bi-heart")"></i> @(Favs.IsFavorito(_restaurante.Id) ? "Favorito" : "Agregar favorito")
-                </button>
+                <button class="ta-btn-hero-secondary" style="padding:8px 16px;font-size:.8rem;" @onclick="() => Favs.Toggle(_restaurante.Id)"><i class="bi @(Favs.IsFavorito(_restaurante.Id) ? "bi-heart-fill" : "bi-heart")"></i></button>
             </div>
             <h1 class="ta-hero__title" style="font-size:clamp(1.5rem,3vw,2.2rem);">@_restaurante.Nombre</h1>
             <div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:12px;">
                 @if (!string.IsNullOrEmpty(_restaurante.Direccion))
                 {
-                    <span style="color:rgba(255,255,255,.7);font-size:.88rem;display:flex;align-items:center;gap:5px;"><i class="bi bi-geo-alt"></i> @_restaurante.Direccion</span>
+                    <span style="color:rgba(255,255,255,.7);font-size:.88rem;"><i class="bi bi-geo-alt"></i> @_restaurante.Direccion</span>
                 }
                 @if (!string.IsNullOrEmpty(_restaurante.Telefono))
                 {
-                    <span style="color:rgba(255,255,255,.7);font-size:.88rem;display:flex;align-items:center;gap:5px;"><i class="bi bi-telephone"></i> @_restaurante.Telefono</span>
-                }
-                @if (!string.IsNullOrEmpty(_restaurante.HorarioApertura))
-                {
-                    <span style="color:rgba(255,255,255,.7);font-size:.88rem;display:flex;align-items:center;gap:5px;"><i class="bi bi-clock"></i> @FmtH(_restaurante.HorarioApertura) - @FmtH(_restaurante.HorarioCierre)</span>
+                    <span style="color:rgba(255,255,255,.7);font-size:.88rem;"><i class="bi bi-telephone"></i> @_restaurante.Telefono</span>
                 }
             </div>
         </div>
         <div class="ta-hero__stats" style="gap:10px;">
             <div class="ta-hero-stat" style="padding:12px 18px;"><div class="ta-hero-stat__val" style="font-size:1.3rem;">@_mesas.Count</div><div class="ta-hero-stat__label">Mesas</div></div>
-            <div class="ta-hero-stat" style="padding:12px 18px;"><div class="ta-hero-stat__val" style="font-size:1.3rem;">@(_menu?.Platos?.Count ?? 0)</div><div class="ta-hero-stat__label">Platos</div></div>
-            <div class="ta-hero-stat" style="padding:12px 18px;"><div class="ta-hero-stat__val" style="font-size:1.3rem;">@_mesas.Count(m => m.Disponible)</div><div class="ta-hero-stat__label">Disponibles</div></div>
+            <div class="ta-hero-stat" style="padding:12px 18px;"><div class="ta-hero-stat__val" style="font-size:1.3rem;">@_platos.Count</div><div class="ta-hero-stat__label">Platos</div></div>
         </div>
     </section>
 
-    <!-- ACCIONES -->
     <section class="ta-sec" style="padding-top:20px;">
-        <div style="display:flex;gap:10px;flex-wrap:wrap;">
-            <button class="ta-btn-primary ta-btn-primary--lg" @onclick="StartReserva"><i class="bi bi-calendar-plus"></i> Reservar Mesa</button>
-            <button class="ta-btn-ghost" @onclick='() => Navigation.NavigateTo("/restaurantes")'><i class="bi bi-arrow-left"></i> Volver</button>
-        </div>
+        <button class="ta-btn-primary ta-btn-primary--lg" @onclick="StartReserva"><i class="bi bi-calendar-plus"></i> Reservar Mesa</button>
     </section>
 
-    <!--  RESERVA -->
+    <!-- PASO 1 -->
     @if (_step == 1)
     {
         <section class="ta-sec" style="padding-top:12px;">
             <div class="ta-card ta-animate-slide-up" style="max-width:550px;">
-                <h3 class="ta-card__title"><i class="bi bi-calendar-check" style="color:var(--primary);margin-right:6px;"></i> Paso 1: Datos de Reserva</h3>
+                <h3 class="ta-card__title"><i class="bi bi-calendar-check" style="color:var(--primary);margin-right:6px;"></i> Paso 1: Reserva</h3>
                 <div style="display:flex;flex-direction:column;gap:14px;">
                     <div class="ta-form-group"><label class="ta-form-label">Fecha</label><input class="ta-form-input" type="date" @bind="_resFecha" min="@DateTime.Today.ToString("yyyy-MM-dd")" /></div>
                     <div class="ta-form-group"><label class="ta-form-label">Hora</label><input class="ta-form-input" type="time" @bind="_resHora" /></div>
                     <div class="ta-form-group"><label class="ta-form-label">Personas</label><input class="ta-form-input" type="number" min="1" max="20" @bind="_resPersonas" /></div>
                     @if (_mesas.Any(m => m.Disponible))
                     {
-                        <div class="ta-form-group"><label class="ta-form-label">Mesa</label><select class="ta-form-select" @bind="_resMesaId"><option value="">-- Seleccionar --</option>@foreach (var m in _mesas.Where(x => x.Disponible)){
-                        <option value="@m.Id">Mesa @m.NumeroMesa — @m.Capacidad pers.</option>
+                        <div class="ta-form-group">
+                            <label class="ta-form-label">Mesa</label>
+                            <select class="ta-form-select" @bind="_resMesaId">
+                                <option value="">-- Seleccionar --</option>
+                                @foreach (var m in _mesas.Where(x => x.Disponible))
+                                {
+                                    <option value="@m.Id">Mesa @m.NumeroMesa — @m.Capacidad pers.</option>
+                                }
+                            </select>
+                        </div>
                     }
-        </select></div>
-                }
-                else
-                {
+                    <div style="display:flex;gap:10px;">
+                        <button class="ta-btn-primary" @onclick="GoStep2" disabled="@(string.IsNullOrEmpty(_resMesaId))"><i class="bi bi-arrow-right"></i> Siguiente</button>
+                        <button class="ta-btn-ghost" @onclick="Cancel"><i class="bi bi-x-lg"></i> Cancelar</button>
+                    </div>
+                    @if (!string.IsNullOrEmpty(_err))
+                    {
+                        <div class="ta-alert ta-alert--error"><i class="ta-alert__ico bi bi-exclamation-triangle-fill"></i> @_err</div>
+                    }
+                </div>
+            </div>
+        </section>
+    }
 
-                    <div class="ta-alert ta-alert--warning"><i class="ta-alert__ico bi bi-exclamation-triangle"></i> No hay mesas disponibles.</div>
+    <!-- PASO 2 -->
+    @if (_step == 2)
+    {
+        <section class="ta-sec" style="padding-top:12px;">
+            <div class="ta-card ta-animate-slide-up">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                    <h3 class="ta-card__title" style="margin-bottom:0;"><i class="bi bi-cart-plus" style="color:var(--primary);margin-right:6px;"></i> Paso 2: Orden</h3>
+                    <button class="ta-btn-ghost" style="font-size:.78rem;" @onclick="() => _step = 3"><i class="bi bi-arrow-right"></i> Saltar</button>
+                </div>
+                @if (_platos.Any())
+                {
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;margin-bottom:20px;">
+                        @foreach (var p in _platos)
+                        {
+                            var ic = _cart.FirstOrDefault(c => c.PId == p.Id);
+                            <div class="ta-dcard">
+                                <img class="ta-dcard__img" src="@GI(p.Nombre)" alt="@p.Nombre" />
+                                <div class="ta-dcard__body">
+                                    <div class="ta-dcard__name">@p.Nombre</div>
+                                    <div class="ta-dcard__desc">@p.Descripcion</div>
+                                    <div class="ta-dcard__foot">
+                                        <span class="ta-dcard__price">$@p.Precio.ToString("N0")</span>
+                                        @if (ic != null)
+                                        {
+                                            <div style="display:flex;align-items:center;gap:6px;">
+                                                <button class="ta-ci-btn" @onclick="() => RC(p.Id)">-</button>
+                                                <span class="ta-ci-qty">@ic.Q</span>
+                                                <button class="ta-ci-btn" @onclick="() => AC(p)">+</button>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <button class="ta-dcard__add" @onclick="() => AC(p)"><i class="bi bi-plus"></i></button>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
                 }
-                <div class="ta-form-group"><label class="ta-form-label">Notas (opcional)</label><textarea class="ta-modal-textarea" @bind="_resNotas" placeholder="Alergias, celebracion..."></textarea></div>
+                @if (_cart.Any())
+                {
+                    <div style="background:var(--bg-warm);border-radius:var(--r-sm);padding:16px;border:1px solid var(--border);margin-bottom:16px;">
+                        <div style="font-weight:700;margin-bottom:10px;"><i class="bi bi-bag" style="color:var(--primary);"></i> Orden (@_cart.Sum(c => c.Q))</div>
+                        @foreach (var i in _cart)
+                        {
+                            <div style="display:flex;justify-content:space-between;font-size:.85rem;padding:4px 0;border-bottom:1px solid var(--border);"><span>@i.N x@i.Q</span><span style="font-weight:700;">$@((i.P * i.Q).ToString("N0"))</span></div>
+                        }
+                        <div style="display:flex;justify-content:space-between;font-weight:800;margin-top:10px;padding-top:10px;border-top:2px solid var(--border-md);"><span>Subtotal</span><span style="color:var(--primary);">$@CT.ToString("N0")</span></div>
+                    </div>
+                }
                 <div style="display:flex;gap:10px;">
-                    <button class="ta-btn-primary" @onclick="GoStep2" disabled="@(string.IsNullOrEmpty(_resMesaId))"><i class="bi bi-arrow-right"></i> Siguiente: Platos</button>
-                    <button class="ta-btn-ghost" @onclick="Cancel"><i class="bi bi-x-lg"></i> Cancelar</button>
+                    <button class="ta-btn-ghost" @onclick="() => _step = 1"><i class="bi bi-arrow-left"></i></button>
+                    <button class="ta-btn-primary" @onclick="() => _step = 3"><i class="bi bi-arrow-right"></i> Pago</button>
+                </div>
+            </div>
+        </section>
+    }
+
+    <!-- PASO 3 -->
+    @if (_step == 3)
+    {
+        <section class="ta-sec" style="padding-top:12px;">
+            <div class="ta-card ta-animate-slide-up" style="max-width:550px;">
+                <h3 class="ta-card__title"><i class="bi bi-credit-card" style="color:var(--primary);margin-right:6px;"></i> Paso 3: Pago</h3>
+                <div style="background:var(--bg-warm);border-radius:var(--r-sm);padding:16px;border:1px solid var(--border);margin-bottom:20px;font-size:.85rem;display:flex;flex-direction:column;gap:4px;">
+                    <span><i class="bi bi-shop" style="color:var(--primary);margin-right:6px;"></i>@_restaurante.Nombre</span>
+                    <span><i class="bi bi-calendar3" style="color:var(--primary);margin-right:6px;"></i>@_resFecha.ToString("dd MMM yyyy") — @_resHora.ToString("hh\\:mm tt")</span>
+                    <span><i class="bi bi-people" style="color:var(--primary);margin-right:6px;"></i>@_resPersonas personas</span>
+                    @if (_cart.Any())
+                    {
+                        <span><i class="bi bi-bag" style="color:var(--primary);margin-right:6px;"></i>@_cart.Sum(c => c.Q) platos — $@CT.ToString("N0")</span>
+                    }
+                </div>
+                @if (_cart.Any())
+                {
+                    <div style="background:white;border-radius:var(--r-sm);padding:16px;border:1px solid var(--border);margin-bottom:20px;">
+                        <div style="display:flex;justify-content:space-between;font-size:.85rem;"><span>Subtotal</span><span>$@CT.ToString("N0")</span></div>
+                        <div style="display:flex;justify-content:space-between;font-size:.85rem;"><span>ITBIS 18%</span><span>$@(CT * 0.18m).ToString("N0")</span></div>
+                        <div style="display:flex;justify-content:space-between;font-size:.85rem;"><span>Propina 10%</span><span>$@(CT * 0.10m).ToString("N0")</span></div>
+                        <div style="display:flex;justify-content:space-between;font-weight:800;font-size:1.05rem;margin-top:8px;padding-top:8px;border-top:2px solid var(--border-md);"><span>Total</span><span style="color:var(--primary);">$@(CT * 1.28m).ToString("N0")</span></div>
+                    </div>
+                }
+                <div style="font-weight:700;font-size:.88rem;margin-bottom:12px;">Metodo de pago:</div>
+                <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+                    <button class="ta-card" style="padding:16px;cursor:pointer;border:2px solid @(_pay == 1 ? "var(--primary)" : "var(--border)");background:@(_pay == 1 ? "var(--primary-10)" : "white");" @onclick="() => _pay = 1">
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <div style="width:44px;height:44px;border-radius:12px;background:@(_pay == 1 ? "var(--primary)" : "var(--bg-warm)");color:@(_pay == 1 ? "white" : "var(--text-3)");display:flex;align-items:center;justify-content:center;font-size:1.2rem;"><i class="bi bi-credit-card-fill"></i></div>
+                            <div style="text-align:left;"><div style="font-weight:700;">Pago Online</div><div style="font-size:.78rem;color:var(--text-3);">Paga ahora</div></div>
+                            @if (_pay == 1)
+                            {
+                                <i class="bi bi-check-circle-fill" style="margin-left:auto;color:var(--primary);"></i>
+                            }
+                        </div>
+                    </button>
+                    <button class="ta-card" style="padding:16px;cursor:pointer;border:2px solid @(_pay == 2 ? "var(--primary)" : "var(--border)");background:@(_pay == 2 ? "var(--primary-10)" : "white");" @onclick="() => _pay = 2">
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <div style="width:44px;height:44px;border-radius:12px;background:@(_pay == 2 ? "var(--primary)" : "var(--bg-warm)");color:@(_pay == 2 ? "white" : "var(--text-3)");display:flex;align-items:center;justify-content:center;font-size:1.2rem;"><i class="bi bi-shop"></i></div>
+                            <div style="text-align:left;"><div style="font-weight:700;">En Restaurante</div><div style="font-size:.78rem;color:var(--text-3);">Pagas al llegar</div></div>
+                            @if (_pay == 2)
+                            {
+                                <i class="bi bi-check-circle-fill" style="margin-left:auto;color:var(--primary);"></i>
+                            }
+                        </div>
+                    </button>
+                </div>
+                <div style="display:flex;gap:10px;">
+                    <button class="ta-btn-ghost" @onclick="() => _step = 2"><i class="bi bi-arrow-left"></i></button>
+                    <button class="ta-btn-primary ta-btn-primary--lg" style="flex:1;" @onclick="ConfirmAll" disabled="@(_busy || _pay == 0)">
+                        @if (_busy)
+                        {
+                            <span>Procesando...</span>
+                        }
+                        else if (_pay == 1)
+                        {
+
+                            <i class="bi bi-lock-fill"></i>
+                            <span>Pagar y Confirmar</span>
+        }
+        else
+        {
+                            <i class="bi bi-check-circle"></i>
+                            <span>Confirmar</span>
+        }
+                    </button>
                 </div>
                 @if (!string.IsNullOrEmpty(_err))
                 {
-                    <div class="ta-alert ta-alert--error"><i class="ta-alert__ico bi bi-exclamation-triangle-fill"></i> @_err</div>
+                    <div class="ta-alert ta-alert--error" style="margin-top:12px;"><i class="ta-alert__ico bi bi-exclamation-triangle-fill"></i> @_err</div>
                 }
             </div>
-        </div>
-    </section>
-}
+        </section>
+    }
 
-<!-- PLATOS -->
-@if (_step == 2)
-{
-    <section class="ta-sec" style="padding-top:12px;">
-        <div class="ta-card ta-animate-slide-up">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-                <h3 class="ta-card__title" style="margin-bottom:0;"><i class="bi bi-cart-plus" style="color:var(--primary);margin-right:6px;"></i> Paso 2: Orden Anticipada</h3>
-                <button class="ta-btn-ghost" style="padding:6px 14px;font-size:.78rem;" @onclick="() => _step = 3"><i class="bi bi-arrow-right"></i> Saltar</button>
+    <!-- PASO 4 -->
+    @if (_step == 4)
+    {
+        <section class="ta-sec" style="padding-top:12px;">
+            <div class="ta-card ta-animate-slide-up" style="max-width:550px;text-align:center;padding:40px 30px;">
+                <div style="width:80px;height:80px;border-radius:50%;background:var(--success-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:2rem;color:var(--success);"><i class="bi bi-check-circle-fill"></i></div>
+                <h2 style="font-family:'Fraunces',serif;font-size:1.6rem;font-weight:700;margin-bottom:8px;">Reserva Confirmada!</h2>
+                <div style="background:var(--bg-warm);border-radius:var(--r-sm);padding:20px;border:1.5px dashed var(--primary-20);margin-bottom:20px;text-align:left;font-size:.85rem;display:flex;flex-direction:column;gap:6px;">
+                    <span><strong>Fecha:</strong> @_resFecha.ToString("dd MMMM yyyy")</span>
+                    <span><strong>Hora:</strong> @_resHora.ToString("hh\\:mm tt")</span>
+                    <span><strong>Personas:</strong> @_resPersonas</span>
+                    <span><strong>Pago:</strong> @(_pay == 1 ? "Online — Pagado" : "En restaurante — Pendiente")</span>
+                </div>
+                @if (_pay == 2)
+                {
+                    <div class="ta-alert ta-alert--warning" style="text-align:left;margin-bottom:16px;"><i class="ta-alert__ico bi bi-info-circle-fill"></i> Pago al llegar.</div>
+                }
+                @if (_pay == 1)
+                {
+                    <div class="ta-alert ta-alert--success" style="text-align:left;margin-bottom:16px;"><i class="ta-alert__ico bi bi-check-circle-fill"></i> Pago procesado. #@_txId</div>
+                }
+                <div style="display:flex;gap:10px;justify-content:center;">
+                    <button class="ta-btn-primary" @onclick='() => Navigation.NavigateTo("/reservas")'><i class="bi bi-calendar-check"></i> Mis Reservas</button>
+                    <button class="ta-btn-ghost" @onclick='() => Navigation.NavigateTo("/restaurantes")'><i class="bi bi-compass"></i> Explorar</button>
+                </div>
             </div>
-            @if (_menu?.Platos != null && _menu.Platos.Any())
+        </section>
+    }
+
+    <!-- VISTA NORMAL -->
+    @if (_step == 0)
+    {
+        <section class="ta-sec" style="padding-top:20px;">
+            <div class="ta-sec__head"><div><h2 class="ta-sec__title">Mesas <span>Disponibles</span></h2></div></div>
+            @if (_mesas.Any())
             {
-                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;margin-bottom:20px;">
-                    @foreach (var p in _menu.Platos)
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;">
+                    @foreach (var m in _mesas)
                     {
-                        var inCart = _cart.FirstOrDefault(c => c.PlatoId == p.Id);
+                        var a = m.Disponible;
+                        <div class="ta-card" style="padding:18px;text-align:center;background:@(a ? "white" : "rgba(220,53,69,.03)");">
+                            <div style="width:44px;height:44px;border-radius:12px;background:@(a ? "var(--primary-10)" : "var(--danger-bg)");display:flex;align-items:center;justify-content:center;margin:0 auto 10px;color:@(a ? "var(--primary)" : "var(--danger)");"><i class="bi bi-grid-3x3-gap"></i></div>
+                            <div style="font-weight:700;">Mesa @m.NumeroMesa</div>
+                            <div style="font-size:.78rem;color:var(--text-3);">@m.Capacidad pers.</div>
+                            <span class="ta-status @(a ? "ta-status--confirmada" : "ta-status--cancelada")">@(a ? "Libre" : "Ocupada")</span>
+                        </div>
+                    }
+                </div>
+            }
+        </section>
+        <div class="ta-menu-sec" style="margin:20px 28px 0;border-radius:var(--r);">
+            <div class="ta-sec__head" style="margin-bottom:18px;"><div><h2 class="ta-sec__title">Menu</h2></div></div>
+            @if (_platos.Any())
+            {
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;">
+                    @foreach (var p in _platos)
+                    {
                         <div class="ta-dcard">
-                            <img class="ta-dcard__img" src="@GetImg(p.Nombre)" alt="@p.Nombre" />
+                            <img class="ta-dcard__img" src="@GI(p.Nombre)" alt="@p.Nombre" />
                             <div class="ta-dcard__body">
                                 <div class="ta-dcard__name">@p.Nombre</div>
                                 <div class="ta-dcard__desc">@p.Descripcion</div>
-                                <div class="ta-dcard__foot">
-                                    <span class="ta-dcard__price">$@p.Precio.ToString("N0")</span>
-                                    @if (inCart != null)
-                                    {
-                                        <div style="display:flex;align-items:center;gap:6px;"><button class="ta-ci-btn" @onclick="() => RemoveCart(p.Id)">-</button><span class="ta-ci-qty">@inCart.Qty</span><button class="ta-ci-btn" @onclick="() => AddCart(p)">+</button></div>
-                                    }
-                                    else
-                                    {
-
-                                        <button class="ta-dcard__add" @onclick="() => AddCart(p)"><i class="bi bi-plus"></i></button>
-                                    }
-                                </div>
+                                <div class="ta-dcard__foot"><span class="ta-dcard__price">$@p.Precio.ToString("N0")</span></div>
                             </div>
                         </div>
                     }
@@ -136,258 +289,152 @@ else
             }
             else
             {
-
-                <p style="color:var(--text-3);font-size:.85rem;margin-bottom:16px;"><i class="bi bi-info-circle"></i> Sin platos en el menu.</p>
-            }
-            @if (_cart.Any())
-            {
-                <div style="background:var(--bg-warm);border-radius:var(--r-sm);padding:16px;border:1px solid var(--border);margin-bottom:16px;">
-                    <div style="font-weight:700;font-size:.92rem;margin-bottom:10px;"><i class="bi bi-bag" style="color:var(--primary);"></i> Tu Orden (@_cart.Sum(c => c.Qty) platos)</div>
-                    @foreach (var i in _cart)
-                    {
-                        <div style="display:flex;justify-content:space-between;font-size:.85rem;padding:4px 0;border-bottom:1px solid var(--border);"><span>@i.Name x@i.Qty</span><span style="font-weight:700;color:var(--primary-d);">$@((i.Price * i.Qty).ToString("N0"))</span></div>
-                    }
-                    <div style="display:flex;justify-content:space-between;font-weight:800;font-size:1rem;margin-top:10px;padding-top:10px;border-top:2px solid var(--border-md);"><span>Subtotal</span><span style="color:var(--primary);font-family:'Fraunces',serif;">$@_cartTotal.ToString("N0")</span></div>
-                </div>
-            }
-            <div style="display:flex;gap:10px;">
-                <button class="ta-btn-ghost" @onclick="() => _step = 1"><i class="bi bi-arrow-left"></i> Volver</button>
-                <button class="ta-btn-primary" @onclick="() => _step = 3"><i class="bi bi-arrow-right"></i> Siguiente: Pago</button>
-            </div>
-        </div>
-    </section>
-}
-
-<!--  PAGO -->
-@if (_step == 3)
-{
-    <section class="ta-sec" style="padding-top:12px;">
-        <div class="ta-card ta-animate-slide-up" style="max-width:550px;">
-            <h3 class="ta-card__title"><i class="bi bi-credit-card" style="color:var(--primary);margin-right:6px;"></i> Paso 3: Metodo de Pago</h3>
-            <div style="background:var(--bg-warm);border-radius:var(--r-sm);padding:16px;border:1px solid var(--border);margin-bottom:20px;">
-                <div style="font-weight:700;margin-bottom:8px;">Resumen:</div>
-                <div style="font-size:.85rem;color:var(--text-2);display:flex;flex-direction:column;gap:4px;">
-                    <span><i class="bi bi-shop" style="color:var(--primary);margin-right:6px;"></i> @_restaurante.Nombre</span>
-                    <span><i class="bi bi-calendar3" style="color:var(--primary);margin-right:6px;"></i> @_resFecha.ToString("dd MMM yyyy") — @_resHora.ToString("hh\\:mm tt")</span>
-                    <span><i class="bi bi-people" style="color:var(--primary);margin-right:6px;"></i> @_resPersonas personas</span>
-                    <span><i class="bi bi-grid-3x3-gap" style="color:var(--primary);margin-right:6px;"></i> Mesa @(_mesas.FirstOrDefault(m => m.Id.ToString() == _resMesaId)?.NumeroMesa ?? 0)</span>
-                    @if (_cart.Any())
-                    {
-                        <span><i class="bi bi-bag" style="color:var(--primary);margin-right:6px;"></i> @_cart.Sum(c => c.Qty) platos — $@_cartTotal.ToString("N0")</span>
-                    }
-                </div>
-            </div>
-            @if (_cart.Any())
-            {
-                <div style="background:white;border-radius:var(--r-sm);padding:16px;border:1px solid var(--border);margin-bottom:20px;">
-                    <div style="display:flex;justify-content:space-between;font-size:.85rem;padding:4px 0;"><span>Subtotal</span><span>$@_cartTotal.ToString("N0")</span></div>
-                    <div style="display:flex;justify-content:space-between;font-size:.85rem;padding:4px 0;"><span>ITBIS (18%)</span><span>$@(_cartTotal * 0.18m).ToString("N0")</span></div>
-                    <div style="display:flex;justify-content:space-between;font-size:.85rem;padding:4px 0;"><span>Propina (10%)</span><span>$@(_cartTotal * 0.10m).ToString("N0")</span></div>
-                    <div style="display:flex;justify-content:space-between;font-weight:800;font-size:1.05rem;margin-top:8px;padding-top:8px;border-top:2px solid var(--border-md);"><span>Total</span><span style="color:var(--primary);font-family:'Fraunces',serif;">$@(_cartTotal * 1.28m).ToString("N0")</span></div>
-                </div>
-            }
-            <div style="font-weight:700;font-size:.88rem;margin-bottom:12px;">Selecciona como pagar:</div>
-            <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
-                <button class="ta-card" style="padding:16px;cursor:pointer;border:2px solid @(_pay == 1 ? "var(--primary)" : "var(--border)");background:@(_pay == 1 ? "var(--primary-10)" : "white");transition:all .2s;" @onclick="() => _pay = 1">
-                    <div style="display:flex;align-items:center;gap:12px;">
-                        <div style="width:44px;height:44px;border-radius:12px;background:@(_pay == 1 ? "var(--primary)" : "var(--bg-warm)");color:@(_pay == 1 ? "white" : "var(--text-3)");display:flex;align-items:center;justify-content:center;font-size:1.2rem;"><i class="bi bi-credit-card-fill"></i></div>
-                        <div style="text-align:left;"><div style="font-weight:700;font-size:.95rem;">Pago Online</div><div style="font-size:.78rem;color:var(--text-3);">Paga ahora — confirmacion inmediata</div></div>
-                        @if (_pay == 1)
-                        {
-                            <i class="bi bi-check-circle-fill" style="margin-left:auto;color:var(--primary);font-size:1.2rem;"></i>
-                        }
-                    </div>
-                </button>
-                <button class="ta-card" style="padding:16px;cursor:pointer;border:2px solid @(_pay == 2 ? "var(--primary)" : "var(--border)");background:@(_pay == 2 ? "var(--primary-10)" : "white");transition:all .2s;" @onclick="() => _pay = 2">
-                    <div style="display:flex;align-items:center;gap:12px;">
-                        <div style="width:44px;height:44px;border-radius:12px;background:@(_pay == 2 ? "var(--primary)" : "var(--bg-warm)");color:@(_pay == 2 ? "white" : "var(--text-3)");display:flex;align-items:center;justify-content:center;font-size:1.2rem;"><i class="bi bi-shop"></i></div>
-                        <div style="text-align:left;"><div style="font-weight:700;font-size:.95rem;">Pagar en Restaurante</div><div style="font-size:.78rem;color:var(--text-3);">Reserva confirmada — pagas al llegar</div></div>
-                        @if (_pay == 2)
-                        {
-                            <i class="bi bi-check-circle-fill" style="margin-left:auto;color:var(--primary);font-size:1.2rem;"></i>
-                        }
-                    </div>
-                </button>
-            </div>
-            <div style="display:flex;gap:10px;">
-                <button class="ta-btn-ghost" @onclick="() => _step = 2"><i class="bi bi-arrow-left"></i> Volver</button>
-                <button class="ta-btn-primary ta-btn-primary--lg ta-btn-primary--full" @onclick="ConfirmAll" disabled="@(_busy || _pay == 0)">
-                    @if (_busy)
-                    {
-                        <span class="ta-spinner" style="width:20px;height:20px;border-width:2px;"></span>
-                        <span>Procesando...</span>
-    }
-                    else if (_pay == 1)
-                    {
-                        <i class="bi bi-lock-fill"></i>
-                        <span>Pagar $@(_cart.Any() ? (_cartTotal * 1.28m).ToString("N0") : "0") y Confirmar</span>
-    }
-                    else
-                    {
-                        <i class="bi bi-check-circle"></i>
-                        <span>Confirmar Reserva</span>
-    }
-                </button>
-            </div>
-            @if (!string.IsNullOrEmpty(_err))
-            {
-                <div class="ta-alert ta-alert--error" style="margin-top:12px;"><i class="ta-alert__ico bi bi-exclamation-triangle-fill"></i> @_err</div>
+                <div class="ta-empty-state" style="padding:40px;"><div class="ta-empty-state__ico"><i class="bi bi-book"></i></div><div class="ta-empty-state__title">Sin platos</div></div>
             }
         </div>
-    </section>
-}
-
-<!--  EXITO -->
-@if (_step == 4)
-{
-    <section class="ta-sec" style="padding-top:12px;">
-        <div class="ta-card ta-animate-slide-up" style="max-width:550px;text-align:center;padding:40px 30px;">
-            <div style="width:80px;height:80px;border-radius:50%;background:var(--success-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:2rem;color:var(--success);"><i class="bi bi-check-circle-fill"></i></div>
-            <h2 style="font-family:'Fraunces',serif;font-size:1.6rem;font-weight:700;margin-bottom:8px;">Reserva Confirmada!</h2>
-            <p style="font-size:.88rem;color:var(--text-3);margin-bottom:20px;">Tu mesa en <strong>@_restaurante.Nombre</strong> esta reservada.</p>
-            <div style="background:var(--bg-warm);border-radius:var(--r-sm);padding:20px;border:1.5px dashed var(--primary-20);margin-bottom:20px;text-align:left;">
-                <div style="font-size:.85rem;color:var(--text-2);display:flex;flex-direction:column;gap:6px;">
-                    <span><i class="bi bi-calendar3" style="color:var(--primary);margin-right:8px;"></i><strong>Fecha:</strong> @_resFecha.ToString("dddd, dd MMMM yyyy")</span>
-                    <span><i class="bi bi-clock" style="color:var(--primary);margin-right:8px;"></i><strong>Hora:</strong> @_resHora.ToString("hh\\:mm tt")</span>
-                    <span><i class="bi bi-people" style="color:var(--primary);margin-right:8px;"></i><strong>Personas:</strong> @_resPersonas</span>
-                    <span><i class="bi bi-grid-3x3-gap" style="color:var(--primary);margin-right:8px;"></i><strong>Mesa:</strong> @(_mesas.FirstOrDefault(m => m.Id.ToString() == _resMesaId)?.NumeroMesa ?? 0)</span>
-                    @if (_cart.Any())
-                    {
-                        <span><i class="bi bi-bag" style="color:var(--primary);margin-right:8px;"></i><strong>Orden:</strong> @_cart.Sum(c => c.Qty) platos — $@(_cartTotal * 1.28m).ToString("N0")</span>
-                    }
-                    <span><i class="bi bi-credit-card" style="color:var(--primary);margin-right:8px;"></i><strong>Pago:</strong> @(_pay == 1 ? "Online — Pagado" : "En restaurante — Pendiente")</span>
-                </div>
-            </div>
-            @if (_pay == 2)
-            {
-                <div class="ta-alert ta-alert--warning" style="text-align:left;margin-bottom:16px;"><i class="ta-alert__ico bi bi-info-circle-fill"></i><span>El pago se realizara al llegar al restaurante.</span></div>
-            }
-            @if (_pay == 1)
-            {
-                <div class="ta-alert ta-alert--success" style="text-align:left;margin-bottom:16px;"><i class="ta-alert__ico bi bi-check-circle-fill"></i><span>Pago procesado. Transaccion #@_txId</span></div>
-            }
-            <div style="display:flex;gap:10px;justify-content:center;">
-                <button class="ta-btn-primary" @onclick='() => Navigation.NavigateTo("/reservas")'><i class="bi bi-calendar-check"></i> Mis Reservas</button>
-                <button class="ta-btn-ghost" @onclick='() => Navigation.NavigateTo("/restaurantes")'><i class="bi bi-compass"></i> Explorar</button>
-            </div>
-        </div>
-    </section>
-}
-
-<!-- MESAS / MENU  -->
-@if (_step == 0)
-{
-    <section class="ta-sec" style="padding-top:20px;">
-        <div class="ta-sec__head"><div><h2 class="ta-sec__title">Mesas <span>Disponibles</span></h2><p class="ta-sec__sub">@_mesas.Count(m => m.Disponible) de @_mesas.Count libres</p></div></div>
-        @if (_mesas.Any())
-        {
-            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;">@foreach(var mesa in _mesas){var av=mesa.Disponible;
-            <div class="ta-card" style="padding:18px;text-align:center;border-color:@(av ? "var(--border)" : "rgba(220,53,69,.2)");background:@(av ? "white" : "rgba(220,53,69,.03)");"><div style="width:44px;height:44px;border-radius:12px;background:@(av ? "var(--primary-10)" : "var(--danger-bg)");display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:1.1rem;color:@(av ? "var(--primary)" : "var(--danger)");"><i class="bi bi-grid-3x3-gap"></i></div><div style="font-weight:700;font-size:.95rem;">Mesa @mesa.NumeroMesa</div><div style="font-size:.78rem;color:var(--text-3);margin-top:2px;">@mesa.Capacidad personas</div><div style="margin-top:8px;"><span class="ta-status @(av ? "ta-status--confirmada" : "ta-status--cancelada")">@(av ? "Disponible" : "Ocupada")</span></div></div>
-        }
-    </div>
-    }
-</section>
-<div class="ta-menu-sec" style="margin:20px 28px 0;border-radius:var(--r);">
-    <div class="ta-sec__head" style="margin-bottom:18px;"><div><h2 class="ta-sec__title">Menu · <span>@_restaurante.Nombre</span></h2></div></div>
-    @if (_menu?.Platos != null && _menu.Platos.Any())
-    {
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;">@foreach(var p in _menu.Platos){
-        <div class="ta-dcard"><img class="ta-dcard__img" src="@GetImg(p.Nombre)" alt="@p.Nombre" /><div class="ta-dcard__body"><div class="ta-dcard__name">@p.Nombre</div><div class="ta-dcard__desc">@p.Descripcion</div><div class="ta-dcard__foot"><span class="ta-dcard__price">$@p.Precio.ToString("N0")</span></div></div></div>
-    }
-</div>
-        }
-        else
-    {
-
-        <div class="ta-empty-state" style="padding:40px 24px;"><div class="ta-empty-state__ico"><i class="bi bi-book"></i></div><div class="ta-empty-state__title">Sin platos</div></div>
-    }
-</div>
     }
 }
 
 @code {
     [Parameter] public string Id { get; set; } = "";
-    private bool _isLoading = true, _busy = false;
-    private Guid _userId;
-    private RestauranteResponse? _restaurante;
-    private List<MesaResponse> _mesas = new();
-    private MenuResponse? _menu;
-    private int _step = 0; // 0=view,1=reserva,2=platos,3=pago,4=ok
-    private DateTime _resFecha = DateTime.Today.AddDays(1);
-    private TimeOnly _resHora = new TimeOnly(19, 0);
-    private int _resPersonas = 2;
-    private string _resMesaId = "", _resNotas = "", _err = "", _txId = "";
-    private List<CI> _cart = new();
-    private decimal _cartTotal => _cart.Sum(c => c.Price * c.Qty);
-    private int _pay = 0;
+    bool _isLoading = true, _busy = false; Guid _userId; RestauranteResponse? _restaurante; List<MesaResponse> _mesas = new(); List<PlatoResponse> _platos = new(); MenuResponse? _menu;
+    int _step = 0; DateTime _resFecha = DateTime.Today.AddDays(1); TimeOnly _resHora = new(19, 0); int _resPersonas = 2;
+    string _resMesaId = "", _err = "", _txId = ""; List<C> _cart = new(); decimal CT => _cart.Sum(c => c.P * c.Q); int _pay = 0;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            try { var r = await SessionStorage.GetAsync<string>("userId"); if (r.Success && Guid.TryParse(r.Value, out var uid)) _userId = uid; } catch { }
-            await LoadAll(); StateHasChanged();
-        }
-    }
+    protected override async Task OnAfterRenderAsync(bool f) { if (f) { try { var r = await SessionStorage.GetAsync<string>("userId"); if (r.Success && Guid.TryParse(r.Value, out var u)) _userId = u; } catch { } await LA(); StateHasChanged(); } }
 
-    private async Task LoadAll()
+    async Task LA()
     {
-        _isLoading = true;
-        try
+        _isLoading = true; try
         {
             var rr = await ApiService.GetAsync<RestauranteApiSingleResponse>($"api/Restaurantes/{Id}"); if (rr?.Data != null) _restaurante = rr.Data;
             try { var m = await ApiService.GetAsync<List<MesaResponse>>($"api/Mesas/restaurante/{Id}"); if (m != null) _mesas = m; } catch { }
-            try { _menu = await ApiService.GetAsync<MenuResponse>($"api/Menus/{Id}"); } catch { }
+            try { var am = await ApiService.GetAsync<List<MenuResponse>>("api/Menus"); if (am != null) { _menu = am.FirstOrDefault(x => x.RestauranteId == Guid.Parse(Id)); if (_menu != null) { var pl = await ApiService.GetAsync<List<PlatoResponse>>($"api/Platos/menu/{_menu.Id}"); if (pl != null) _platos = pl; } } } catch { }
         }
         catch { }
         finally { _isLoading = false; }
     }
 
-    private void StartReserva() { _step = 1; _err = ""; _pay = 0; _cart.Clear(); }
-    private void Cancel() { _step = 0; _err = ""; _cart.Clear(); }
-    private void GoStep2() { _err = ""; if (string.IsNullOrEmpty(_resMesaId)) { _err = "Selecciona una mesa"; return; } if (_resPersonas < 1) { _err = "Minimo 1 persona"; return; } if (_resFecha < DateTime.Today) { _err = "Fecha invalida"; return; } _step = 2; }
+    void StartReserva() { _step = 1; _err = ""; _pay = 0; _cart.Clear(); }
+    void Cancel() { _step = 0; _err = ""; _cart.Clear(); }
+    void GoStep2() { _err = ""; if (string.IsNullOrEmpty(_resMesaId)) { _err = "Selecciona mesa"; return; } if (_resPersonas < 1) { _err = "Min 1"; return; } _step = 2; }
+    void AC(PlatoResponse p) { var e = _cart.FirstOrDefault(c => c.PId == p.Id); if (e != null) e.Q++; else _cart.Add(new C { PId = p.Id, N = p.Nombre, P = p.Precio, Q = 1 }); }
+    void RC(Guid id) { var i = _cart.FirstOrDefault(c => c.PId == id); if (i != null) { i.Q--; if (i.Q <= 0) _cart.Remove(i); } }
 
-    private void AddCart(PlatoResponse p) { var e = _cart.FirstOrDefault(c => c.PlatoId == p.Id); if (e != null) e.Qty++; else _cart.Add(new CI { PlatoId = p.Id, Name = p.Nombre, Price = p.Precio, Qty = 1 }); Toast.Success($"{p.Nombre} agregado!"); }
-    private void RemoveCart(Guid id) { var i = _cart.FirstOrDefault(c => c.PlatoId == id); if (i != null) { i.Qty--; if (i.Qty <= 0) _cart.Remove(i); } }
-
-    private async Task ConfirmAll()
+    async Task ConfirmAll()
     {
-        _busy = true; _err = "";
-        try
+        _busy = true; _err = ""; try
         {
-            // 1. Reserva
-            await ApiService.PostAsync<object>("api/Reservas", new { usuarioId = _userId, restauranteId = Guid.Parse(Id), mesaId = Guid.Parse(_resMesaId), fechaReserva = _resFecha.ToString("yyyy-MM-dd") + "T" + _resHora.ToString("HH:mm:ss"), cantidadPersonas = _resPersonas, notas = _resNotas });
+            var restGuid = Guid.Parse(Id);
+            var mesaGuid = Guid.Parse(_resMesaId);
+
+            // Buscar o crear disponibilidad
+            Guid dispId = Guid.Empty;
+            try
+            {
+                var disps = await ApiService.GetAsync<List<DispItem>>($"api/Disponibilidades/restaurante/{Id}");
+                if (disps != null && disps.Any()) dispId = disps.First().Id;
+            }
+            catch { }
+
+            if (dispId == Guid.Empty)
+            {
+                // Crear disponibilidad
+                dispId = Guid.NewGuid();
+                var dispResult = await ApiService.PostAsync<object>("api/Disponibilidades", new
+                {
+                    id = dispId,
+                    restauranteId = restGuid,
+                    fecha = _resFecha.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+                    horaInicio = _resHora.ToString("HH:mm:ss"),
+                    horaFin = _resHora.Add(TimeSpan.FromHours(2)).ToString("HH:mm:ss"),
+                    estado = 1,
+                    fechaCreacion = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
+                });
+                // Si falla con string, intentar con ticks
+                if (dispResult == null)
+                {
+                    await ApiService.PostAsync<object>("api/Disponibilidades", new
+                    {
+                        id = dispId,
+                        restauranteId = restGuid,
+                        fecha = _resFecha,
+                        horaInicio = new { ticks = _resHora.ToTimeSpan().Ticks },
+                        horaFin = new { ticks = _resHora.Add(TimeSpan.FromHours(2)).ToTimeSpan().Ticks },
+                        estado = 1,
+                        fechaCreacion = DateTime.UtcNow
+                    });
+                }
+            }
+
+            // Crear Reserva
+            var resId = Guid.NewGuid();
+            var resResult = await ApiService.PostAsync<object>("api/Reservas", new
+            {
+                id = resId,
+                usuarioId = _userId,
+                restauranteId = restGuid,
+                mesaId = mesaGuid,
+                disponibilidadId = dispId,
+                fechaReserva = _resFecha.ToString("yyyy-MM-dd") + "T" + _resHora.ToString("HH:mm:ss") + "Z",
+                cantidadPersonas = _resPersonas,
+                estadoReserva = 0
+            });
+            if (resResult == null)
+            {
+                // Intentar sin disponibilidadId (por si es nullable)
+                resResult = await ApiService.PostAsync<object>("api/Reservas", new
+                {
+                    id = resId,
+                    usuarioId = _userId,
+                    restauranteId = restGuid,
+                    mesaId = mesaGuid,
+                    disponibilidadId = dispId,
+                    fechaReserva = _resFecha,
+                    cantidadPersonas = _resPersonas,
+                    estadoReserva = 0
+                });
+            }
+            if (resResult == null) { _err = "Error al crear reserva. La API rechazo los datos. Verifica en Swagger que POST /api/Reservas funcione con estos campos."; _busy = false; StateHasChanged(); return; }
             Notif.ReservaConfirmada(_restaurante!.Nombre, _resFecha.ToString("dd MMM yyyy"));
 
-            // 2. Orden
+            //  Orden
             Guid? ordenId = null;
             if (_cart.Any())
             {
-                var or = await ApiService.PostAsync<OrdenResponse>("api/Ordenes", new { usuarioId = _userId, restauranteId = Guid.Parse(Id), tipoOrden = "Anticipada", detalles = _cart.Select(c => new { platoId = c.PlatoId, cantidad = c.Qty, precioUnitario = c.Price }).ToList() });
+                var or = await ApiService.PostAsync<OrdenResponse>("api/Ordenes", new
+                {
+                    usuarioId = _userId,
+                    restauranteId = restGuid,
+                    detalles = _cart.Select(c => new { platoId = c.PId, cantidad = c.Q, precioUnitario = c.P, subtotal = c.P * c.Q }).ToList()
+                });
                 if (or != null) ordenId = or.Id;
-                Notif.OrdenCreada(_restaurante.Nombre, _cart.Sum(c => c.Qty));
+                Notif.OrdenCreada(_restaurante.Nombre, _cart.Sum(c => c.Q));
             }
 
-            // 3. Pago
+            //  Pago
             _txId = "TA-" + DateTime.Now.ToString("yyyyMMdd") + "-" + new Random().Next(1000, 9999);
-            if (_pay == 1)
+            if (_pay == 1 && _cart.Any() && ordenId != null)
             {
-                if (_cart.Any()) await ApiService.PostAsync<object>("api/Pagos", new { ordenId = ordenId ?? Guid.NewGuid(), monto = _cartTotal * 1.28m, metodoPago = 1, estadoPago = 1 });
-                Notif.PagoAprobado(_cart.Any() ? _cartTotal * 1.28m : 0, _txId);
+                await ApiService.PostAsync<object>("api/Pagos", new
+                {
+                    id = Guid.NewGuid(),
+                    ordenId = ordenId.Value,
+                    monto = CT * 1.28m,
+                    estadoPago = 1,
+                    metodoPago = 1
+                });
+                Notif.PagoAprobado(CT * 1.28m, _txId);
             }
-            else
-            {
-                Notif.PagoPendiente(_restaurante.Nombre);
-            }
+            else { Notif.PagoPendiente(_restaurante.Nombre); }
 
-            Toast.Success("Reserva confirmada!");
-            _step = 4;
+            Toast.Success("Reserva confirmada!"); _step = 4;
         }
-        catch (Exception ex) { _err = "Error: " + ex.Message; Toast.Error("Error al procesar"); }
+        catch (Exception ex) { _err = "Error: " + ex.Message; }
         finally { _busy = false; StateHasChanged(); }
     }
 
-    private string FmtH(string? h) => string.IsNullOrEmpty(h) ? "" : (h.Length >= 5 ? h.Substring(0, 5) : h);
-    private string GetImg(string? n) { var imgs = new[] { "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=200&q=80", "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=200&q=80", "https://images.unsplash.com/photo-1544025162-d76694265947?w=200&q=80", "https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=200&q=80" }; return imgs[Math.Abs((n ?? "").GetHashCode()) % imgs.Length]; }
-    private class CI { public Guid PlatoId { get; set; } public string Name { get; set; } = ""; public decimal Price { get; set; } public int Qty { get; set; } }
+    string GI(string? n) { var i = new[] { "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=200&q=80", "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=200&q=80", "https://images.unsplash.com/photo-1544025162-d76694265947?w=200&q=80" }; return i[Math.Abs((n ?? "").GetHashCode()) % i.Length]; }
+    class C { public Guid PId { get; set; } public string N { get; set; } = ""; public decimal P { get; set; } public int Q { get; set; } }
+    class DispItem { public Guid Id { get; set; } public Guid RestauranteId { get; set; } }
 }

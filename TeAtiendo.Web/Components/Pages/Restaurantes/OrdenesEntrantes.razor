@@ -4,56 +4,42 @@
 @layout TeAtiendo.Web.Components.Layout.MainLayout
 @inject IApiService ApiService
 @inject ToastService Toast
-@inject NotificationService Notif
 @inject Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedSessionStorage SessionStorage
 @rendermode InteractiveServer
 
-<section class="ta-sec">
-    <div class="ta-sec__head">
-        <div>
-            <h2 class="ta-sec__title">Ordenes <span>Entrantes</span></h2>
-            <p class="ta-sec__sub">@_ordenes.Count ordenes — @_ordenes.Count(o => o.Estado < 3) activas</p>
-        </div>
-    </div>
-</section>
-
+<section class="ta-sec"><div class="ta-sec__head"><div><h2 class="ta-sec__title">Ordenes <span>Entrantes</span></h2><p class="ta-sec__sub">@_ord.Count ordenes</p></div></div></section>
 <section class="ta-sec" style="padding-top:0;">
-    @if (_isLoading)
+    @if (_ld)
     {
         <div class="ta-loading"><div class="ta-spinner"></div></div>
     }
-    else if (_ordenes.Any())
+    else if (_ord.Any())
     {
+
         <div style="display:flex;flex-direction:column;gap:14px;">
-            @foreach (var o in _ordenes.OrderByDescending(x => x.Fecha))
+            @foreach (var o in _ord.OrderByDescending(x => x.Fecha))
             {
-                <div class="ta-card ta-animate-fade-up" style="padding:20px;">
+                <div class="ta-card" style="padding:20px;">
                     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-                        <div style="display:flex;align-items:center;gap:14px;">
-                            <div style="width:44px;height:44px;border-radius:12px;background:var(--primary-10);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--primary);"><i class="bi bi-receipt"></i></div>
-                            <div><div style="font-weight:700;font-size:.95rem;">Orden</div><div style="font-size:.78rem;color:var(--text-3);"><i class="bi bi-calendar3"></i> @o.Fecha.ToString("dd MMM yyyy, hh:mm tt")</div></div>
-                        </div>
-                        <div style="display:flex;align-items:center;gap:12px;">
-                            <span class="ta-status @GetSC(o.Estado)">@GetST(o.Estado)</span>
-                            <span style="font-family:'Fraunces',serif;font-weight:700;font-size:1.05rem;color:var(--primary-d);">$@o.Total.ToString("N0")</span>
-                        </div>
+                        <div style="display:flex;align-items:center;gap:14px;"><div style="width:44px;height:44px;border-radius:12px;background:var(--primary-10);display:flex;align-items:center;justify-content:center;color:var(--primary);"><i class="bi bi-receipt"></i></div><div><div style="font-weight:700;">Orden</div><div style="font-size:.78rem;color:var(--text-3);">@o.Fecha.ToString("dd MMM yyyy")</div></div></div>
+                        <div style="display:flex;align-items:center;gap:12px;"><span class="ta-status @GC(o.Estado)">@GS(o.Estado)</span><span style="font-weight:700;color:var(--primary-d);">$@o.Total.ToString("N0")</span></div>
                     </div>
                     @if (o.Estado < 3)
                     {
                         <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;gap:8px;">
                             @if (o.Estado == 0)
                             {
-                                <button class="ta-btn-primary" style="padding:6px 14px;font-size:.78rem;" @onclick="() => Change(o, 1)"><i class="bi bi-fire"></i> En Preparacion</button>
+                                <button class="ta-btn-primary" style="padding:6px 14px;font-size:.78rem;" @onclick="() => Ch(o, 1)"><i class="bi bi-fire"></i> Preparar</button>
                             }
                             @if (o.Estado == 1)
                             {
-                                <button class="ta-btn-success" style="padding:6px 14px;font-size:.78rem;" @onclick="() => Change(o, 2)"><i class="bi bi-check-circle"></i> Lista</button>
+                                <button class="ta-btn-success" style="padding:6px 14px;font-size:.78rem;" @onclick="() => Ch(o, 2)"><i class="bi bi-check-circle"></i> Lista</button>
                             }
                             @if (o.Estado == 2)
                             {
-                                <button class="ta-btn-success" style="padding:6px 14px;font-size:.78rem;" @onclick="() => Change(o, 3)"><i class="bi bi-bag-check"></i> Entregada</button>
+                                <button class="ta-btn-success" style="padding:6px 14px;font-size:.78rem;" @onclick="() => Ch(o, 3)"><i class="bi bi-bag-check"></i> Entregada</button>
                             }
-                            <button class="ta-btn-danger" style="padding:6px 14px;font-size:.78rem;" @onclick="() => Change(o, 4)"><i class="bi bi-x-circle"></i> Cancelar</button>
+                            <button class="ta-btn-danger" style="padding:6px 14px;font-size:.78rem;" @onclick="() => Ch(o, 4)"><i class="bi bi-x-circle"></i> Cancelar</button>
                         </div>
                     }
                 </div>
@@ -68,36 +54,17 @@
 </section>
 
 @code {
-    private bool _isLoading = true;
-    private Guid _restauranteId;
-    private List<OrdenResponse> _ordenes = new();
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    bool _ld = true; Guid _rid; List<OrdenResponse> _ord = new();
+    protected override async Task OnAfterRenderAsync(bool f)
     {
-        if (firstRender)
+        if (f)
         {
-            try { var r = await SessionStorage.GetAsync<string>("restauranteId"); if (r.Success && Guid.TryParse(r.Value, out var rid)) _restauranteId = rid; } catch { }
-            _isLoading = true;
-            try { if (_restauranteId != Guid.Empty) { var r = await ApiService.GetAsync<List<OrdenResponse>>($"api/Ordenes/restaurante/{_restauranteId}"); if (r != null) _ordenes = r; } }
-            catch { }
-            finally { _isLoading = false; }
+            try { var r = await SessionStorage.GetAsync<string>("restauranteId"); if (r.Success && Guid.TryParse(r.Value, out var id)) _rid = id; } catch { }
+            _ld = true; try { var a = await ApiService.GetAsync<List<OrdenResponse>>("api/Ordenes"); if (a != null) _ord = a.Where(x => x.RestauranteId == _rid).ToList(); } catch { } finally { _ld = false; }
             StateHasChanged();
         }
     }
-
-    private async Task Change(OrdenResponse o, int s)
-    {
-        try
-        {
-            await ApiService.PatchAsync<object>($"api/Ordenes/{o.Id}/estado", new { estado = s });
-            o.Estado = s;
-            Toast.Success("Estado: " + GetST(s));
-            Notif.Push(s == 4 ? "reserva_rechazada" : "orden_preparacion", $"Orden marcada como <strong>{GetST(s)}</strong>", "/restaurante/ordenes");
-            StateHasChanged();
-        }
-        catch { Toast.Error("Error al cambiar estado"); }
-    }
-
-    private string GetSC(int s) => s switch { 0 => "ta-status--pendiente", 1 => "ta-status--preparacion", 2 => "ta-status--lista", 3 => "ta-status--entregada", 4 => "ta-status--cancelada", _ => "ta-status--pendiente" };
-    private string GetST(int s) => s switch { 0 => "Pendiente", 1 => "En Preparacion", 2 => "Lista", 3 => "Entregada", 4 => "Cancelada", _ => "Pendiente" };
+    async Task Ch(OrdenResponse o, int s) { try { await ApiService.PatchAsync<object>($"api/Ordenes/{o.Id}/estado", new { estado = s }); o.Estado = s; Toast.Success("Estado: " + GS(s)); StateHasChanged(); } catch { Toast.Error("Error"); } }
+    string GC(int s) => s switch { 0 => "ta-status--pendiente", 1 => "ta-status--preparacion", 2 => "ta-status--lista", 3 => "ta-status--entregada", 4 => "ta-status--cancelada", _ => "ta-status--pendiente" };
+    string GS(int s) => s switch { 0 => "Pendiente", 1 => "En Preparacion", 2 => "Lista", 3 => "Entregada", 4 => "Cancelada", _ => "Pendiente" };
 }

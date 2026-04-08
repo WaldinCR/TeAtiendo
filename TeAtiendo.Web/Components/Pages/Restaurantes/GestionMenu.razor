@@ -10,44 +10,55 @@
 
 <section class="ta-sec">
     <div class="ta-sec__head">
-        <div>
-            <h2 class="ta-sec__title">Gestionar <span>Menu</span></h2>
-            <p class="ta-sec__sub">Menus y platos de tu restaurante</p>
-        </div>
+        <div><h2 class="ta-sec__title">Gestionar <span>Menu</span></h2><p class="ta-sec__sub">Menus y platos</p></div>
         <button class="ta-btn-primary" @onclick="ShowAddMenu"><i class="bi bi-plus-lg"></i> Agregar Menu</button>
     </div>
 </section>
 
-@if (_showMenuForm)
+@if (_showMF)
 {
     <section class="ta-sec" style="padding-top:0;">
         <div class="ta-card ta-animate-slide-up" style="max-width:500px;">
             <h3 class="ta-card__title"><i class="bi bi-book" style="color:var(--primary);margin-right:6px;"></i> Nuevo Menu</h3>
             <div style="display:flex;flex-direction:column;gap:14px;">
-                <div class="ta-form-group"><label class="ta-form-label">Nombre</label><input class="ta-form-input" @bind="_menuNombre" placeholder="Menu del Dia" /></div>
-                <div class="ta-form-group"><label class="ta-form-label">Descripcion</label><textarea class="ta-modal-textarea" @bind="_menuDesc"></textarea></div>
-                <div style="display:flex;gap:10px;">
-                    <button class="ta-btn-primary" @onclick="SaveMenu"><i class="bi bi-check-lg"></i> Guardar</button>
-                    <button class="ta-btn-ghost" @onclick="() => _showMenuForm = false"><i class="bi bi-x-lg"></i> Cancelar</button>
-                </div>
+                <div class="ta-form-group"><label class="ta-form-label">Nombre</label><input class="ta-form-input" @bind="_mn" placeholder="Menu del Dia" /></div>
+                <div class="ta-form-group"><label class="ta-form-label">Descripcion</label><textarea class="ta-modal-textarea" @bind="_md"></textarea></div>
+                <div style="display:flex;gap:10px;"><button class="ta-btn-primary" @onclick="SaveMenu"><i class="bi bi-check-lg"></i> Guardar</button><button class="ta-btn-ghost" @onclick="() => _showMF = false"><i class="bi bi-x-lg"></i></button></div>
+                @if (!string.IsNullOrEmpty(_fe))
+                {
+                    <div class="ta-alert ta-alert--error">@_fe</div>
+                }
             </div>
         </div>
     </section>
 }
 
-@if (_showPlatoForm)
+@if (_showPF)
 {
     <section class="ta-sec" style="padding-top:0;">
         <div class="ta-card ta-animate-slide-up" style="max-width:500px;">
             <h3 class="ta-card__title"><i class="bi bi-egg-fried" style="color:var(--primary);margin-right:6px;"></i> Nuevo Plato</h3>
             <div style="display:flex;flex-direction:column;gap:14px;">
-                <div class="ta-form-group"><label class="ta-form-label">Nombre</label><input class="ta-form-input" @bind="_platoNombre" placeholder="Ensalada Cesar" /></div>
-                <div class="ta-form-group"><label class="ta-form-label">Descripcion</label><textarea class="ta-modal-textarea" @bind="_platoDesc"></textarea></div>
-                <div class="ta-form-group"><label class="ta-form-label">Precio (RD$)</label><input class="ta-form-input" type="number" @bind="_platoPrecio" /></div>
-                <div style="display:flex;gap:10px;">
-                    <button class="ta-btn-primary" @onclick="SavePlato"><i class="bi bi-check-lg"></i> Guardar</button>
-                    <button class="ta-btn-ghost" @onclick="() => _showPlatoForm = false"><i class="bi bi-x-lg"></i> Cancelar</button>
-                </div>
+                <div class="ta-form-group"><label class="ta-form-label">Nombre</label><input class="ta-form-input" @bind="_pn" placeholder="Ensalada" /></div>
+                <div class="ta-form-group"><label class="ta-form-label">Descripcion</label><textarea class="ta-modal-textarea" @bind="_pd"></textarea></div>
+                <div class="ta-form-group"><label class="ta-form-label">Precio (RD$)</label><input class="ta-form-input" type="number" @bind="_pp" /></div>
+                @if (_categorias.Any())
+                {
+                    <div class="ta-form-group">
+                        <label class="ta-form-label">Categoria</label>
+                        <select class="ta-form-select" @bind="_pcatId">
+                            @foreach (var c in _categorias)
+                            {
+                                <option value="@c.Id">@c.Nombre</option>
+                            }
+                        </select>
+                    </div>
+                }
+                <div style="display:flex;gap:10px;"><button class="ta-btn-primary" @onclick="SavePlato"><i class="bi bi-check-lg"></i> Guardar</button><button class="ta-btn-ghost" @onclick="() => _showPF = false"><i class="bi bi-x-lg"></i></button></div>
+                @if (!string.IsNullOrEmpty(_fe))
+                {
+                    <div class="ta-alert ta-alert--error">@_fe</div>
+                }
             </div>
         </div>
     </section>
@@ -62,86 +73,113 @@
     {
         <div class="ta-card" style="margin-bottom:16px;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-                <div style="display:flex;align-items:center;gap:12px;">
-                    <div style="width:42px;height:42px;border-radius:12px;background:var(--primary-10);display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:var(--primary);"><i class="bi bi-book"></i></div>
-                    <div><div style="font-weight:700;font-size:1.05rem;">@_menu.Nombre</div><div style="font-size:.78rem;color:var(--text-3);">@_menu.Descripcion</div></div>
-                </div>
+                <div style="display:flex;align-items:center;gap:12px;"><div style="width:42px;height:42px;border-radius:12px;background:var(--primary-10);display:flex;align-items:center;justify-content:center;color:var(--primary);"><i class="bi bi-book"></i></div><div><div style="font-weight:700;">@_menu.Nombre</div><div style="font-size:.78rem;color:var(--text-3);">@_menu.Descripcion</div></div></div>
                 <button class="ta-btn-primary" style="padding:7px 14px;font-size:.78rem;" @onclick="ShowAddPlato"><i class="bi bi-plus"></i> Plato</button>
             </div>
-            @if (_menu.Platos != null && _menu.Platos.Any())
+            @if (_platos.Any())
             {
-                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">
-                    @foreach (var plato in _menu.Platos)
-                    {
-                        <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg-warm);border-radius:14px;border:1px solid var(--border);">
-                            <div style="width:40px;height:40px;border-radius:10px;background:var(--primary-10);display:flex;align-items:center;justify-content:center;color:var(--primary);flex-shrink:0;"><i class="bi bi-egg-fried"></i></div>
-                            <div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:.88rem;">@plato.Nombre</div><div style="font-size:.75rem;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@plato.Descripcion</div></div>
-                            <div style="font-weight:700;font-size:.88rem;color:var(--primary-d);flex-shrink:0;">$@plato.Precio.ToString("N0")</div>
-                        </div>
-                    }
-                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">@foreach(var p in _platos){
+                <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg-warm);border-radius:14px;border:1px solid var(--border);"><div style="width:40px;height:40px;border-radius:10px;background:var(--primary-10);display:flex;align-items:center;justify-content:center;color:var(--primary);"><i class="bi bi-egg-fried"></i></div><div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:.88rem;">@p.Nombre</div><div style="font-size:.75rem;color:var(--text-3);">@p.Descripcion</div></div><div style="font-weight:700;color:var(--primary-d);">$@p.Precio.ToString("N0")</div></div>
             }
-            else
-            {
+    </div>
+        }
+        else
+        {
 
-                <p style="color:var(--text-3);font-size:.85rem;"><i class="bi bi-info-circle"></i> Sin platos. Agrega uno!</p>
-                <button class="ta-btn-primary" style="margin-top:12px;" @onclick="ShowAddPlato"><i class="bi bi-plus-lg"></i> Agregar</button>
-     }
-        </div>
-    }
-    else
+            <p style="color:var(--text-3);"><i class="bi bi-info-circle"></i> Sin platos.</p>
+            <button class="ta-btn-primary" style="margin-top:12px;" @onclick="ShowAddPlato"><i class="bi bi-plus-lg"></i> Agregar</button>
+}
+    </div>
+        }
+        else
     {
 
-        <div class="ta-empty-state"><div class="ta-empty-state__ico"><i class="bi bi-book"></i></div><div class="ta-empty-state__title">Sin menu</div><button class="ta-btn-primary" @onclick="ShowAddMenu"><i class="bi bi-plus-lg"></i> Crear menu</button></div>
+        <div class="ta-empty-state"><div class="ta-empty-state__ico"><i class="bi bi-book"></i></div><div class="ta-empty-state__title">Sin menu</div><button class="ta-btn-primary" @onclick="ShowAddMenu"><i class="bi bi-plus-lg"></i> Crear</button></div>
     }
 </section>
 
 @code {
-    private bool _isLoading = true, _showMenuForm = false, _showPlatoForm = false;
-    private Guid _restauranteId;
-    private MenuResponse? _menu;
-    private string _menuNombre = "", _menuDesc = "", _platoNombre = "", _platoDesc = "";
-    private decimal _platoPrecio = 0;
+    bool _isLoading = true, _showMF = false, _showPF = false; Guid _restId; MenuResponse? _menu; List<PlatoResponse> _platos = new();
+    List<CatItem> _categorias = new(); string _pcatId = "";
+    string _mn = "", _md = "", _pn = "", _pd = "", _fe = ""; decimal _pp = 0;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnAfterRenderAsync(bool f) { if (f) { try { var r = await SessionStorage.GetAsync<string>("restauranteId"); if (r.Success && Guid.TryParse(r.Value, out var id)) _restId = id; } catch { } await Load(); StateHasChanged(); } }
+
+    async Task Load()
     {
-        if (firstRender)
+        _isLoading = true; try
         {
-            try { var r = await SessionStorage.GetAsync<string>("restauranteId"); if (r.Success && Guid.TryParse(r.Value, out var rid)) _restauranteId = rid; } catch { }
-            await LoadMenu(); StateHasChanged();
+            if (_restId != Guid.Empty)
+            {
+                // Buscar menu del restaurante
+                var am = await ApiService.GetAsync<List<MenuResponse>>("api/Menus");
+                if (am != null)
+                {
+                    _menu = am.FirstOrDefault(x => x.RestauranteId == _restId);
+                    if (_menu != null)
+                    {
+                        // Platos del menu
+                        var pl = await ApiService.GetAsync<List<PlatoResponse>>($"api/Platos/menu/{_menu.Id}"); if (pl != null) _platos = pl;
+                        // Categorias del menu
+                        try { var cats = await ApiService.GetAsync<List<CatItem>>($"api/Categoriasplato/menu/{_menu.Id}"); if (cats != null && cats.Any()) { _categorias = cats; _pcatId = cats.First().Id.ToString(); } } catch { }
+                    }
+                }
+                // Si no hay categorias, cargar todas
+                if (!_categorias.Any()) { try { var allCats = await ApiService.GetAsync<List<CatItem>>("api/Categoriasplato"); if (allCats != null && allCats.Any()) { _categorias = allCats; _pcatId = allCats.First().Id.ToString(); } } catch { } }
+            }
         }
-    }
-
-    private async Task LoadMenu()
-    {
-        _isLoading = true;
-        try { if (_restauranteId != Guid.Empty) _menu = await ApiService.GetAsync<MenuResponse>($"api/Menus/{_restauranteId}"); }
         catch { }
         finally { _isLoading = false; }
     }
 
-    private void ShowAddMenu() { _menuNombre = ""; _menuDesc = ""; _showMenuForm = true; _showPlatoForm = false; }
-    private void ShowAddPlato() { _platoNombre = ""; _platoDesc = ""; _platoPrecio = 0; _showPlatoForm = true; _showMenuForm = false; }
+    void ShowAddMenu() { _mn = ""; _md = ""; _showMF = true; _showPF = false; _fe = ""; }
+    void ShowAddPlato() { _pn = ""; _pd = ""; _pp = 0; _showPF = true; _showMF = false; _fe = ""; }
 
-    private async Task SaveMenu()
+    async Task SaveMenu()
     {
-        if (string.IsNullOrWhiteSpace(_menuNombre)) { Toast.Warning("Nombre requerido"); return; }
+        _fe = ""; if (string.IsNullOrWhiteSpace(_mn)) { _fe = "Nombre requerido"; return; }
         try
         {
-            await ApiService.PostAsync<object>("api/Menus", new { nombre = _menuNombre, descripcion = _menuDesc, restauranteId = _restauranteId });
-            Toast.Success("Menu creado!"); Notif.MenuActualizado(_menuNombre, "creado"); _showMenuForm = false; await LoadMenu(); StateHasChanged();
+            var r = await ApiService.PostAsync<object>("api/Menus", new { nombre = _mn, descripcion = _md, restauranteId = _restId });
+            if (r != null) { Toast.Success("Menu creado!"); Notif.MenuActualizado(_mn, "creado"); _showMF = false; await Load(); StateHasChanged(); }
+            else { _fe = "Error — API rechazo. Verifica datos."; }
         }
-        catch { Toast.Error("Error al guardar"); }
+        catch (Exception ex) { _fe = "Error: " + ex.Message; }
     }
 
-    private async Task SavePlato()
+    async Task SavePlato()
     {
-        if (string.IsNullOrWhiteSpace(_platoNombre) || _platoPrecio <= 0) { Toast.Warning("Nombre y precio requeridos"); return; }
+        _fe = ""; if (string.IsNullOrWhiteSpace(_pn) || _pp <= 0) { _fe = "Nombre y precio requeridos"; return; }
         try
         {
-            await ApiService.PostAsync<object>("api/Platos", new { nombre = _platoNombre, descripcion = _platoDesc, precio = _platoPrecio, menuId = _menu?.Id ?? Guid.Empty });
-            Toast.Success("Plato creado!"); Notif.MenuActualizado(_platoNombre, "agregado"); _showPlatoForm = false; await LoadMenu(); StateHasChanged();
+            // Si no hay categoria, crear una por defecto primero
+            Guid catId;
+            if (!string.IsNullOrEmpty(_pcatId) && Guid.TryParse(_pcatId, out var parsed)) { catId = parsed; }
+            else
+            {
+                // Crear categoria por defecto
+                var newCatId = Guid.NewGuid();
+                await ApiService.PostAsync<object>("api/Categoriasplato", new { id = newCatId, menuId = _menu?.Id ?? Guid.Empty, nombre = "General", descripcion = "Categoria general" });
+                catId = newCatId;
+            }
+
+            var r = await ApiService.PostAsync<object>("api/Platos", new
+            {
+                id = Guid.NewGuid(),
+                categoriaPlatoId = catId,
+                menuId = _menu?.Id ?? Guid.Empty,
+                nombre = _pn,
+                descripcion = _pd,
+                precio = _pp,
+                disponible = true,
+                fechaCreacion = DateTime.UtcNow,
+                activo = true
+            });
+            if (r != null) { Toast.Success("Plato creado!"); Notif.MenuActualizado(_pn, "agregado"); _showPF = false; await Load(); StateHasChanged(); }
+            else { _fe = "Error — API rechazo datos. Verifica que el menu exista."; }
         }
-        catch { Toast.Error("Error al guardar"); }
+        catch (Exception ex) { _fe = "Error: " + ex.Message; }
     }
+
+    class CatItem { public Guid Id { get; set; } public string Nombre { get; set; } = ""; }
 }

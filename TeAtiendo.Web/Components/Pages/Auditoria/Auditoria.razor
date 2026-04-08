@@ -22,18 +22,15 @@
     {
         <div class="ta-table-wrap">
             <table class="ta-table">
-                <thead><tr><th>Fecha</th><th>Usuario</th><th>Accion</th><th>Entidad</th><th>Detalles</th></tr></thead>
+                <thead><tr><th>Fecha</th><th>Admin</th><th>Modulo</th><th>Detalles</th></tr></thead>
                 <tbody>
-                    @foreach (var log in _logs.OrderByDescending(l => l.Fecha))
+                    @foreach (var log in _logs)
                     {
                         <tr>
                             <td style="font-size:.82rem;color:var(--text-3);">@log.Fecha.ToString("dd MMM yyyy HH:mm")</td>
-                            <td style="font-weight:600;">@log.Usuario</td>
-                            <td>
-                                <span class="ta-status @GetActionClass(log.Accion)">@log.Accion</span>
-                            </td>
-                            <td>@log.Entidad</td>
-                            <td style="font-size:.82rem;color:var(--text-3);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@log.Detalles</td>
+                            <td style="font-weight:600;">Admin</td>
+                            <td><span class="ta-status ta-status--preparacion">@log.Modulo</span></td>
+                            <td style="font-size:.82rem;color:var(--text-3);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@log.Descripcion</td>
                         </tr>
                     }
                 </tbody>
@@ -42,7 +39,7 @@
     }
     else
     {
-        <div class="ta-empty-state"><div class="ta-empty-state__ico"><i class="bi bi-journal-text"></i></div><div class="ta-empty-state__title">Sin logs</div><div class="ta-empty-state__sub">No hay registros de auditoria aun.</div></div>
+        <div class="ta-empty-state"><div class="ta-empty-state__ico"><i class="bi bi-journal-text"></i></div><div class="ta-empty-state__title">Sin logs</div></div>
     }
 </section>
 
@@ -52,18 +49,23 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender) { await Load(); StateHasChanged(); }
+        if (firstRender)
+        {
+            _isLoading = true;
+            // GET api/Auditorias
+            try { var r = await ApiService.GetAsync<List<AuditLog>>("api/Auditorias"); if (r != null) _logs = r; }
+            catch { }
+            finally { _isLoading = false; }
+            StateHasChanged();
+        }
     }
 
-    private async Task Load()
+    private class AuditLog
     {
-        _isLoading = true;
-        try { var r = await ApiService.GetAsync<List<AuditLog>>("api/Auditoria"); if (r != null) _logs = r; }
-        catch { }
-        finally { _isLoading = false; }
+        public Guid Id { get; set; }
+        public Guid AdminId { get; set; }
+        public string Modulo { get; set; } = "";
+        public string Descripcion { get; set; } = "";
+        public DateTime Fecha { get; set; }
     }
-
-    private string GetActionClass(string? a) => (a?.ToLower()) switch { "crear" or "create" => "ta-status--confirmada", "editar" or "update" => "ta-status--preparacion", "eliminar" or "delete" => "ta-status--cancelada", "login" => "ta-status--lista", _ => "ta-status--pendiente" };
-
-    private class AuditLog { public Guid Id { get; set; } public DateTime Fecha { get; set; } public string Usuario { get; set; } = ""; public string Accion { get; set; } = ""; public string Entidad { get; set; } = ""; public string? Detalles { get; set; } }
 }

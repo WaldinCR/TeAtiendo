@@ -11,14 +11,10 @@
 
 <section class="ta-sec">
     <div class="ta-sec__head">
-        <div>
-            <h2 class="ta-sec__title">Mis <span>Reservas</span></h2>
-            <p class="ta-sec__sub">Historial y estado de tus reservas</p>
-        </div>
-        <button class="ta-btn-primary" @onclick='() => Navigation.NavigateTo("/restaurantes")'><i class="bi bi-plus-lg"></i> Nueva Reserva</button>
+        <div><h2 class="ta-sec__title">Mis <span>Reservas</span></h2><p class="ta-sec__sub">Historial y estado</p></div>
+        <button class="ta-btn-primary" @onclick='() => Navigation.NavigateTo("/restaurantes")'><i class="bi bi-plus-lg"></i> Nueva</button>
     </div>
 </section>
-
 <section class="ta-sec" style="padding-top:0;">
     @if (_isLoading)
     {
@@ -26,66 +22,46 @@
     }
     else if (_reservas != null && _reservas.Any())
     {
+
         <div class="ta-table-wrap">
             <table class="ta-table">
-                <thead><tr><th>Restaurante</th><th>Fecha</th><th>Personas</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <thead><tr><th>Fecha</th><th>Personas</th><th>Estado</th><th>Acciones</th></tr></thead>
                 <tbody>
                     @foreach (var r in _reservas)
                     {
                         <tr>
-                            <td><div style="display:flex;align-items:center;gap:10px;"><div style="width:36px;height:36px;border-radius:10px;background:var(--primary-10);display:flex;align-items:center;justify-content:center;color:var(--primary);"><i class="bi bi-shop"></i></div><span style="font-weight:600;">Restaurante</span></div></td>
                             <td><div style="font-weight:600;">@r.FechaReserva.ToString("dd MMM yyyy")</div><div style="font-size:.75rem;color:var(--text-3);">@r.FechaReserva.ToString("hh:mm tt")</div></td>
-                            <td><i class="bi bi-people" style="margin-right:4px;color:var(--text-3);"></i> @r.CantidadPersonas</td>
-                            <td><span class="ta-status @GetSC(r.EstadoReserva)">@GetST(r.EstadoReserva)</span></td>
-                            <td>
-                                @if (r.EstadoReserva == 0 || r.EstadoReserva == 1)
-                                {
-                                    <button class="ta-btn-ghost" style="padding:6px 12px;font-size:.78rem;" @onclick="() => CancelReserva(r)"><i class="bi bi-x-circle"></i> Cancelar</button>
-                                }
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    }
-    else
+                            <td>@r.CantidadPersonas</td>
+                            <td><span class="ta-status @SC(r.EstadoReserva)">@ST(r.EstadoReserva)</span></td>
+                            <td>@if(r.EstadoReserva==0||r.EstadoReserva==1){
+                            <button class="ta-btn-ghost" style="padding:6px 12px;font-size:.78rem;" @onclick="() => Can(r)"><i class="bi bi-x-circle"></i> Cancelar</button>
+                        }
+    </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+        }
+        else
     {
-        <div class="ta-empty-state"><div class="ta-empty-state__ico"><i class="bi bi-calendar-x"></i></div><div class="ta-empty-state__title">Sin reservas</div><div class="ta-empty-state__sub">Aun no has hecho ninguna reserva.</div><button class="ta-btn-primary" @onclick='() => Navigation.NavigateTo("/restaurantes")'><i class="bi bi-search"></i> Explorar</button></div>
+
+        <div class="ta-empty-state"><div class="ta-empty-state__ico"><i class="bi bi-calendar-x"></i></div><div class="ta-empty-state__title">Sin reservas</div><button class="ta-btn-primary" @onclick='() => Navigation.NavigateTo("/restaurantes")'><i class="bi bi-search"></i> Explorar</button></div>
     }
 </section>
 
 @code {
-    private bool _isLoading = true;
-    private Guid _userId;
-    private List<ReservaResponse>? _reservas;
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    bool _isLoading = true; Guid _userId; List<ReservaResponse>? _reservas;
+    protected override async Task OnAfterRenderAsync(bool f)
     {
-        if (firstRender)
+        if (f)
         {
-            try { var r = await SessionStorage.GetAsync<string>("userId"); if (r.Success && Guid.TryParse(r.Value, out var uid)) _userId = uid; } catch { }
-            _isLoading = true;
-            try { _reservas = await ApiService.GetAsync<List<ReservaResponse>>($"api/Reservas/usuario/{_userId}"); }
-            catch { _reservas = new(); }
-            finally { _isLoading = false; }
+            try { var r = await SessionStorage.GetAsync<string>("userId"); if (r.Success && Guid.TryParse(r.Value, out var u)) _userId = u; } catch { }
+            _isLoading = true; try { _reservas = await ApiService.GetAsync<List<ReservaResponse>>($"api/Reservas/usuario/{_userId}"); } catch { _reservas = new(); } finally { _isLoading = false; }
             StateHasChanged();
         }
     }
-
-    private async Task CancelReserva(ReservaResponse r)
-    {
-        try
-        {
-            await ApiService.PatchAsync<object>($"api/Reservas/{r.Id}/estado", new { estadoReserva = 3 });
-            r.EstadoReserva = 3;
-            Toast.Success("Reserva cancelada");
-            Notif.ReservaCancelada("Restaurante");
-            StateHasChanged();
-        }
-        catch { Toast.Error("Error al cancelar"); }
-    }
-
-    private string GetSC(int s) => s switch { 0 => "ta-status--pendiente", 1 => "ta-status--confirmada", 2 => "ta-status--completada", 3 => "ta-status--cancelada", _ => "ta-status--pendiente" };
-    private string GetST(int s) => s switch { 0 => "Pendiente", 1 => "Confirmada", 2 => "Completada", 3 => "Cancelada", _ => "Pendiente" };
+    async Task Can(ReservaResponse r) { try { await ApiService.PostAsync<object>($"api/Reservas/{r.Id}/cancelar", new { }); r.EstadoReserva = 3; Toast.Success("Cancelada"); Notif.ReservaCancelada("Restaurante"); StateHasChanged(); } catch { Toast.Error("Error"); } }
+    string SC(int s) => s switch { 0 => "ta-status--pendiente", 1 => "ta-status--confirmada", 2 => "ta-status--completada", 3 => "ta-status--cancelada", _ => "ta-status--pendiente" };
+    string ST(int s) => s switch { 0 => "Pendiente", 1 => "Confirmada", 2 => "Completada", 3 => "Cancelada", _ => "Pendiente" };
 }

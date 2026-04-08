@@ -42,10 +42,9 @@ namespace TeAtiendo.Web.Services
                 {
                     try
                     {
-                        var restaurantes = await _api.GetAsync<RestauranteListResponse>("api/Restaurantes");
-                        if (restaurantes != null && restaurantes.Data != null && restaurantes.Data.Any())
+                        var restaurantes = await _api.GetAsync<RestauranteApiResponse>("api/Restaurantes");
+                        if (restaurantes?.Data != null && restaurantes.Data.Any())
                         {
-                            // Buscar el restaurante que pertenece a este usuario
                             var miRest = restaurantes.Data.FirstOrDefault();
                             if (miRest != null)
                             {
@@ -116,18 +115,5 @@ namespace TeAtiendo.Web.Services
             await _storage.DeleteAsync("userRol");
             await _storage.DeleteAsync("restauranteId");
         }
-    }
-
-    // Clase auxiliar para deserializar la lista de restaurantes
-    public class RestauranteListResponse
-    {
-        public string? Message { get; set; }
-        public List<RestauranteBasic>? Data { get; set; }
-    }
-
-    public class RestauranteBasic
-    {
-        public int Id { get; set; }
-        public string Nombre { get; set; } = "";
     }
 }

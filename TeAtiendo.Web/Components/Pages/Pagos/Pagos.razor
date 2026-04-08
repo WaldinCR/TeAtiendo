@@ -6,15 +6,7 @@
 @inject Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedSessionStorage SessionStorage
 @rendermode InteractiveServer
 
-<section class="ta-sec">
-    <div class="ta-sec__head">
-        <div>
-            <h2 class="ta-sec__title">Mis <span>Pagos</span></h2>
-            <p class="ta-sec__sub">Historial de transacciones</p>
-        </div>
-    </div>
-</section>
-
+<section class="ta-sec"><div class="ta-sec__head"><div><h2 class="ta-sec__title">Mis <span>Pagos</span></h2></div></div></section>
 <section class="ta-sec" style="padding-top:0;">
     @if (_isLoading)
     {
@@ -22,17 +14,18 @@
     }
     else if (_pagos != null && _pagos.Any())
     {
+
         <div class="ta-table-wrap">
             <table class="ta-table">
                 <thead><tr><th>Monto</th><th>Metodo</th><th>Estado</th><th>Fecha</th></tr></thead>
                 <tbody>
-                    @foreach (var pago in _pagos)
+                    @foreach (var p in _pagos)
                     {
                         <tr>
-                            <td><span style="font-family:'Fraunces',serif;font-weight:700;color:var(--text);">$@pago.Monto.ToString("N0")</span></td>
-                            <td><div style="display:flex;align-items:center;gap:6px;"><i class="bi bi-credit-card" style="color:var(--primary);"></i> @GetMetodo(pago.MetodoPago)</div></td>
-                            <td><span class="ta-status @GetSC(pago.EstadoPago)">@GetST(pago.EstadoPago)</span></td>
-                            <td style="font-size:.82rem;color:var(--text-3);">@pago.FechaPago.ToString("dd MMM yyyy")</td>
+                            <td><span style="font-family:'Fraunces',serif;font-weight:700;">$@p.Monto.ToString("N0")</span></td>
+                            <td><i class="bi bi-credit-card" style="color:var(--primary);margin-right:4px;"></i>@GM(p.MetodoPago)</td>
+                            <td><span class="ta-status @GC(p.EstadoPago)">@GS(p.EstadoPago)</span></td>
+                            <td style="font-size:.82rem;color:var(--text-3);">@p.FechaPago.ToString("dd MMM yyyy")</td>
                         </tr>
                     }
                 </tbody>
@@ -41,29 +34,15 @@
     }
     else
     {
-        <div class="ta-empty-state"><div class="ta-empty-state__ico"><i class="bi bi-credit-card"></i></div><div class="ta-empty-state__title">Sin pagos</div><div class="ta-empty-state__sub">Aun no has realizado ningun pago.</div></div>
+
+        <div class="ta-empty-state"><div class="ta-empty-state__ico"><i class="bi bi-credit-card"></i></div><div class="ta-empty-state__title">Sin pagos</div></div>
     }
 </section>
 
 @code {
-    private bool _isLoading = true;
-    private Guid _userId;
-    private List<PagoResponse>? _pagos;
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            try { var r = await SessionStorage.GetAsync<string>("userId"); if (r.Success && Guid.TryParse(r.Value, out var uid)) _userId = uid; } catch { }
-            _isLoading = true;
-            try { _pagos = await ApiService.GetAsync<List<PagoResponse>>($"api/Pagos/usuario/{_userId}"); }
-            catch { _pagos = new(); }
-            finally { _isLoading = false; }
-            StateHasChanged();
-        }
-    }
-
-    private string GetMetodo(int m) => m switch { 0 => "Efectivo", 1 => "Tarjeta", 2 => "Transferencia", _ => "Otro" };
-    private string GetSC(int s) => s switch { 0 => "ta-status--pendiente", 1 => "ta-status--confirmada", 2 => "ta-status--cancelada", _ => "ta-status--pendiente" };
-    private string GetST(int s) => s switch { 0 => "Pendiente", 1 => "Aprobado", 2 => "Rechazado", _ => "Pendiente" };
+    bool _isLoading = true; List<PagoResponse>? _pagos;
+    protected override async Task OnAfterRenderAsync(bool f) { if (f) { _isLoading = true; try { _pagos = await ApiService.GetAsync<List<PagoResponse>>("api/Pagos"); } catch { _pagos = new(); } finally { _isLoading = false; } StateHasChanged(); } }
+    string GM(int m) => m switch { 0 => "Efectivo", 1 => "Tarjeta", 2 => "Transferencia", _ => "Otro" };
+    string GC(int s) => s switch { 0 => "ta-status--pendiente", 1 => "ta-status--confirmada", 2 => "ta-status--cancelada", _ => "ta-status--pendiente" };
+    string GS(int s) => s switch { 0 => "Pendiente", 1 => "Aprobado", 2 => "Rechazado", _ => "Pendiente" };
 }

@@ -1,0 +1,201 @@
+@page "/restaurante/perfil"
+@using TeAtiendo.Web.Services
+@using TeAtiendo.Web.Models.Reponses
+@layout TeAtiendo.Web.Components.Layout.MainLayout
+@inject IApiService ApiService
+@inject ToastService Toast
+@inject NotificationService Notif
+@inject NavigationManager Navigation
+@inject Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedSessionStorage SessionStorage
+@rendermode InteractiveServer
+
+<section class="ta-sec">
+    <div class="ta-sec__head">
+        <div>
+            <h2 class="ta-sec__title">Mi <span>Restaurante</span></h2>
+            <p class="ta-sec__sub">@(_hasRestaurante ? "Editar informacion de tu restaurante" : "Crea tu restaurante para empezar")</p>
+        </div>
+    </div>
+</section>
+
+<section class="ta-sec" style="padding-top:0;">
+    @if (_isLoading)
+    {
+        <div class="ta-loading"><div class="ta-spinner"></div></div>
+    }
+    else
+    {
+        <div class="ta-card ta-animate-slide-up" style="max-width:600px;">
+            <h3 class="ta-card__title">
+                <i class="bi bi-shop" style="color:var(--primary);margin-right:6px;"></i>
+                @(_hasRestaurante ? "Editar Restaurante" : "Crear Restaurante")
+            </h3>
+            <div style="display:flex;flex-direction:column;gap:16px;">
+                <div class="ta-form-group">
+                    <label class="ta-form-label">Nombre del restaurante *</label>
+                    <input class="ta-form-input" @bind="_nombre" placeholder="Mi Restaurante" />
+                </div>
+                <div class="ta-form-group">
+                    <label class="ta-form-label">Direccion *</label>
+                    <input class="ta-form-input" @bind="_direccion" placeholder="Calle Principal #123, Santo Domingo" />
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                    <div class="ta-form-group">
+                        <label class="ta-form-label">Telefono *</label>
+                        <input class="ta-form-input" @bind="_telefono" placeholder="809-555-1234" />
+                    </div>
+                    <div class="ta-form-group">
+                        <label class="ta-form-label">Correo</label>
+                        <input class="ta-form-input" type="email" @bind="_correo" placeholder="info@mirestaurante.com" />
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                    <div class="ta-form-group">
+                        <label class="ta-form-label">Horario Apertura *</label>
+                        <input class="ta-form-input" @bind="_horaApertura" placeholder="08:00" />
+                    </div>
+                    <div class="ta-form-group">
+                        <label class="ta-form-label">Horario Cierre *</label>
+                        <input class="ta-form-input" @bind="_horaCierre" placeholder="22:00" />
+                    </div>
+                </div>
+
+                <!-- Imagen -->
+                <div class="ta-form-group">
+                    <label class="ta-form-label">URL de imagen (opcional)</label>
+                    <input class="ta-form-input" @bind="_imagenUrl" placeholder="https://ejemplo.com/mi-restaurante.jpg" />
+                    @if (!string.IsNullOrEmpty(_imagenUrl))
+                    {
+                        <div style="margin-top:10px;border-radius:var(--r-sm);overflow:hidden;max-height:200px;">
+                            <img src="@_imagenUrl" alt="Preview" style="width:100%;height:200px;object-fit:cover;" />
+                        </div>
+                    }
+                </div>
+
+                <div style="display:flex;gap:10px;">
+                    <button class="ta-btn-primary ta-btn-primary--lg" @onclick="SaveRestaurante" disabled="@_saving">
+                        @if (_saving) { <span>Guardando...</span> }
+                        else if (_hasRestaurante) { <i class="bi bi-check-lg"></i> <span>Actualizar</span> }
+                        else { <i class="bi bi-plus-lg"></i> <span>Crear Restaurante</span> }
+                    </button>
+                    @if (_hasRestaurante)
+                    {
+                        <button class="ta-btn-ghost" @onclick='() => Navigation.NavigateTo("/restaurante/dashboard")'>
+                            <i class="bi bi-arrow-left"></i> Dashboard
+                        </button>
+                    }
+                </div>
+
+                @if (!string.IsNullOrEmpty(_error))
+                {
+                    <div class="ta-alert ta-alert--error"><i class="ta-alert__ico bi bi-exclamation-triangle-fill"></i> @_error</div>
+                }
+                @if (!string.IsNullOrEmpty(_success))
+                {
+                    <div class="ta-alert ta-alert--success"><i class="ta-alert__ico bi bi-check-circle-fill"></i> @_success</div>
+                }
+            </div>
+        </div>
+    }
+</section>
+
+@code {
+    private bool _isLoading = true, _saving = false, _hasRestaurante = false;
+    private Guid _restId, _userId;
+    private string _nombre = "", _direccion = "", _telefono = "", _correo = "", _horaApertura = "08:00", _horaCierre = "22:00", _imagenUrl = "";
+    private string _error = "", _success = "";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var uid = await SessionStorage.GetAsync<string>("userId");
+                if (uid.Success && Guid.TryParse(uid.Value, out var u)) _userId = u;
+
+                var rid = await SessionStorage.GetAsync<string>("restauranteId");
+                if (rid.Success && Guid.TryParse(rid.Value, out var r)) _restId = r;
+            }
+            catch { }
+
+            await LoadRestaurante();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadRestaurante()
+    {
+        _isLoading = true;
+        try
+        {
+            if (_restId != Guid.Empty)
+            {
+                var resp = await ApiService.GetAsync<RestauranteApiSingleResponse>($"api/Restaurantes/{_restId}");
+                if (resp?.Data != null)
+                {
+                    _hasRestaurante = true;
+                    _nombre = resp.Data.Nombre;
+                    _direccion = resp.Data.Direccion;
+                    _telefono = resp.Data.Telefono;
+                    _correo = resp.Data.Correo;
+                    _horaApertura = resp.Data.HorarioApertura;
+                    _horaCierre = resp.Data.HorarioCierre;
+                }
+            }
+        }
+        catch { }
+        finally { _isLoading = false; }
+    }
+
+    private async Task SaveRestaurante()
+    {
+        _error = ""; _success = ""; _saving = true;
+        if (string.IsNullOrWhiteSpace(_nombre)) { _error = "Nombre requerido"; _saving = false; return; }
+        if (string.IsNullOrWhiteSpace(_direccion)) { _error = "Direccion requerida"; _saving = false; return; }
+        if (string.IsNullOrWhiteSpace(_telefono)) { _error = "Telefono requerido"; _saving = false; return; }
+
+        try
+        {
+            
+            var body = new
+            {
+                id = _hasRestaurante ? _restId : Guid.NewGuid(),
+                nombre = _nombre,
+                direccion = _direccion,
+                telefono = _telefono,
+                correo = string.IsNullOrWhiteSpace(_correo) ? $"{_nombre.ToLower().Replace(" ", "")}@teatiendo.com" : _correo,
+                horarioApertura = _horaApertura,
+                horarioCierre = _horaCierre
+            };
+
+            object? result;
+            if (_hasRestaurante)
+            {
+                result = await ApiService.PutAsync<object>($"api/Restaurantes/{_restId}", body);
+                if (result != null)
+                {
+                    _success = "Restaurante actualizado exitosamente!";
+                    Toast.Success("Restaurante actualizado!");
+                }
+                else { _error = "Error al actualizar — la API rechazo los datos"; }
+            }
+            else
+            {
+                result = await ApiService.PostAsync<object>("api/Restaurantes", body);
+                if (result != null)
+                {
+                    _hasRestaurante = true;
+                    _restId = ((dynamic)body).id;
+                    await SessionStorage.SetAsync("restauranteId", _restId.ToString());
+                    _success = "Restaurante creado exitosamente! Ya aparece en la lista.";
+                    Toast.Success("Restaurante creado!");
+                    Notif.Push("menu", $"Restaurante <strong>{_nombre}</strong> fue creado", "/restaurante/perfil");
+                }
+                else { _error = "Error al crear — verifica los datos"; }
+            }
+        }
+        catch (Exception ex) { _error = "Error: " + ex.Message; }
+        finally { _saving = false; StateHasChanged(); }
+    }
+}

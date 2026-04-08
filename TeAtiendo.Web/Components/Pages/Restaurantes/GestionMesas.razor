@@ -10,11 +10,8 @@
 
 <section class="ta-sec">
     <div class="ta-sec__head">
-        <div>
-            <h2 class="ta-sec__title">Gestionar <span>Mesas</span></h2>
-            <p class="ta-sec__sub">@_mesas.Count mesas registradas — @_mesas.Count(m => m.Disponible) disponibles</p>
-        </div>
-        <button class="ta-btn-primary" @onclick="ShowAddForm"><i class="bi bi-plus-lg"></i> Agregar Mesa</button>
+        <div><h2 class="ta-sec__title">Gestionar <span>Mesas</span></h2><p class="ta-sec__sub">@_mesas.Count mesas — @_mesas.Count(m => m.Disponible) disponibles</p></div>
+        <button class="ta-btn-primary" @onclick="ShowAdd"><i class="bi bi-plus-lg"></i> Agregar Mesa</button>
     </div>
 </section>
 
@@ -22,21 +19,18 @@
 {
     <section class="ta-sec" style="padding-top:0;">
         <div class="ta-card ta-animate-slide-up" style="max-width:500px;">
-            <h3 class="ta-card__title"><i class="bi bi-grid-3x3-gap" style="color:var(--primary);margin-right:6px;"></i> @(_editingId != Guid.Empty ? "Editar Mesa" : "Nueva Mesa")</h3>
+            <h3 class="ta-card__title"><i class="bi bi-grid-3x3-gap" style="color:var(--primary);margin-right:6px;"></i> @(_editId != Guid.Empty ? "Editar" : "Nueva") Mesa</h3>
             <div style="display:flex;flex-direction:column;gap:14px;">
-                <div class="ta-form-group"><label class="ta-form-label">Numero de mesa</label><input class="ta-form-input" type="number" @bind="_formNumero" /></div>
-                <div class="ta-form-group"><label class="ta-form-label">Capacidad (personas)</label><input class="ta-form-input" type="number" @bind="_formCapacidad" /></div>
-                <div class="ta-form-group">
-                    <label class="ta-form-label">Estado</label>
-                    <select class="ta-form-select" @bind="_formDisponible">
-                        <option value="true">Disponible</option>
-                        <option value="false">Ocupada</option>
-                    </select>
-                </div>
+                <div class="ta-form-group"><label class="ta-form-label">Numero</label><input class="ta-form-input" type="number" @bind="_fNum" /></div>
+                <div class="ta-form-group"><label class="ta-form-label">Capacidad</label><input class="ta-form-input" type="number" @bind="_fCap" /></div>
                 <div style="display:flex;gap:10px;">
-                    <button class="ta-btn-primary" @onclick="SaveMesa"><i class="bi bi-check-lg"></i> Guardar</button>
+                    <button class="ta-btn-primary" @onclick="Save"><i class="bi bi-check-lg"></i> Guardar</button>
                     <button class="ta-btn-ghost" @onclick="() => _showForm = false"><i class="bi bi-x-lg"></i> Cancelar</button>
                 </div>
+                @if (!string.IsNullOrEmpty(_formErr))
+                {
+                    <div class="ta-alert ta-alert--error">@_formErr</div>
+                }
             </div>
         </div>
     </section>
@@ -50,17 +44,17 @@
     else if (_mesas.Any())
     {
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;">
-            @foreach (var mesa in _mesas.OrderBy(m => m.NumeroMesa))
+            @foreach (var m in _mesas.OrderBy(x => x.NumeroMesa))
             {
-                var av = mesa.Disponible;
-                <div class="ta-card ta-animate-fade-up" style="padding:20px;text-align:center;background:@(av ? "white" : "rgba(220,53,69,.03)");">
-                    <div style="width:48px;height:48px;border-radius:14px;background:@(av ? "var(--primary-10)" : "var(--danger-bg)");display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:1.2rem;color:@(av ? "var(--primary)" : "var(--danger)");"><i class="bi bi-grid-3x3-gap"></i></div>
-                    <div style="font-weight:700;font-size:1.05rem;">Mesa @mesa.NumeroMesa</div>
-                    <div style="font-size:.8rem;color:var(--text-3);margin:4px 0 10px;"><i class="bi bi-people"></i> @mesa.Capacidad personas</div>
-                    <span class="ta-status @(av ? "ta-status--confirmada" : "ta-status--cancelada")">@(av ? "Disponible" : "Ocupada")</span>
+                var a = m.Disponible;
+                <div class="ta-card ta-animate-fade-up" style="padding:20px;text-align:center;background:@(a ? "white" : "rgba(220,53,69,.03)");">
+                    <div style="width:48px;height:48px;border-radius:14px;background:@(a ? "var(--primary-10)" : "var(--danger-bg)");display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:1.2rem;color:@(a ? "var(--primary)" : "var(--danger)");"><i class="bi bi-grid-3x3-gap"></i></div>
+                    <div style="font-weight:700;font-size:1.05rem;">Mesa @m.NumeroMesa</div>
+                    <div style="font-size:.8rem;color:var(--text-3);margin:4px 0 10px;">@m.Capacidad personas</div>
+                    <span class="ta-status @(a ? "ta-status--confirmada" : "ta-status--cancelada")">@(a ? "Disponible" : "Ocupada")</span>
                     <div style="display:flex;gap:8px;justify-content:center;margin-top:14px;">
-                        <button class="ta-btn-ghost" style="padding:6px 12px;font-size:.78rem;" @onclick="() => EditMesa(mesa)"><i class="bi bi-pencil"></i> Editar</button>
-                        <button class="ta-btn-ghost" style="padding:6px 12px;font-size:.78rem;color:var(--danger);" @onclick="() => DeleteMesa(mesa)"><i class="bi bi-trash"></i></button>
+                        <button class="ta-btn-ghost" style="padding:6px 12px;font-size:.78rem;" @onclick="() => Edit(m)"><i class="bi bi-pencil"></i></button>
+                        <button class="ta-btn-ghost" style="padding:6px 12px;font-size:.78rem;color:var(--danger);" @onclick="() => Del(m)"><i class="bi bi-trash"></i></button>
                     </div>
                 </div>
             }
@@ -68,54 +62,37 @@
     }
     else
     {
-        <div class="ta-empty-state"><div class="ta-empty-state__ico"><i class="bi bi-grid-3x3"></i></div><div class="ta-empty-state__title">Sin mesas</div><button class="ta-btn-primary" @onclick="ShowAddForm"><i class="bi bi-plus-lg"></i> Agregar</button></div>
+
+        <div class="ta-empty-state"><div class="ta-empty-state__ico"><i class="bi bi-grid-3x3"></i></div><div class="ta-empty-state__title">Sin mesas</div><button class="ta-btn-primary" @onclick="ShowAdd"><i class="bi bi-plus-lg"></i> Agregar</button></div>
     }
 </section>
 
 @code {
-    private bool _isLoading = true, _showForm = false;
-    private Guid _restauranteId, _editingId;
-    private List<MesaResponse> _mesas = new();
-    private int _formNumero = 1, _formCapacidad = 4;
-    private string _formDisponible = "true";
+    bool _isLoading = true, _showForm = false; Guid _restId, _editId; List<MesaResponse> _mesas = new();
+    int _fNum = 1, _fCap = 4; string _formErr = "";
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnAfterRenderAsync(bool f) { if (f) { try { var r = await SessionStorage.GetAsync<string>("restauranteId"); if (r.Success && Guid.TryParse(r.Value, out var id)) _restId = id; } catch { } await Load(); StateHasChanged(); } }
+
+    async Task Load() { _isLoading = true; try { if (_restId != Guid.Empty) { var r = await ApiService.GetAsync<List<MesaResponse>>($"api/Mesas/restaurante/{_restId}"); if (r != null) _mesas = r; } } catch { } finally { _isLoading = false; } }
+
+    void ShowAdd() { _editId = Guid.Empty; _fNum = _mesas.Any() ? _mesas.Max(m => m.NumeroMesa) + 1 : 1; _fCap = 4; _showForm = true; _formErr = ""; }
+    void Edit(MesaResponse m) { _editId = m.Id; _fNum = m.NumeroMesa; _fCap = m.Capacidad; _showForm = true; _formErr = ""; }
+
+    async Task Save()
     {
-        if (firstRender)
+        _formErr = ""; try
         {
-            try { var r = await SessionStorage.GetAsync<string>("restauranteId"); if (r.Success && Guid.TryParse(r.Value, out var rid)) _restauranteId = rid; } catch { }
-            await LoadMesas(); StateHasChanged();
+            
+            var body = new { id = _editId != Guid.Empty ? _editId : Guid.NewGuid(), restauranteId = _restId, numeroMesa = _fNum, capacidad = _fCap, disponible = true, fechaCreacion = DateTime.UtcNow };
+            object? result;
+            if (_editId != Guid.Empty) { result = await ApiService.PutAsync<object>($"api/Mesas/{_editId}", body); }
+            else { result = await ApiService.PostAsync<object>("api/Mesas", body); }
+            if (result != null) { Toast.Success(_editId != Guid.Empty ? "Actualizada!" : "Creada!"); Notif.MesaActualizada(_fNum, _editId != Guid.Empty ? "actualizada" : "creada"); }
+            else { _formErr = "Error — la API rechazo los datos. Verifica que no exista una mesa con ese numero."; StateHasChanged(); return; }
+            _showForm = false; await Load(); StateHasChanged();
         }
+        catch (Exception ex) { _formErr = "Error: " + ex.Message; }
     }
 
-    private async Task LoadMesas()
-    {
-        _isLoading = true;
-        try { if (_restauranteId != Guid.Empty) { var r = await ApiService.GetAsync<List<MesaResponse>>($"api/Mesas/restaurante/{_restauranteId}"); if (r != null) _mesas = r; } }
-        catch { }
-        finally { _isLoading = false; }
-    }
-
-    private void ShowAddForm() { _editingId = Guid.Empty; _formNumero = _mesas.Any() ? _mesas.Max(m => m.NumeroMesa) + 1 : 1; _formCapacidad = 4; _formDisponible = "true"; _showForm = true; }
-    private void EditMesa(MesaResponse m) { _editingId = m.Id; _formNumero = m.NumeroMesa; _formCapacidad = m.Capacidad; _formDisponible = m.Disponible.ToString().ToLower(); _showForm = true; }
-
-    private async Task SaveMesa()
-    {
-        try
-        {
-            var body = new { numeroMesa = _formNumero, capacidad = _formCapacidad, disponible = _formDisponible == "true", restauranteId = _restauranteId };
-            if (_editingId != Guid.Empty)
-            { await ApiService.PutAsync<object>($"api/Mesas/{_editingId}", body); Toast.Success("Mesa actualizada!"); Notif.MesaActualizada(_formNumero, "actualizada"); }
-            else
-            { await ApiService.PostAsync<object>("api/Mesas", body); Toast.Success("Mesa creada!"); Notif.MesaActualizada(_formNumero, "creada"); }
-            _showForm = false; await LoadMesas(); StateHasChanged();
-        }
-        catch { Toast.Error("Error al guardar"); }
-    }
-
-    private async Task DeleteMesa(MesaResponse mesa)
-    {
-        try { await ApiService.DeleteAsync($"api/Mesas/{mesa.Id}"); Toast.Success("Mesa eliminada"); Notif.MesaActualizada(mesa.NumeroMesa, "eliminada"); await LoadMesas(); StateHasChanged(); }
-        catch { Toast.Error("Error al eliminar"); }
-    }
+    async Task Del(MesaResponse m) { try { await ApiService.DeleteAsync($"api/Mesas/{m.Id}"); Toast.Success("Eliminada"); Notif.MesaActualizada(m.NumeroMesa, "eliminada"); await Load(); StateHasChanged(); } catch { Toast.Error("Error"); } }
 }

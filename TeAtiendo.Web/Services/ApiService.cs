@@ -22,11 +22,23 @@ namespace TeAtiendo.Web.Services
                 new AuthenticationHeaderValue("Bearer", token);
         }
 
-        //mtodos
+        // Asegurar que el token está seteado antes de cada llamada
+        private void EnsureToken()
+        {
+            if (!string.IsNullOrEmpty(_token) && _http.DefaultRequestHeaders.Authorization == null)
+            {
+                _http.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", _token);
+            }
+        }
+
+        // metodos 
+
         public async Task<T?> GetAsync<T>(string url)
         {
             try
             {
+                EnsureToken();
                 var response = await _http.GetAsync(url);
                 if (response.IsSuccessStatusCode)
                     return await response.Content.ReadFromJsonAsync<T>();
@@ -42,6 +54,7 @@ namespace TeAtiendo.Web.Services
         {
             try
             {
+                EnsureToken();
                 var response = await _http.PostAsJsonAsync(url, data);
                 if (response.IsSuccessStatusCode)
                     return await response.Content.ReadFromJsonAsync<T>();
@@ -57,6 +70,7 @@ namespace TeAtiendo.Web.Services
         {
             try
             {
+                EnsureToken();
                 var response = await _http.PutAsJsonAsync(url, data);
                 if (response.IsSuccessStatusCode)
                     return await response.Content.ReadFromJsonAsync<T>();
@@ -72,6 +86,7 @@ namespace TeAtiendo.Web.Services
         {
             try
             {
+                EnsureToken();
                 var response = await _http.DeleteAsync(url);
                 return response.IsSuccessStatusCode;
             }
@@ -85,6 +100,7 @@ namespace TeAtiendo.Web.Services
         {
             try
             {
+                EnsureToken();
                 var request = new HttpRequestMessage(HttpMethod.Patch, url)
                 {
                     Content = JsonContent.Create(data)
@@ -100,14 +116,14 @@ namespace TeAtiendo.Web.Services
             }
         }
 
-
-        //mtodos con el manejo de errores
-
+        // Métodos CON manejo de errores
+       
 
         public async Task<ApiResult<T>> GetWithResultAsync<T>(string url)
         {
             try
             {
+                EnsureToken();
                 var response = await _http.GetAsync(url);
                 return await HandleResponse<T>(response);
             }
@@ -129,6 +145,7 @@ namespace TeAtiendo.Web.Services
         {
             try
             {
+                EnsureToken();
                 var response = await _http.PostAsJsonAsync(url, data);
                 return await HandleResponse<T>(response);
             }
@@ -150,6 +167,7 @@ namespace TeAtiendo.Web.Services
         {
             try
             {
+                EnsureToken();
                 var response = await _http.PutAsJsonAsync(url, data);
                 return await HandleResponse<T>(response);
             }
@@ -171,6 +189,7 @@ namespace TeAtiendo.Web.Services
         {
             try
             {
+                EnsureToken();
                 var request = new HttpRequestMessage(HttpMethod.Patch, url)
                 {
                     Content = JsonContent.Create(data)
@@ -196,6 +215,7 @@ namespace TeAtiendo.Web.Services
         {
             try
             {
+                EnsureToken();
                 var response = await _http.DeleteAsync(url);
                 if (response.IsSuccessStatusCode)
                     return ApiResult<bool>.Success(true, (int)response.StatusCode);
@@ -217,8 +237,9 @@ namespace TeAtiendo.Web.Services
             }
         }
 
+ 
         // Manejo centralizado de respuestas HTTP
-
+       
 
         private async Task<ApiResult<T>> HandleResponse<T>(HttpResponseMessage response)
         {
