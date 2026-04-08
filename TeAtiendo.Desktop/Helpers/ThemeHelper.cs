@@ -2,9 +2,6 @@
 {
     public static class ThemeHelper
     {
-        
-        
-        
         public static readonly Color Primary = ColorTranslator.FromHtml("#F37021");
         public static readonly Color PrimaryDark = ColorTranslator.FromHtml("#D45E0F");
         public static readonly Color PrimaryLight = Color.FromArgb(25, 243, 112, 33);
@@ -30,11 +27,8 @@
         public static readonly Color Warning = ColorTranslator.FromHtml("#FFC107");
         public static readonly Color Info = ColorTranslator.FromHtml("#0DCAF0");
 
-        
-        
-        
-        public static readonly Font FontTitle = new("Segoe UI", 20F, FontStyle.Bold);
-        public static readonly Font FontSubtitle = new("Segoe UI", 14F, FontStyle.Bold);
+        public static readonly Font FontTitle = new("Georgia", 20F, FontStyle.Bold);
+        public static readonly Font FontSubtitle = new("Georgia", 14F, FontStyle.Bold);
         public static readonly Font FontBody = new("Segoe UI", 10F, FontStyle.Regular);
         public static readonly Font FontBodyBold = new("Segoe UI", 10F, FontStyle.Bold);
         public static readonly Font FontSmall = new("Segoe UI", 9F, FontStyle.Regular);
@@ -42,7 +36,6 @@
         public static readonly Font FontSidebarActive = new("Segoe UI", 11F, FontStyle.Bold);
         public static readonly Font FontButton = new("Segoe UI", 10F, FontStyle.Bold);
         public static readonly Font FontHeader = new("Segoe UI", 12F, FontStyle.Bold);
-
 
         public static void EstilizarFormulario(Form form)
         {

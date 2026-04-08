@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text.Json.Serialization;
 
-namespace TeAtiendo.Desktop.Models.Responses
+namespace TeAtiendo.Desktop.Models.Responses;
+
+public class AuthResponse
 {
-    internal class AuthResponse
-    {
-    }
+    [JsonPropertyName("token")]
+    public string Token { get; set; } = "";
+
+    [JsonPropertyName("user")]
+    public UsuarioResponse? User { get; set; }
 }

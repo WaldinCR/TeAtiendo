@@ -1,12 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text.Json.Serialization;
 
-namespace TeAtiendo.Desktop.Models.Requests
+namespace TeAtiendo.Desktop.Models.Requests;
+
+public class RegisterRequest
 {
-    internal class RegisterRequest
-    {
-    }
+    [JsonPropertyName("nombre")]
+    public string Nombre { get; set; } = "";
+
+    [JsonPropertyName("correo")]
+    public string Correo { get; set; } = "";
+
+    [JsonPropertyName("password")]
+    public string Password { get; set; } = "";
 }

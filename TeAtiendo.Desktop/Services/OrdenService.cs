@@ -1,4 +1,5 @@
 ﻿using TeAtiendo.Desktop.Models;
+using TeAtiendo.Desktop.Models.Responses;
 
 namespace TeAtiendo.Desktop.Services
 {
@@ -11,27 +12,31 @@ namespace TeAtiendo.Desktop.Services
             _api = api;
         }
 
-        public async Task<List<Orden>> ObtenerTodosAsync()
+        public async Task<List<OrdenResponse>> ObtenerTodosAsync()
         {
-            var response = await _api.GetAsync<ApiListResponse<Orden>>("Ordenes");
-            return response?.Data ?? new List<Orden>();
+            var response = await _api.GetAsync<ApiListResponse<OrdenResponse>>("Ordenes");
+            return response?.Data ?? new List<OrdenResponse>();
         }
 
-        public async Task<List<Orden>> ObtenerPorUsuarioAsync(int usuarioId)
+        public async Task<List<OrdenResponse>> ObtenerPorUsuarioAsync(int usuarioId)
         {
-            var response = await _api.GetAsync<ApiListResponse<Orden>>($"Ordenes/usuario/{usuarioId}");
-            return response?.Data ?? new List<Orden>();
+            var response = await _api.GetAsync<ApiListResponse<OrdenResponse>>($"Ordenes/usuario/{usuarioId}");
+            return response?.Data ?? new List<OrdenResponse>();
         }
 
-        public async Task<Orden?> ObtenerPorIdAsync(int id)
+        public async Task<OrdenResponse?> ObtenerPorIdAsync(int id)
         {
-            var response = await _api.GetAsync<ApiResponse<Orden>>($"Ordenes/{id}");
+            var response = await _api.GetAsync<ApiResponse<OrdenResponse>>($"Ordenes/{id}");
             return response?.Data;
         }
 
         public async Task<bool> CambiarEstadoAsync(int ordenId, int nuevoEstado)
         {
-            var request = new CambiarEstadoOrdenRequest { NuevoEstado = nuevoEstado };
+            var request = new TeAtiendo.Desktop.Models.Requests.CambiarEstadoOrdenRequest
+            {
+                NuevoEstado = nuevoEstado
+            };
+
             var response = await _api.PatchAsync<ApiResponse<object>>($"Ordenes/{ordenId}/estado", request);
             return response != null;
         }

@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text.Json.Serialization;
 
-namespace TeAtiendo.Desktop.Models.Requests
+namespace TeAtiendo.Desktop.Models.Requests;
+
+public class CambiarEstadoOrdenRequest
 {
-    internal class CambiarEstadoOrdenRequest
-    {
-    }
+    [JsonPropertyName("nuevoEstado")]
+    public int NuevoEstado { get; set; }
 }

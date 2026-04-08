@@ -13,7 +13,7 @@ namespace TeAtiendo.Desktop.Services
 
         public async Task<LoginResponse?> LoginAsync(string correo, string password)
         {
-            var request = new LoginRequest
+            var request = new TeAtiendo.Desktop.Models.Requests.LoginRequest
             {
                 Correo = correo,
                 Password = password
@@ -22,7 +22,7 @@ namespace TeAtiendo.Desktop.Services
             return await _api.PostAsync<LoginResponse>("Auth/login", request);
         }
 
-        public async Task<ApiResponse<object>?> RegisterAsync(RegisterRequest request)
+        public async Task<ApiResponse<object>?> RegisterAsync(TeAtiendo.Desktop.Models.Requests.RegisterRequest request)
         {
             return await _api.PostAsync<ApiResponse<object>>("Auth/register", request);
         }
