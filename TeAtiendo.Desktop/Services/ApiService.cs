@@ -51,7 +51,8 @@ namespace TeAtiendo.Desktop.Services
             }
             catch (HttpRequestException ex)
             {
-                throw new ApiException("No se pudo conectar con el servidor. Verifique que la API esté corriendo.", ex);
+                throw new ApiException(
+                    $"No se pudo conectar con el servidor. Base={_http.BaseAddress} Detalle={ex.Message}", ex);
             }
         }
 
@@ -74,7 +75,11 @@ namespace TeAtiendo.Desktop.Services
             }
             catch (HttpRequestException ex)
             {
-                throw new ApiException("No se pudo conectar con el servidor.", ex);
+                var baseUrl = _http.BaseAddress?.ToString() ?? "(null)";
+                var detalle = ex.InnerException?.Message ?? ex.Message;
+
+                throw new ApiException(
+                    $"No se pudo conectar con el servidor. Base={baseUrl}. Detalle={detalle}", ex);
             }
         }
 
