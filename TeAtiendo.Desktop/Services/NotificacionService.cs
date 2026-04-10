@@ -1,8 +1,12 @@
-﻿using TeAtiendo.Desktop.Models;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using TeAtiendo.Application.DTOs;
+using TeAtiendo.Desktop.Models.Legacy;
 
 namespace TeAtiendo.Desktop.Services
 {
-    public class NotificacionService
+    public sealed class NotificacionService
     {
         private readonly ApiService _api;
 
@@ -11,26 +15,38 @@ namespace TeAtiendo.Desktop.Services
             _api = api;
         }
 
-        public async Task<List<Notificacion>> ObtenerPorUsuarioAsync(int usuarioId)
+        public async Task<List<NotificacionDto>> ObtenerPorUsuarioAsync(Guid usuarioId)
         {
-            var response = await _api.GetAsync<ApiListResponse<Notificacion>>($"Notificaciones/usuario/{usuarioId}");
-            return response?.Data ?? new List<Notificacion>();
+            var response =
+                await _api.GetAsync<List<NotificacionDto>>($"Notificaciones/usuario/{usuarioId}");
+
+            return response ?? new List<NotificacionDto>();
         }
 
-        public async Task<List<Notificacion>> ObtenerNoLeidasAsync(int usuarioId)
+        public async Task<List<NotificacionDto>> ObtenerNoLeidasAsync(Guid usuarioId)
         {
-            var response = await _api.GetAsync<ApiListResponse<Notificacion>>($"Notificaciones/usuario/{usuarioId}/noleidas");
-            return response?.Data ?? new List<Notificacion>();
+            var response =
+                await _api.GetAsync<List<NotificacionDto>>($"Notificaciones/usuario/{usuarioId}/noleidas");
+
+            return response ?? new List<NotificacionDto>();
         }
 
-        public async Task<bool> MarcarLeidaAsync(int notificacionId)
+        public async Task<bool> MarcarLeidaAsync(Guid notificacionId)
         {
-            return await _api.PatchSinBodyAsync($"Notificaciones/{notificacionId}/marcar-leida");
+            var response = await _api.PatchSinBodyAsync<ApiResponse<object>>(
+                $"Notificaciones/{notificacionId}/marcar-leida"
+            );
+
+            return response != null;
         }
 
-        public async Task<Notificacion?> CrearAsync(Notificacion notificacion)
+        public async Task<NotificacionDto?> CrearAsync(NotificacionDto dto)
         {
-            var response = await _api.PostAsync<ApiResponse<Notificacion>>("Notificaciones", notificacion);
+            var response = await _api.PostAsync<NotificacionDto, ApiResponse<NotificacionDto>>(
+                "Notificaciones",
+                dto
+            );
+
             return response?.Data;
         }
     }

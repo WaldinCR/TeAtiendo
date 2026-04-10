@@ -1,12 +1,10 @@
-﻿using System.Text.Json.Serialization;
-
-namespace TeAtiendo.Desktop.Models.Responses;
-
-public class AuthResponse
+﻿namespace TeAtiendo.Desktop.Models.Responses
 {
-    [JsonPropertyName("token")]
-    public string Token { get; set; } = "";
-
-    [JsonPropertyName("user")]
-    public UsuarioResponse? User { get; set; }
+    public sealed class AuthResponse
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = "";
+        public string Token { get; set; } = "";
+        public UsuarioResponse? User { get; set; }
+    }
 }

@@ -8,11 +8,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace TeAtiendo.Desktop.UserControls
+namespace TeAtiendo.Desktop.UserControls.Admin
 {
-    public partial class UcReservas : UserControl
+    public partial class UcRestaurantesAdmin : UserControl
     {
-        public UcReservas()
+        public UcRestaurantesAdmin()
         {
             InitializeComponent();
         }

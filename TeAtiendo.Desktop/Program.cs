@@ -1,3 +1,5 @@
+using TeAtiendo.Desktop.Helpers;
+
 namespace TeAtiendo.Desktop
 {
     internal static class Program
@@ -6,7 +8,8 @@ namespace TeAtiendo.Desktop
         static void Main()
         {
             ApplicationConfiguration.Initialize();
-            Application.Run(new Forms.FrmLogin());
+            ThemeHelper.ApplyTheme();
+            AppBootstrapper.Run();
         }
     }
 }

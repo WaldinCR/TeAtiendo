@@ -1,25 +1,16 @@
-﻿using System.Text.Json.Serialization;
+﻿using TeAtiendo.Domain.Enums;
 
-namespace TeAtiendo.Desktop.Models.Responses;
-
-public class ReservaResponse
+namespace TeAtiendo.Desktop.Models.Responses
 {
-    [JsonPropertyName("id")]
-    public int Id { get; set; }
-
-    [JsonPropertyName("usuarioId")]
-    public int UsuarioId { get; set; }
-
-    [JsonPropertyName("restauranteId")]
-    public int RestauranteId { get; set; }
-
-    [JsonPropertyName("mesaId")]
-    public int MesaId { get; set; }
-
-    [JsonPropertyName("fecha")]
-    public DateTime Fecha { get; set; }
-
-    // si tu API manda string, lo cambiamos luego
-    [JsonPropertyName("estado")]
-    public int Estado { get; set; }
+    public sealed class ReservaResponse
+    {
+        public Guid Id { get; set; }
+        public Guid UsuarioId { get; set; }
+        public Guid RestauranteId { get; set; }
+        public Guid MesaId { get; set; }
+        public Guid DisponibilidadId { get; set; }
+        public DateTime FechaReserva { get; set; }
+        public int CantidadPersonas { get; set; }
+        public EstadoReserva EstadoReserva { get; set; }
+    }
 }

@@ -1,21 +1,16 @@
-﻿namespace TeAtiendo.Desktop.Core.Ui;
-
-public sealed class UiState
+﻿namespace TeAtiendo.Desktop.Core.Ui
 {
-    public bool IsLoading { get; private set; }
-    public string? ErrorMessage { get; private set; }
-
-    public void SetLoading(bool value)
+    public sealed class UiState
     {
-        IsLoading = value;
-        if (value) ErrorMessage = null;
-    }
+        public bool IsBusy { get; set; }
+        public string? Info { get; set; }
+        public string? Error { get; set; }
 
-    public void SetError(string message)
-    {
-        IsLoading = false;
-        ErrorMessage = message;
+        public void Clear()
+        {
+            IsBusy = false;
+            Info = null;
+            Error = null;
+        }
     }
-
-    public void ClearError() => ErrorMessage = null;
 }

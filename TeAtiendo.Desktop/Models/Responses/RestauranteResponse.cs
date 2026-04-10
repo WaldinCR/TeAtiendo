@@ -1,27 +1,25 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace TeAtiendo.Desktop.Models.Responses;
-
-public class RestauranteResponse
+namespace TeAtiendo.Desktop.Models.Responses
 {
-    [JsonPropertyName("id")]
-    public int Id { get; set; }
+    public sealed class RestauranteResponse
+    {
+        public Guid Id { get; set; }
 
-    [JsonPropertyName("nombre")]
-    public string Nombre { get; set; } = "";
+        [Required(ErrorMessage = "El nombre del restaurante es requerido")]
+        [StringLength(255, MinimumLength = 3)]
+        public string? Nombre { get; set; }
 
-    [JsonPropertyName("direccion")]
-    public string? Direccion { get; set; }
+        [Required, StringLength(255, MinimumLength = 5)]
+        public string? Direccion { get; set; }
 
-    [JsonPropertyName("telefono")]
-    public string? Telefono { get; set; }
+        [Required, Phone]
+        public string? Telefono { get; set; }
 
-    [JsonPropertyName("descripcion")]
-    public string? Descripcion { get; set; }
+        [Required, EmailAddress]
+        public string? Correo { get; set; }
 
-    [JsonPropertyName("imagenUrl")]
-    public string? ImagenUrl { get; set; }
-
-    [JsonPropertyName("activo")]
-    public bool Activo { get; set; } = true;
+        public TimeOnly HorarioApertura { get; set; }
+        public TimeOnly HorarioCierre { get; set; }
+    }
 }

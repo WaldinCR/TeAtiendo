@@ -1,33 +1,16 @@
-﻿using TeAtiendo.Desktop.Core.Services;
+﻿using System.Windows.Forms;
 
-namespace TeAtiendo.Desktop.Core.Ui;
-
-public abstract class BaseUserControl : UserControl
+namespace TeAtiendo.Desktop.Core.Ui
 {
-    protected ServiceFactory Services { get; }
-    protected UiState State { get; } = new();
-
-    protected BaseUserControl(ServiceFactory services)
+    public class BaseUserControl : UserControl
     {
-        Services = services;
-        this.Dock = DockStyle.Fill;
-    }
+        protected UiState State { get; } = new UiState();
 
-    protected async Task RunSafeAsync(Func<Task> action, bool showError = true)
-    {
-        try
+        protected void SetBusy(bool busy)
         {
-            State.SetLoading(true);
-            await action();
-        }
-        catch (Exception ex)
-        {
-            State.SetError(ex.Message);
-            if (showError) UiErrorHandler.Show(ex);
-        }
-        finally
-        {
-            State.SetLoading(false);
+            State.IsBusy = busy;
+            Cursor = busy ? Cursors.WaitCursor : Cursors.Default;
+            Enabled = !busy;
         }
     }
 }

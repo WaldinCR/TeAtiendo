@@ -1,24 +1,14 @@
-﻿using System.Text.Json.Serialization;
+﻿using TeAtiendo.Application.DTOs.Pago;
+using TeAtiendo.Domain.Enums;
 
-namespace TeAtiendo.Desktop.Models.Responses;
-
-public class PagoResponse
+namespace TeAtiendo.Desktop.Models.Responses
 {
-    [JsonPropertyName("id")]
-    public int Id { get; set; }
-
-    [JsonPropertyName("ordenId")]
-    public int OrdenId { get; set; }
-
-    [JsonPropertyName("monto")]
-    public decimal Monto { get; set; }
-
-    [JsonPropertyName("fecha")]
-    public DateTime Fecha { get; set; }
-
-    [JsonPropertyName("estado")]
-    public int Estado { get; set; }
-
-    [JsonPropertyName("metodo")]
-    public string? Metodo { get; set; }
+    public sealed class PagoResponse
+    {
+        public Guid Id { get; set; }
+        public Guid OrdenId { get; set; }
+        public decimal Monto { get; set; }
+        public EstadoPago EstadoPago { get; set; }
+        public MetodoPago MetodoPago { get; set; }
+    }
 }

@@ -1,8 +1,12 @@
-﻿using TeAtiendo.Desktop.Models;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using TeAtiendo.Application.DTOs.Menu;
+using TeAtiendo.Desktop.Models.Legacy;
 
 namespace TeAtiendo.Desktop.Services
 {
-    public class MenuService
+    public sealed class MenuService
     {
         private readonly ApiService _api;
 
@@ -11,31 +15,31 @@ namespace TeAtiendo.Desktop.Services
             _api = api;
         }
 
-        public async Task<List<Menu>> ObtenerTodosAsync()
+        public async Task<List<MenuDto>> ObtenerTodosAsync()
         {
-            var response = await _api.GetAsync<ApiListResponse<Menu>>("Menus");
-            return response?.Data ?? new List<Menu>();
+            var response = await _api.GetAsync<List<MenuDto>>("Menus");
+            return response ?? new List<MenuDto>();
         }
 
-        public async Task<Menu?> ObtenerPorIdAsync(int id)
+        public async Task<MenuDto?> ObtenerPorIdAsync(Guid id)
         {
-            var response = await _api.GetAsync<ApiResponse<Menu>>($"Menus/{id}");
+            var response = await _api.GetAsync<ApiResponse<MenuDto>>($"Menus/{id}");
             return response?.Data;
         }
 
-        public async Task<Menu?> CrearAsync(Menu menu)
+        public async Task<MenuDto?> CrearAsync(CreateMenuDto dto)
         {
-            var response = await _api.PostAsync<ApiResponse<Menu>>("Menus", menu);
+            var response = await _api.PostAsync<CreateMenuDto, ApiResponse<MenuDto>>("Menus", dto);
             return response?.Data;
         }
 
-        public async Task<Menu?> ActualizarAsync(Menu menu)
+        public async Task<MenuDto?> ActualizarAsync(Guid id, UpdateMenuDto dto)
         {
-            var response = await _api.PutAsync<ApiResponse<Menu>>($"Menus/{menu.Id}", menu);
+            var response = await _api.PutAsync<UpdateMenuDto, ApiResponse<MenuDto>>($"Menus/{id}", dto);
             return response?.Data;
         }
 
-        public async Task<bool> EliminarAsync(int id)
+        public async Task<bool> EliminarAsync(Guid id)
         {
             return await _api.DeleteAsync($"Menus/{id}");
         }

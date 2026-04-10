@@ -1,8 +1,12 @@
-﻿using TeAtiendo.Desktop.Models;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using TeAtiendo.Application.DTOs.Usuario;
+using TeAtiendo.Desktop.Models.Legacy;
 
 namespace TeAtiendo.Desktop.Services
 {
-    public class UsuarioService
+    public sealed class UsuarioService
     {
         private readonly ApiService _api;
 
@@ -11,31 +15,33 @@ namespace TeAtiendo.Desktop.Services
             _api = api;
         }
 
-        public async Task<List<Usuario>> ObtenerTodosAsync()
+        public async Task<List<UsuarioDto>> ObtenerTodosAsync()
         {
-            var response = await _api.GetAsync<ApiListResponse<Usuario>>("Usuarios");
-            return response?.Data ?? new List<Usuario>();
+            var response = await _api.GetAsync<List<UsuarioDto>>("Usuarios");
+            return response ?? new List<UsuarioDto>();
         }
 
-        public async Task<Usuario?> ObtenerPorIdAsync(int id)
+        public async Task<UsuarioDto?> ObtenerPorIdAsync(Guid id)
         {
-            var response = await _api.GetAsync<ApiResponse<Usuario>>($"Usuarios/{id}");
+            var response = await _api.GetAsync<ApiResponse<UsuarioDto>>($"Usuarios/{id}");
             return response?.Data;
         }
 
-        public async Task<Usuario?> ObtenerPorEmailAsync(string correo)
+        public async Task<UsuarioDto?> ObtenerPorEmailAsync(string correo)
         {
-            var response = await _api.GetAsync<ApiResponse<Usuario>>($"Usuarios/email/{Uri.EscapeDataString(correo)}");
+            var response = await _api.GetAsync<ApiResponse<UsuarioDto>>(
+                $"Usuarios/email/{Uri.EscapeDataString(correo)}"
+            );
             return response?.Data;
         }
 
-        public async Task<Usuario?> ActualizarAsync(Usuario usuario)
+        public async Task<UsuarioDto?> ActualizarAsync(Guid id, UpdateUsuarioDto dto)
         {
-            var response = await _api.PutAsync<ApiResponse<Usuario>>($"Usuarios/{usuario.Id}", usuario);
+            var response = await _api.PutAsync<UpdateUsuarioDto, ApiResponse<UsuarioDto>>($"Usuarios/{id}", dto);
             return response?.Data;
         }
 
-        public async Task<bool> EliminarAsync(int id)
+        public async Task<bool> EliminarAsync(Guid id)
         {
             return await _api.DeleteAsync($"Usuarios/{id}");
         }

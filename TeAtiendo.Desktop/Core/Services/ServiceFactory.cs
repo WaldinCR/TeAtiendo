@@ -1,22 +1,21 @@
 ﻿using TeAtiendo.Desktop.Services;
 
-namespace TeAtiendo.Desktop.Core.Services;
-
-public sealed class ServiceFactory
+namespace TeAtiendo.Desktop.Core.Services
 {
-    public ApiService Api { get; }
-
-    public AuthService Auth { get; }
-    public UsuarioService Usuarios { get; }
-    public NotificacionService Notificaciones { get; }
-
-    public ServiceFactory()
+    public sealed class ServiceFactory
     {
-        Api = new ApiService();
 
-        Auth = new AuthService(Api);
-        Usuarios = new UsuarioService(Api);
-        Notificaciones = new NotificacionService(Api);
+        private const string BaseUrl = "http://localhost:5067/api";
 
+        public ApiService ApiService() => new ApiService(BaseUrl);
+
+        public AuthService AuthService() => new AuthService(ApiService());
+
+        public RestauranteService RestauranteService() => new RestauranteService(ApiService());
+        public MenuService MenuService() => new MenuService(ApiService());
+        public ReservaService ReservaService() => new ReservaService(ApiService());
+        public OrdenService OrdenService() => new OrdenService(ApiService());
+        public NotificacionService NotificacionService() => new NotificacionService(ApiService());
+        public CategoriaService CategoriaService() => new CategoriaService(ApiService());
     }
 }

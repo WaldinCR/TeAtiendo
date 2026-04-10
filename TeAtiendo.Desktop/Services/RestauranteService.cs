@@ -1,49 +1,32 @@
-﻿using TeAtiendo.Desktop.Models;
+﻿using TeAtiendo.Desktop.Models.Legacy;
+using TeAtiendo.Desktop.Models.Responses;
 
 namespace TeAtiendo.Desktop.Services
 {
-    public class RestauranteService
+    public sealed class RestauranteService
     {
         private readonly ApiService _api;
+        public RestauranteService(ApiService api) => _api = api;
 
-        public RestauranteService(ApiService api)
+        public async Task<IReadOnlyList<RestauranteResponse>> GetAllAsync(CancellationToken ct = default)
         {
-            _api = api;
+            var env = await _api.GetAsync<ApiEnvelope<List<RestauranteResponse>>>("api/restaurantes", ct);
+            return env?.Data ?? new List<RestauranteResponse>();
         }
 
-        public async Task<List<Restaurante>> ObtenerTodosAsync()
+        public async Task<RestauranteResponse?> CreateAsync(RestauranteResponse dto, CancellationToken ct = default)
         {
-            var response = await _api.GetAsync<ApiListResponse<Restaurante>>("Restaurantes");
-            return response?.Data ?? new List<Restaurante>();
+            var env = await _api.PostAsync<RestauranteResponse, ApiEnvelope<RestauranteResponse>>("api/restaurantes", dto, ct);
+            return env?.Data;
         }
 
-        public async Task<Restaurante?> ObtenerPorIdAsync(int id)
+        public async Task<RestauranteResponse?> UpdateAsync(Guid id, RestauranteResponse dto, CancellationToken ct = default)
         {
-            var response = await _api.GetAsync<ApiResponse<Restaurante>>($"Restaurantes/{id}");
-            return response?.Data;
+            var env = await _api.PutAsync<RestauranteResponse, ApiEnvelope<RestauranteResponse>>($"api/restaurantes/{id}", dto, ct);
+            return env?.Data;
         }
 
-        public async Task<List<Restaurante>> BuscarAsync(string nombre)
-        {
-            var response = await _api.GetAsync<ApiListResponse<Restaurante>>($"Restaurantes/buscar?nombre={Uri.EscapeDataString(nombre)}");
-            return response?.Data ?? new List<Restaurante>();
-        }
-
-        public async Task<Restaurante?> CrearAsync(Restaurante restaurante)
-        {
-            var response = await _api.PostAsync<ApiResponse<Restaurante>>("Restaurantes", restaurante);
-            return response?.Data;
-        }
-
-        public async Task<Restaurante?> ActualizarAsync(Restaurante restaurante)
-        {
-            var response = await _api.PutAsync<ApiResponse<Restaurante>>($"Restaurantes/{restaurante.Id}", restaurante);
-            return response?.Data;
-        }
-
-        public async Task<bool> EliminarAsync(int id)
-        {
-            return await _api.DeleteAsync($"Restaurantes/{id}");
-        }
+        public Task DeleteAsync(Guid id, Guid userId, CancellationToken ct = default)
+            => _api.DeleteAsync($"api/restaurantes/{id}?userId={userId}", ct);
     }
 }

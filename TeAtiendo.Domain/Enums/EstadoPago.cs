@@ -4,6 +4,7 @@
     {
         Pendiente = 1,
         Aprobado = 2,
-        Rechazado = 3
+        Rechazado = 3,
+        Reembolsado = 4
     }
 }

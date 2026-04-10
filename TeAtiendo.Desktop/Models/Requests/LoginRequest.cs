@@ -1,12 +1,13 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace TeAtiendo.Desktop.Models.Requests;
-
-public class LoginRequest
+namespace TeAtiendo.Desktop.Models.Requests
 {
-    [JsonPropertyName("correo")]
-    public string Correo { get; set; } = "";
+    public sealed class LoginRequest
+    {
+        [Required, EmailAddress]
+        public string Correo { get; set; } = "";
 
-    [JsonPropertyName("password")]
-    public string Password { get; set; } = "";
+        [Required, MinLength(8)]
+        public string Password { get; set; } = "";
+    }
 }

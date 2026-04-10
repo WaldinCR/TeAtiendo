@@ -1,19 +1,19 @@
-﻿using TeAtiendo.Desktop.Core.Services;
+﻿using System;
+using System.Windows.Forms;
 using TeAtiendo.Desktop.UserControls;
 
-namespace TeAtiendo.Desktop.Core.Navigation;
-
-public sealed class ViewFactory : IViewFactory
+namespace TeAtiendo.Desktop.Core.Navigation
 {
-    public ServiceFactory Services { get; }
-
-    public ViewFactory(ServiceFactory services)
+    public sealed class ViewFactory : IViewFactory
     {
-        Services = services;
-    }
-
-    public T Create<T>() where T : UserControl
-    {
-        return Activator.CreateInstance<T>();
+        public UserControl Create(string viewKey)
+        {
+            return viewKey switch
+            {
+                "dashboard" => new UcDashboard(),
+                "restaurantes" => new UcRestaurantes(),
+                _ => throw new ArgumentOutOfRangeException(nameof(viewKey), $"ViewKey desconocida: {viewKey}")
+            };
+        }
     }
 }

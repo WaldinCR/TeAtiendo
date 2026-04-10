@@ -1,8 +1,12 @@
-﻿using TeAtiendo.Desktop.Models;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using TeAtiendo.Application.DTOs;
+using TeAtiendo.Desktop.Models.Legacy;
 
 namespace TeAtiendo.Desktop.Services
 {
-    public class CategoriaService
+    public sealed class CategoriaService
     {
         private readonly ApiService _api;
 
@@ -11,21 +15,21 @@ namespace TeAtiendo.Desktop.Services
             _api = api;
         }
 
-        public async Task<List<CategoriaPlato>> ObtenerTodosAsync()
+        public async Task<List<CategoriaplatoDto>> ObtenerTodosAsync()
         {
-            var response = await _api.GetAsync<ApiListResponse<CategoriaPlato>>("Categoriasplato");
-            return response?.Data ?? new List<CategoriaPlato>();
+            var response = await _api.GetAsync<ApiListResponse<CategoriaplatoDto>>("Categoriasplato");
+            return response?.Data ?? new List<CategoriaplatoDto>();
         }
 
-        public async Task<CategoriaPlato?> CrearAsync(CategoriaPlato categoria)
+        public async Task<CategoriaplatoDto?> CrearAsync(CategoriaplatoDto categoria)
         {
-            var response = await _api.PostAsync<ApiResponse<CategoriaPlato>>("Categoriasplato", categoria);
+            var response = await _api.PostAsync<CategoriaplatoDto, ApiResponse<CategoriaplatoDto>>("Categoriasplato", categoria);
             return response?.Data;
         }
 
-        public async Task<CategoriaPlato?> ActualizarAsync(CategoriaPlato categoria)
+        public async Task<CategoriaplatoDto?> ActualizarAsync(CategoriaplatoDto categoria)
         {
-            var response = await _api.PutAsync<ApiResponse<CategoriaPlato>>($"Categoriasplato/{categoria.Id}", categoria);
+            var response = await _api.PutAsync<CategoriaplatoDto, ApiResponse<CategoriaplatoDto>>($"Categoriasplato/{categoria.Id}", categoria);
             return response?.Data;
         }
 

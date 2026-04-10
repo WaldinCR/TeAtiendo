@@ -1,9 +1,13 @@
-﻿using TeAtiendo.Desktop.Models;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using TeAtiendo.Desktop.Models.Legacy;
+using TeAtiendo.Desktop.Models.Requests;
 using TeAtiendo.Desktop.Models.Responses;
+using TeAtiendo.Domain.Enums;
 
 namespace TeAtiendo.Desktop.Services
 {
-    public class OrdenService
+    public sealed class OrdenService
     {
         private readonly ApiService _api;
 
@@ -14,14 +18,14 @@ namespace TeAtiendo.Desktop.Services
 
         public async Task<List<OrdenResponse>> ObtenerTodosAsync()
         {
-            var response = await _api.GetAsync<ApiListResponse<OrdenResponse>>("Ordenes");
-            return response?.Data ?? new List<OrdenResponse>();
+            var response = await _api.GetAsync<List<OrdenResponse>>("Ordenes");
+            return response ?? new List<OrdenResponse>();
         }
 
         public async Task<List<OrdenResponse>> ObtenerPorUsuarioAsync(int usuarioId)
         {
-            var response = await _api.GetAsync<ApiListResponse<OrdenResponse>>($"Ordenes/usuario/{usuarioId}");
-            return response?.Data ?? new List<OrdenResponse>();
+            var response = await _api.GetAsync<List<OrdenResponse>>($"Ordenes/usuario/{usuarioId}");
+            return response ?? new List<OrdenResponse>();
         }
 
         public async Task<OrdenResponse?> ObtenerPorIdAsync(int id)
@@ -30,14 +34,18 @@ namespace TeAtiendo.Desktop.Services
             return response?.Data;
         }
 
-        public async Task<bool> CambiarEstadoAsync(int ordenId, int nuevoEstado)
+        public async Task<bool> CambiarEstadoAsync(int ordenId, EstadoOrden nuevoEstado)
         {
-            var request = new TeAtiendo.Desktop.Models.Requests.CambiarEstadoOrdenRequest
+            var request = new CambiarEstadoOrdenRequest
             {
                 NuevoEstado = nuevoEstado
             };
 
-            var response = await _api.PatchAsync<ApiResponse<object>>($"Ordenes/{ordenId}/estado", request);
+            var response = await _api.PatchAsync<CambiarEstadoOrdenRequest, ApiResponse<object>>(
+                $"Ordenes/{ordenId}/estado",
+                request
+            );
+
             return response != null;
         }
     }

@@ -1,9 +1,9 @@
-﻿using System.Text.Json.Serialization;
+﻿using TeAtiendo.Domain.Enums;
 
-namespace TeAtiendo.Desktop.Models.Requests;
-
-public class CambiarEstadoOrdenRequest
+namespace TeAtiendo.Desktop.Models.Requests
 {
-    [JsonPropertyName("nuevoEstado")]
-    public int NuevoEstado { get; set; }
+    public sealed class CambiarEstadoOrdenRequest
+    {
+        public EstadoOrden NuevoEstado { get; set; }
+    }
 }

@@ -1,8 +1,12 @@
-﻿using TeAtiendo.Desktop.Models;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using TeAtiendo.Application.DTOs; 
+using TeAtiendo.Desktop.Models.Legacy; 
 
 namespace TeAtiendo.Desktop.Services
 {
-    public class MesaService
+    public sealed class MesaService
     {
         private readonly ApiService _api;
 
@@ -11,27 +15,27 @@ namespace TeAtiendo.Desktop.Services
             _api = api;
         }
 
-        public async Task<List<Mesa>> ObtenerTodosAsync()
+        public async Task<List<MesaDto>> ObtenerTodosAsync()
         {
-            var response = await _api.GetAsync<ApiListResponse<Mesa>>("Mesas");
-            return response?.Data ?? new List<Mesa>();
+            var response = await _api.GetAsync<List<MesaDto>>("Mesas");
+            return response ?? new List<MesaDto>();
         }
 
-        public async Task<List<Mesa>> ObtenerPorRestauranteAsync(int restauranteId)
+        public async Task<List<MesaDto>> ObtenerPorRestauranteAsync(int restauranteId)
         {
-            var response = await _api.GetAsync<ApiListResponse<Mesa>>($"Mesas/restaurante/{restauranteId}");
-            return response?.Data ?? new List<Mesa>();
+            var response = await _api.GetAsync<List<MesaDto>>($"Mesas/restaurante/{restauranteId}");
+            return response ?? new List<MesaDto>();
         }
 
-        public async Task<Mesa?> CrearAsync(Mesa mesa)
+        public async Task<MesaDto?> CrearAsync(MesaDto mesa)
         {
-            var response = await _api.PostAsync<ApiResponse<Mesa>>("Mesas", mesa);
+            var response = await _api.PostAsync<MesaDto, ApiResponse<MesaDto>>("Mesas", mesa);
             return response?.Data;
         }
 
-        public async Task<Mesa?> ActualizarAsync(Mesa mesa)
+        public async Task<MesaDto?> ActualizarAsync(MesaDto mesa)
         {
-            var response = await _api.PutAsync<ApiResponse<Mesa>>($"Mesas/{mesa.Id}", mesa);
+            var response = await _api.PutAsync<MesaDto, ApiResponse<MesaDto>>($"Mesas/{mesa.Id}", mesa);
             return response?.Data;
         }
 

@@ -1,21 +1,13 @@
-﻿using System.Text.Json.Serialization;
+﻿using TeAtiendo.Desktop.Models;
+using TeAtiendo.Domain.Enums;
 
-namespace TeAtiendo.Desktop.Models.Responses;
-
-public class UsuarioResponse
+namespace TeAtiendo.Desktop.Models.Responses
 {
-    [JsonPropertyName("id")]
-    public int Id { get; set; }
-
-    [JsonPropertyName("nombre")]
-    public string Nombre { get; set; } = "";
-
-    [JsonPropertyName("correo")]
-    public string Correo { get; set; } = "";
-
-    [JsonPropertyName("rol")]
-    public int Rol { get; set; }
-
-    [JsonPropertyName("activo")]
-    public bool Activo { get; set; } = true;
+    public sealed class UsuarioResponse
+    {
+        public Guid Id { get; set; }
+        public string Nombre { get; set; } = "";
+        public string Correo { get; set; } = "";
+        public RolUsuario Rol { get; set; }
+    }
 }

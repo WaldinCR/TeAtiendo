@@ -1,187 +1,134 @@
 ﻿using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using TeAtiendo.Desktop.Helpers;
+using TeAtiendo.Desktop.Models.Legacy;
+using TeAtiendo.Desktop.Services.Json;
 
 namespace TeAtiendo.Desktop.Services
 {
-    public class ApiService
+    public sealed class ApiService
     {
-        private readonly HttpClient _http;
-        private const string BASE_URL = "http://localhost:5067/api/";
-
-        private static readonly JsonSerializerOptions _jsonOptions = new()
+        private static readonly Lazy<HttpClient> _lazy = new(() =>
         {
-            PropertyNameCaseInsensitive = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        };
+            var c = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
+            return c;
+        });
 
-        public ApiService()
+        private readonly string _baseUrl;
+        private readonly JsonSerializerOptions _json;
+
+        public ApiService(string baseUrl)
         {
-            _http = new HttpClient
+            _baseUrl = baseUrl.TrimEnd('/');
+
+            _json = new JsonSerializerOptions(JsonSerializerDefaults.Web)
             {
-                BaseAddress = new Uri(BASE_URL),
-                Timeout = TimeSpan.FromSeconds(30)
+                PropertyNameCaseInsensitive = true,
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
             };
+            _json.Converters.Add(new TimeOnlyJsonConverter());
         }
 
-        private void SetAuthHeader()
+        private HttpClient Client => _lazy.Value;
+
+        private HttpRequestMessage Create(HttpMethod method, string route)
         {
-            if (!string.IsNullOrEmpty(SessionManager.Token))
-            {
-                _http.DefaultRequestHeaders.Authorization =
-                    new AuthenticationHeaderValue("Bearer", SessionManager.Token);
-            }
+            var req = new HttpRequestMessage(method, $"{_baseUrl}/{route.TrimStart('/')}");
+
+            if (!string.IsNullOrWhiteSpace(SessionManager.JwtToken))
+                req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", SessionManager.JwtToken);
+
+            req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            return req;
         }
-        public async Task<T?> GetAsync<T>(string endpoint)
+
+        public Task<T?> GetAsync<T>(string route, CancellationToken ct = default)
+            => SendAsync<T>(HttpMethod.Get, route, null, ct);
+
+        public Task<TResponse?> PostAsync<TRequest, TResponse>(string route, TRequest body, CancellationToken ct = default)
+            => SendAsync<TResponse>(HttpMethod.Post, route, body!, ct);
+
+        public Task<TResponse?> PutAsync<TRequest, TResponse>(string route, TRequest body, CancellationToken ct = default)
+            => SendAsync<TResponse>(HttpMethod.Put, route, body!, ct);
+
+        public Task<TResponse?> PatchAsync<TRequest, TResponse>(string route, TRequest body, CancellationToken ct = default)
+            => SendAsync<TResponse>(HttpMethod.Patch, route, body!, ct);
+
+        public Task<TResponse?> PatchSinBodyAsync<TResponse>(string route, CancellationToken ct = default)
+            => SendAsync<TResponse>(HttpMethod.Patch, route, null, ct);
+
+        public async Task<bool> DeleteAsync(string route, CancellationToken ct = default)
         {
+            using var req = Create(HttpMethod.Delete, route);
+            using var res = await Client.SendAsync(req, ct);
+            var text = res.Content is null ? null : await res.Content.ReadAsStringAsync(ct);
+
+            if (!res.IsSuccessStatusCode)
+            {
+                var msg = ExtractMessage(text) ?? $"HTTP {(int)res.StatusCode} ({res.StatusCode})";
+                throw new ApiServiceException(res.StatusCode, msg, text);
+            }
+
+            return true;
+        }
+
+        private async Task<T?> SendAsync<T>(HttpMethod method, string route, object? body, CancellationToken ct)
+        {
+            using var req = Create(method, route);
+
+            if (body is not null)
+            {
+                var payload = JsonSerializer.Serialize(body, _json);
+                req.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+            }
+
+            using var res = await Client.SendAsync(req, ct);
+            var text = res.Content is null ? null : await res.Content.ReadAsStringAsync(ct);
+
+            if (!res.IsSuccessStatusCode)
+            {
+                var msg = ExtractMessage(text) ?? $"HTTP {(int)res.StatusCode} ({res.StatusCode})";
+                throw new ApiServiceException(res.StatusCode, msg, text);
+            }
+
+            if (typeof(T) == typeof(object) || string.IsNullOrWhiteSpace(text))
+                return default;
+
+            return JsonSerializer.Deserialize<T>(text, _json);
+        }
+
+        private string? ExtractMessage(string? body)
+        {
+            if (string.IsNullOrWhiteSpace(body)) return null;
+    
             try
             {
-                SetAuthHeader();
-                var response = await _http.GetAsync(endpoint);
-                var json = await response.Content.ReadAsStringAsync();
-
-                if (!response.IsSuccessStatusCode)
+                var env = JsonSerializer.Deserialize<ApiEnvelope<object>>(body, _json);
+                if (env != null)
                 {
-                    throw new ApiException($"Error {(int)response.StatusCode}: {json}");
+                    if (env.Errors is { Count: > 0 })
+                        return (env.Message ?? "Errores") + "\n- " + string.Join("\n- ", env.Errors);
+
+                    if (!string.IsNullOrWhiteSpace(env.Error))
+                        return (env.Message ?? "Error") + $"\nDetalle: {env.Error}";
+
+                    if (!string.IsNullOrWhiteSpace(env.Message))
+                        return env.Message;
                 }
-
-                return JsonSerializer.Deserialize<T>(json, _jsonOptions);
             }
-            catch (HttpRequestException ex)
-            {
-                throw new ApiException(
-                    $"No se pudo conectar con el servidor. Base={_http.BaseAddress} Detalle={ex.Message}", ex);
-            }
-        }
+            catch { }
 
-        public async Task<T?> PostAsync<T>(string endpoint, object data)
-        {
             try
             {
-                SetAuthHeader();
-                var json = JsonSerializer.Serialize(data, _jsonOptions);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var response = await _http.PostAsync(endpoint, content);
-                var responseJson = await response.Content.ReadAsStringAsync();
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new ApiException($"Error {(int)response.StatusCode}: {responseJson}");
-                }
-
-                return JsonSerializer.Deserialize<T>(responseJson, _jsonOptions);
+                using var doc = JsonDocument.Parse(body);
+                if (doc.RootElement.TryGetProperty("message", out var m))
+                    return m.GetString();
             }
-            catch (HttpRequestException ex)
-            {
-                var baseUrl = _http.BaseAddress?.ToString() ?? "(null)";
-                var detalle = ex.InnerException?.Message ?? ex.Message;
+            catch { }
 
-                throw new ApiException(
-                    $"No se pudo conectar con el servidor. Base={baseUrl}. Detalle={detalle}", ex);
-            }
+            return null;
         }
-
-        public async Task<T?> PutAsync<T>(string endpoint, object data)
-        {
-            try
-            {
-                SetAuthHeader();
-                var json = JsonSerializer.Serialize(data, _jsonOptions);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var response = await _http.PutAsync(endpoint, content);
-                var responseJson = await response.Content.ReadAsStringAsync();
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new ApiException($"Error {(int)response.StatusCode}: {responseJson}");
-                }
-
-                return JsonSerializer.Deserialize<T>(responseJson, _jsonOptions);
-            }
-            catch (HttpRequestException ex)
-            {
-                throw new ApiException("No se pudo conectar con el servidor.", ex);
-            }
-        }
-
-        public async Task<T?> PatchAsync<T>(string endpoint, object? data = null)
-        {
-            try
-            {
-                SetAuthHeader();
-                HttpContent? content = null;
-                if (data != null)
-                {
-                    var json = JsonSerializer.Serialize(data, _jsonOptions);
-                    content = new StringContent(json, Encoding.UTF8, "application/json");
-                }
-
-                var request = new HttpRequestMessage(HttpMethod.Patch, endpoint) { Content = content };
-                var response = await _http.SendAsync(request);
-                var responseJson = await response.Content.ReadAsStringAsync();
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new ApiException($"Error {(int)response.StatusCode}: {responseJson}");
-                }
-
-                return JsonSerializer.Deserialize<T>(responseJson, _jsonOptions);
-            }
-            catch (HttpRequestException ex)
-            {
-                throw new ApiException("No se pudo conectar con el servidor.", ex);
-            }
-        }
-
-        public async Task<bool> DeleteAsync(string endpoint)
-        {
-            try
-            {
-                SetAuthHeader();
-                var response = await _http.DeleteAsync(endpoint);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    var json = await response.Content.ReadAsStringAsync();
-                    throw new ApiException($"Error {(int)response.StatusCode}: {json}");
-                }
-
-                return true;
-            }
-            catch (HttpRequestException ex)
-            {
-                throw new ApiException("No se pudo conectar con el servidor.", ex);
-            }
-        }
-
-        public async Task<bool> PatchSinBodyAsync(string endpoint)
-        {
-            try
-            {
-                SetAuthHeader();
-                var request = new HttpRequestMessage(HttpMethod.Patch, endpoint);
-                var response = await _http.SendAsync(request);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    var json = await response.Content.ReadAsStringAsync();
-                    throw new ApiException($"Error {(int)response.StatusCode}: {json}");
-                }
-
-                return true;
-            }
-            catch (HttpRequestException ex)
-            {
-                throw new ApiException("No se pudo conectar con el servidor.", ex);
-            }
-        }
-    }
-
-    public class ApiException : Exception
-    {
-        public ApiException(string message) : base(message) { }
-        public ApiException(string message, Exception inner) : base(message, inner) { }
     }
 }

@@ -1,6 +1,6 @@
-﻿namespace TeAtiendo.Desktop.UserControls
+﻿namespace TeAtiendo.Desktop.UserControls.Admin
 {
-    partial class UcMesas
+    partial class UcNotificacionesAdmin
     {
         /// <summary> 
         /// Variable del diseñador necesaria.

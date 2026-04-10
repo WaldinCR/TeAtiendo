@@ -1,8 +1,12 @@
-﻿using TeAtiendo.Desktop.Models;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using TeAtiendo.Application.DTOs;
+using TeAtiendo.Desktop.Models.Legacy;
 
 namespace TeAtiendo.Desktop.Services
 {
-    public class PlatoService
+    public sealed class PlatoService
     {
         private readonly ApiService _api;
 
@@ -11,37 +15,37 @@ namespace TeAtiendo.Desktop.Services
             _api = api;
         }
 
-        public async Task<List<Plato>> ObtenerTodosAsync()
+        public async Task<List<PlatoDto>> ObtenerTodosAsync()
         {
-            var response = await _api.GetAsync<ApiListResponse<Plato>>("Platos");
-            return response?.Data ?? new List<Plato>();
+            var response = await _api.GetAsync<ApiListResponse<PlatoDto>>("Platos");
+            return response?.Data ?? new List<PlatoDto>();
         }
 
-        public async Task<List<Plato>> ObtenerPorMenuAsync(int menuId)
+        public async Task<List<PlatoDto>> ObtenerPorMenuAsync(Guid menuId)
         {
-            var response = await _api.GetAsync<ApiListResponse<Plato>>($"Platos/menu/{menuId}");
-            return response?.Data ?? new List<Plato>();
+            var response = await _api.GetAsync<ApiListResponse<PlatoDto>>($"Platos/menu/{menuId}");
+            return response?.Data ?? new List<PlatoDto>();
         }
 
-        public async Task<List<Plato>> ObtenerPorCategoriaAsync(int categoriaId)
+        public async Task<List<PlatoDto>> ObtenerPorCategoriaAsync(Guid categoriaPlatoId)
         {
-            var response = await _api.GetAsync<ApiListResponse<Plato>>($"Platos/categoria/{categoriaId}");
-            return response?.Data ?? new List<Plato>();
+            var response = await _api.GetAsync<ApiListResponse<PlatoDto>>($"Platos/categoria/{categoriaPlatoId}");
+            return response?.Data ?? new List<PlatoDto>();
         }
 
-        public async Task<Plato?> CrearAsync(Plato plato)
+        public async Task<PlatoDto?> CrearAsync(PlatoDto dto)
         {
-            var response = await _api.PostAsync<ApiResponse<Plato>>("Platos", plato);
+            var response = await _api.PostAsync<PlatoDto, ApiResponse<PlatoDto>>("Platos", dto);
             return response?.Data;
         }
 
-        public async Task<Plato?> ActualizarAsync(Plato plato)
+        public async Task<PlatoDto?> ActualizarAsync(PlatoDto dto)
         {
-            var response = await _api.PutAsync<ApiResponse<Plato>>($"Platos/{plato.Id}", plato);
+            var response = await _api.PutAsync<PlatoDto, ApiResponse<PlatoDto>>($"Platos/{dto.Id}", dto);
             return response?.Data;
         }
 
-        public async Task<bool> EliminarAsync(int id)
+        public async Task<bool> EliminarAsync(Guid id)
         {
             return await _api.DeleteAsync($"Platos/{id}");
         }

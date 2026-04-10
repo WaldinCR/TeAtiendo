@@ -1,8 +1,12 @@
-﻿using TeAtiendo.Desktop.Models;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using TeAtiendo.Application.DTOs.Moderacion;
+using TeAtiendo.Desktop.Models.Legacy;
 
 namespace TeAtiendo.Desktop.Services
 {
-    public class ModeracionService
+    public sealed class ModeracionService
     {
         private readonly ApiService _api;
 
@@ -11,44 +15,65 @@ namespace TeAtiendo.Desktop.Services
             _api = api;
         }
 
-        public async Task<List<Moderacion>> ObtenerTodosAsync()
+        public async Task<List<ModeracionContenidoDto>> ObtenerTodosAsync()
         {
-            var response = await _api.GetAsync<ApiListResponse<Moderacion>>("Moderacion");
-            return response?.Data ?? new List<Moderacion>();
+            var response = await _api.GetAsync<ApiListResponse<ModeracionContenidoDto>>("Moderacion");
+            return response?.Data ?? new List<ModeracionContenidoDto>();
         }
 
-        public async Task<List<Moderacion>> ObtenerPorAdminAsync(int adminId)
+        public async Task<List<ModeracionContenidoDto>> ObtenerPorAdminAsync(Guid adminId)
         {
-            var response = await _api.GetAsync<ApiListResponse<Moderacion>>($"Moderacion/admin/{adminId}");
-            return response?.Data ?? new List<Moderacion>();
+            var response = await _api.GetAsync<ApiListResponse<ModeracionContenidoDto>>($"Moderacion/admin/{adminId}");
+            return response?.Data ?? new List<ModeracionContenidoDto>();
         }
 
-        public async Task<List<Moderacion>> ObtenerPorTipoAsync(string tipoContenido)
+        public async Task<List<ModeracionContenidoDto>> ObtenerPorTipoAsync(string tipoContenido)
         {
-            var response = await _api.GetAsync<ApiListResponse<Moderacion>>($"Moderacion/tipo/{Uri.EscapeDataString(tipoContenido)}");
-            return response?.Data ?? new List<Moderacion>();
+            var response = await _api.GetAsync<ApiListResponse<ModeracionContenidoDto>>(
+                $"Moderacion/tipo/{Uri.EscapeDataString(tipoContenido)}"
+            );
+
+            return response?.Data ?? new List<ModeracionContenidoDto>();
         }
 
-        public async Task<List<Moderacion>> ObtenerPorEstadoAsync(string estado)
+        public async Task<List<ModeracionContenidoDto>> ObtenerPorEstadoAsync(string estado)
         {
-            var response = await _api.GetAsync<ApiListResponse<Moderacion>>($"Moderacion/estado/{Uri.EscapeDataString(estado)}");
-            return response?.Data ?? new List<Moderacion>();
+            var response = await _api.GetAsync<ApiListResponse<ModeracionContenidoDto>>(
+                $"Moderacion/estado/{Uri.EscapeDataString(estado)}"
+            );
+
+            return response?.Data ?? new List<ModeracionContenidoDto>();
         }
 
-        public async Task<bool> CambiarEstadoAsync(int id, string nuevoEstado)
+        // Si tu API espera { nuevoEstado: "..." }, usamos este DTO interno.
+        private sealed class CambiarEstadoModeracionDto
         {
-            var request = new CambiarEstadoModeracionRequest { NuevoEstado = nuevoEstado };
-            var response = await _api.PatchAsync<ApiResponse<object>>($"Moderacion/{id}/estado", request);
+            public string NuevoEstado { get; set; } = string.Empty;
+        }
+
+        public async Task<bool> CambiarEstadoAsync(Guid id, string nuevoEstado)
+        {
+            var request = new CambiarEstadoModeracionDto { NuevoEstado = nuevoEstado };
+
+            var response = await _api.PatchAsync<CambiarEstadoModeracionDto, ApiResponse<object>>(
+                $"Moderacion/{id}/estado",
+                request
+            );
+
             return response != null;
         }
 
-        public async Task<Moderacion?> CrearAsync(Moderacion moderacion)
+        public async Task<ModeracionContenidoDto?> CrearAsync(ModeracionContenidoDto dto)
         {
-            var response = await _api.PostAsync<ApiResponse<Moderacion>>("Moderacion", moderacion);
+            var response = await _api.PostAsync<ModeracionContenidoDto, ApiResponse<ModeracionContenidoDto>>(
+                "Moderacion",
+                dto
+            );
+
             return response?.Data;
         }
 
-        public async Task<bool> EliminarAsync(int id)
+        public async Task<bool> EliminarAsync(Guid id)
         {
             return await _api.DeleteAsync($"Moderacion/{id}");
         }

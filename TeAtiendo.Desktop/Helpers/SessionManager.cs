@@ -1,30 +1,47 @@
-﻿using TeAtiendo.Desktop.Models;
+﻿using TeAtiendo.Desktop.Models.Responses;
+using TeAtiendo.Domain.Enums;
 
 namespace TeAtiendo.Desktop.Helpers
 {
     public static class SessionManager
     {
-        public static string? Token { get; private set; }
-        public static Usuario? UsuarioActual { get; private set; }
-        public static int? RestauranteIdActual { get; set; }
+        public static string? JwtToken { get; private set; }
+        public static UsuarioResponse? UsuarioActual { get; private set; }
 
-        public static void IniciarSesion(string token, Usuario usuario)
+        // Nuevo: Restaurante seleccionado para filtrar módulos de "Restaurante"
+        public static Guid RestauranteActualId { get; private set; } = Guid.Empty;
+        public static string RestauranteActualNombre { get; private set; } = "";
+
+        public static bool IsAuthenticated => !string.IsNullOrWhiteSpace(JwtToken);
+        public static bool EsAdmin => UsuarioActual?.Rol == RolUsuario.Admin;
+
+        public static void SetSession(string token, UsuarioResponse? user)
         {
-            Token = token;
-            UsuarioActual = usuario;
+            JwtToken = token;
+            UsuarioActual = user;
+
+            // Al iniciar sesión reseteamos el restaurante seleccionado
+            RestauranteActualId = Guid.Empty;
+            RestauranteActualNombre = "";
         }
 
-        public static void CerrarSesion()
+        public static void SetRestauranteActual(Guid id, string nombre)
         {
-            Token = null;
+            RestauranteActualId = id;
+            RestauranteActualNombre = nombre ?? "";
+        }
+
+        public static void ClearRestauranteActual()
+        {
+            RestauranteActualId = Guid.Empty;
+            RestauranteActualNombre = "";
+        }
+
+        public static void Clear()
+        {
+            JwtToken = null;
             UsuarioActual = null;
-            RestauranteIdActual = null;
+            ClearRestauranteActual();
         }
-
-        public static bool EstaAutenticado => !string.IsNullOrEmpty(Token) && UsuarioActual != null;
-
-        public static bool EsAdmin => UsuarioActual?.Rol == (int)RolUsuario.Admin;
-
-        public static bool EsRestaurante => UsuarioActual?.Rol == (int)RolUsuario.Restaurante;
     }
 }
