@@ -48,7 +48,7 @@ Pasos
 Clonar el repositorio:
 
 Bash
-git clone https://github.com/tu-usuario/TeAtiendo.git
+git clone https://github.com/WaldinCR/TeAtiendo
 Configurar Base de Datos:
 Actualiza la cadena de conexión en appsettings.json dentro de TeAtiendo.API y ejecuta las migraciones:
 
